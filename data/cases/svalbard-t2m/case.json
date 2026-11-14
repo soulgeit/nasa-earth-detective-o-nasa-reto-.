@@ -1,0 +1,34 @@
+{
+ "id": "svalbard-t2m",
+ "variable_id": "T2M",
+ "region": {
+  "kind": "point",
+  "name": null,
+  "lat": 78.22,
+  "lon": 15.65,
+  "bbox": null
+ },
+ "names": {
+  "es": "Svalbard, Noruega",
+  "en": "Svalbard, Norway"
+ },
+ "titles": {
+  "es": "TODO_HUMANO",
+  "en": "TODO_HUMANO"
+ },
+ "story": {
+  "es": [
+   "TODO_HUMANO"
+  ],
+  "en": [
+   "TODO_HUMANO"
+  ]
+ },
+ "frozen_at": "2026-11-14T21:43:34Z",
+ "source": {
+  "kind": "nasa_api",
+  "source": "NASA POWER v2.10.0",
+  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=15.65&latitude=78.22&start=1981&end=2025&format=JSON"
+ },
+ "significance": {}
+}

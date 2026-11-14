@@ -1,0 +1,34 @@
+{
+ "id": "antarctic-seaice",
+ "variable_id": "SEAICE_EXTENT_S",
+ "region": {
+  "kind": "named",
+  "name": null,
+  "lat": null,
+  "lon": null,
+  "bbox": null
+ },
+ "names": {
+  "es": "Hielo marino del Antártico",
+  "en": "Antarctic sea ice"
+ },
+ "titles": {
+  "es": "TODO_HUMANO",
+  "en": "TODO_HUMANO"
+ },
+ "story": {
+  "es": [
+   "TODO_HUMANO"
+  ],
+  "en": [
+   "TODO_HUMANO"
+  ]
+ },
+ "frozen_at": "2026-11-14T21:45:34Z",
+ "source": {
+  "kind": "nasa_file",
+  "source": "NSIDC Sea Ice Index v4",
+  "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv"
+ },
+ "significance": {}
+}
