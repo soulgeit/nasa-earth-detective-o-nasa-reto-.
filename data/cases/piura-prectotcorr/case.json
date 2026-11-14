@@ -1,0 +1,34 @@
+{
+ "id": "piura-prectotcorr",
+ "variable_id": "PRECTOTCORR",
+ "region": {
+  "kind": "point",
+  "name": null,
+  "lat": -5.19,
+  "lon": -80.63,
+  "bbox": null
+ },
+ "names": {
+  "es": "Piura, Perú",
+  "en": "Piura, Peru"
+ },
+ "titles": {
+  "es": "TODO_HUMANO",
+  "en": "TODO_HUMANO"
+ },
+ "story": {
+  "es": [
+   "TODO_HUMANO"
+  ],
+  "en": [
+   "TODO_HUMANO"
+  ]
+ },
+ "frozen_at": "2026-11-14T21:43:33Z",
+ "source": {
+  "kind": "nasa_api",
+  "source": "NASA POWER v2.10.0",
+  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=-80.63&latitude=-5.19&start=1981&end=2025&format=JSON"
+ },
+ "significance": {}
+}

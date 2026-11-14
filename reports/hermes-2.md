@@ -62,3 +62,51 @@ language mix (train): {'es': 2294, 'en': 2029}
 ```
 Falta / riesgos: avisar a Antigravity 2 (fase LoRA) con el recuento nuevo.
 Necesito de otros: nada.
+
+## S2 — LISTO (con un pendiente de otro carril)  (2026-11-14 16:52 UTC-5)
+Rama@commit: feature/scrapes
+Qué quedó:
+- `scripts/freeze_case.py`: llama a `get_series` y `analyze_series` del contrato §6 y escribe
+  `data/cases/<id>/{series.json,analysis.json,case.json}`. Los textos de historia quedan `TODO_HUMANO`.
+- Cinco casos técnicos congelados con datos reales:
+  - `lima-t2m` (POWER, 540 meses, 1981-01 → 2025-12, 18.41 °C en 1981-01)
+  - `svalbard-t2m` (POWER, 540 meses)
+  - `piura-prectotcorr` (POWER, 540 meses)
+  - `arctic-seaice` (NSIDC, 576 meses, 11.65 → 6.69 millones de km²)
+  - `antarctic-seaice` (NSIDC, 576 meses)
+- Las variables hemisféricas (NSIDC, GISTEMP) se piden sin coordenadas: el conector rechaza un punto y era el fallo inicial.
+Evidencia:
+```bash
+$ python scripts/validate_datasets.py data/cases/*/series.json
+[ OK ] data/cases/antarctic-seaice/series.json
+[ OK ] data/cases/arctic-seaice/series.json
+[ OK ] data/cases/lima-t2m/series.json
+[ OK ] data/cases/piura-prectotcorr/series.json
+[ OK ] data/cases/svalbard-t2m/series.json
+5/5 archivos validos
+```
+Falta / riesgos:
+- `analysis.json` sale con la estructura vieja del motor (`metrics`, `detective_answers`), no con `AnalysisResult v2` (`trend`, `significance`, `detectability`). El contrato §6 (`analyze_series`) aún no está en `origin/feature/stats`; cuando Antigravity 2 lo publique, se vuelve a ejecutar `freeze_case.py --technical` y se regeneran los cinco.
+- El caso «tendencias opuestas» no se cumple con el periodo completo: Ártico −0.41 M km²/año (p<0.001, significativo) y Antártico −0.06 (no significativo). Es el resultado honesto; el caso debe presentarse como «el Ártico baja con claridad; el Antártico todavía no se puede afirmar».
+Necesito de otros: Antigravity 2 (analyze_series v2) para la estructura final del análisis.
+
+## S3 — LISTO  (2026-11-14 16:52 UTC-5)
+Rama@commit: feature/scrapes
+Qué quedó: `scripts/build_atlas.py` → `data/atlas/<ID>.json` (TrendMap v2).
+- GISTEMP_TANOM: un archivo, 16 000 celdas, 15 398 significativas (96.2 %), 0.77 MB, 14 s.
+- T2M regional Sudamérica: 16 teselas de 4°, 759 celdas, 455 significativas (59.9 %, todas al alza), 0.04 MB, 0.9 min.
+- Progreso reanudable en `data/cache/atlas_<ID>.npz` (comprimido; la primera versión en JSON pesaba 542 MB y se descartó).
+- Tendencia por celda sobre **medias anuales** (Sen + Mann-Kendall + BH FDR), que es la reducción que el contrato ya usa para la prueba anual; sin promediar pendientes ni valores p.
+- Si el archivo supera 3 MB, agrupa 2×2 promediando las series antes de analizar.
+Evidencia:
+```bash
+$ python scripts/build_atlas.py --variable GISTEMP_TANOM
+wrote data/atlas/GISTEMP_TANOM.json
+size=0.77 MB cells=16000 significant=15398 (96.2%) elapsed=0.2 min
+
+$ python scripts/build_atlas.py --variable T2M --bbox -82 -18 -68 -2 --tile 4
+wrote data/atlas/T2M.json
+size=0.04 MB cells=759 significant=455 (59.9%) elapsed=0.9 min
+```
+Falta / riesgos: `analyze_grid` del contrato §6 aún no existe; se usa una implementación local equivalente marcada en `method_note`.
+Necesito de otros: Antigravity 2 (`analyze_grid`) para sustituir el fallback.

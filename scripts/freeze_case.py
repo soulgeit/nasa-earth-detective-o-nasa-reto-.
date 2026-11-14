@@ -40,11 +40,15 @@ TECHNICAL_CASES = [
      "name_es": "Svalbard, Noruega", "name_en": "Svalbard, Norway"},
     {"id": "piura-prectotcorr", "variable": "PRECTOTCORR", "lat": -5.19, "lon": -80.63,
      "name_es": "Piura, Perú", "name_en": "Piura, Peru"},
-    {"id": "arctic-seaice", "variable": "SEAICE_EXTENT_N", "lat": 80.0, "lon": 0.0,
+    # NSIDC Sea Ice Index is hemispheric: it takes no coordinates.
+    {"id": "arctic-seaice", "variable": "SEAICE_EXTENT_N",
      "name_es": "Hielo marino del Ártico", "name_en": "Arctic sea ice"},
-    {"id": "antarctic-seaice", "variable": "SEAICE_EXTENT_S", "lat": -70.0, "lon": 0.0,
+    {"id": "antarctic-seaice", "variable": "SEAICE_EXTENT_S",
      "name_es": "Hielo marino del Antártico", "name_en": "Antarctic sea ice"},
 ]
+
+# Variables whose connector is defined over a whole hemisphere.
+HEMISPHERIC_VARIABLES = {"SEAICE_EXTENT_N", "SEAICE_EXTENT_S", "GISTEMP_TANOM"}
 
 
 def load_modules():
@@ -91,7 +95,9 @@ def load_modules():
 def fetch_series(variable: str, lat: float | None, lon: float | None, bbox: list[float] | None) -> dict:
     get_series, _, _ = load_modules()
     kwargs: dict[str, Any] = {}
-    if bbox:
+    if variable in HEMISPHERIC_VARIABLES:
+        pass  # hemispheric connectors take no location
+    elif bbox:
         kwargs["bbox"] = bbox
     else:
         kwargs["lat"], kwargs["lon"] = lat, lon
@@ -221,8 +227,8 @@ def main() -> int:
 
     if not (args.id and args.variable):
         parser.error("--id and --variable are required (or use --technical)")
-    if not args.bbox and (args.lat is None or args.lon is None):
-        parser.error("give --lat/--lon or --bbox")
+    if not args.bbox and args.variable not in HEMISPHERIC_VARIABLES and (args.lat is None or args.lon is None):
+        parser.error("give --lat/--lon or --bbox (hemispheric variables need neither)")
 
     case = {
         "id": args.id,
