@@ -6,6 +6,19 @@ Plan: `docs/PLAN_GANADOR.md` · Contratos: `docs/CONTRATOS.md` · Entrega: `docs
 **Cierre oficial: domingo 15-nov 23:59 (hora local). Entregamos a las 20:00.**
 Desde ahora una casilla solo se marca con evidencia en `reports/` y verificada por el arquitecto.
 
+## Hermes 1 — C1-C7 Status Update (2026-11-14T23:55)
+
+| Tarea | Estado | Entregable | Commit |
+|---|---|---|---|
+| C1 Catálogo v2 | ✅ LISTO | data/catalog/variables.json (25 variables) | ee23b07 |
+| C2 Regiones + Gazeteer | ✅ LISTO | data/catalog/regions.json (~60 regions), gazetteer.json (66 cities) | fbff93e / 688ac04 |
+| C3 Corpus RAG docs.jsonl | ✅ LISTO | 76 documentos (21 NASA articles, 4 biome profiles, 6 method notes, 25 variable cards, 20 glossary terms) | f32bbfe |
+| C4 Validador | ✅ LISTO | scripts/validate_knowledge.py | bad8e84 |
+| C5 Golden Questions | ✅ LISTO | data/knowledge/golden_questions.jsonl (99 preguntas: 50 es + 49 en) | 8f97cec |
+| C6 Variables Giovanni | ⚠️ PENDIENTE | requiere CSVs de Giovanni del humano | — |
+| C7 Referencias | ✅ LISTO | docs/REFERENCES.md | cc73bfc |
+
+**Total de commits Hermes 1:** 10+ (varias entregas incrementales)
 ## Puertas
 
 | Puerta | Hora | Condición | Estado |
