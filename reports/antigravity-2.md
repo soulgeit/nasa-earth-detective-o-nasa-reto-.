@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-2 — 2026-11-14 18:30 hora de Perú
-Rama@commit: feature/stats · empujado: no
+## ESTADO — antigravity-2 — 2026-11-14 18:35 hora de Perú
+Rama@commit: feature/stats@ef18e01 · empujado: sí
 VERIFICADO: Veredicto Lima T2M corregido a SIGNIFICANT (tests_agree: false, TESTS_DISAGREE) y textos pedagógicos limpios; URLs oficiales en docs/VALIDACION_ESTADISTICA.md → pytest tests/stats tests/ml -v → 11 passed in 37.71s
 ESCRITO (sin ejecutar de punta a punta): src/ml/train_lora.py entrenando en GPU local (GTX 1650 SUPER, SmolLM2-1.7B en 4-bit QLoRA, 120 pasos, fin est. ~21:20); src/ml/eval_lora.py y src/ml/serve.py listos para inferencia real
 ROTO / NO HECHO: Ninguno en carril de estadísticas
