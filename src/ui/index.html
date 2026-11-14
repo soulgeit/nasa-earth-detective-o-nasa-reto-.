@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EarthTrend Detective - NASA Space Apps</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js para visualización de series temporales -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo-area">
+        <span class="nasa-badge">NASA Space Apps</span>
+        <h1>EarthTrend Detective</h1>
+      </div>
+      <p class="subtitle">Herramienta interactiva para descubrir y verificar tendencias significativas en Ciencias de la Tierra</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Casos de Demostración Rápida -->
+    <section class="card demo-banner">
+      <h2>🚀 Casos de Estudio Emblemáticos (1-Clic)</h2>
+      <p class="text-muted">Selecciona uno de los casos verificados para cargar los datos satelitales y el veredicto científico al instante:</p>
+      <div class="preset-buttons">
+        <button class="btn btn-preset" onclick="loadCase('amazon_deforestation_arc', 'MODIS_NDVI')">
+          🌲 Deforestación Amazonía (MODIS NDVI)
+        </button>
+        <button class="btn btn-preset" onclick="loadCase('arctic_svalbard', 'MERRA2_T2M')">
+          ❄️ Calentamiento Ártico (MERRA-2 Temp)
+        </button>
+        <button class="btn btn-preset" onclick="loadCase('aral_sea', 'SWOT_WATER_ELEV')">
+          🌊 Desecación Mar de Aral (SWOT Agua)
+        </button>
+        <button class="btn btn-preset" onclick="loadCase('california_central_valley', 'GLDAS_SOILM')">
+          🌾 Sequía California (GLDAS Humedad)
+        </button>
+      </div>
+    </section>
+
+    <!-- Controles de Selección -->
+    <section class="card controls-grid">
+      <div class="control-group">
+        <label for="select-region"><strong>📍 1. Región o Bioma:</strong></label>
+        <select id="select-region" onchange="onSelectionChange()">
+          <option value="amazon_deforestation_arc">Amazonía - Arco de Deforestación</option>
+          <option value="arctic_svalbard">Ártico - Svalbard</option>
+          <option value="aral_sea">Mar de Aral (Asia Central)</option>
+          <option value="california_central_valley">Valle Central de California</option>
+        </select>
+        <small id="region-desc" class="text-muted"></small>
+      </div>
+
+      <div class="control-group">
+        <label for="select-variable"><strong>🛰️ 2. Variable Satelital / Modelo:</strong></label>
+        <select id="select-variable" onchange="onSelectionChange()">
+          <option value="MODIS_NDVI">MODIS - Vegetación (NDVI)</option>
+          <option value="MERRA2_T2M">MERRA-2 - Temperatura a 2m (°C)</option>
+          <option value="SWOT_WATER_ELEV">SWOT - Elevación de Agua (m)</option>
+          <option value="GLDAS_SOILM">GLDAS - Humedad de Suelo (kg/m²)</option>
+          <option value="GPM_PRECIP">GPM - Precipitación Mensual (mm)</option>
+          <option value="OMI_OZONE">OMI - Capa de Ozono (DU)</option>
+        </select>
+        <small id="variable-desc" class="text-muted"></small>
+      </div>
+
+      <div class="control-group filter-actions">
+        <button class="btn btn-primary" onclick="runAnalysis()">🔍 Analizar Tendencia</button>
+        <button class="btn btn-secondary" onclick="exportReport()">📄 Exportar Informe</button>
+      </div>
+    </section>
+
+    <!-- Cuatro Respuestas del Detective (Preguntas NASA) -->
+    <section class="detective-answers-grid">
+      <div class="answer-card" id="card-what">
+        <div class="badge-number">1</div>
+        <h3>¿Qué está cambiando?</h3>
+        <p id="ans-what" class="ans-text">Cargando...</p>
+      </div>
+      <div class="answer-card" id="card-where">
+        <div class="badge-number">2</div>
+        <h3>¿Dónde cambia?</h3>
+        <p id="ans-where" class="ans-text">Cargando...</p>
+      </div>
+      <div class="answer-card" id="card-howmuch">
+        <div class="badge-number">3</div>
+        <h3>¿Cuánto cambia?</h3>
+        <p id="ans-howmuch" class="ans-text">Cargando...</p>
+        <div class="stat-highlight" id="rate-highlight">+0.00 / década</div>
+      </div>
+      <div class="answer-card significance-card" id="card-sig">
+        <div class="badge-number">4</div>
+        <h3>¿Es significativo?</h3>
+        <div id="sig-badge" class="badge-pill">Verificando...</div>
+        <p id="ans-sig" class="ans-text">Cargando prueba estadística...</p>
+        <small id="p-val-detail" class="text-muted"></small>
+      </div>
+    </section>
+
+    <!-- Gráfica de Serie Temporal -->
+    <section class="card chart-section">
+      <div class="chart-header">
+        <h2>📈 Visualización de Serie Temporal y Desestacionalización</h2>
+        <div class="toggle-group">
+          <label><input type="radio" name="view-type" value="raw" checked onchange="toggleSeriesView('raw')"> Datos Crudos + Tendencia</label>
+          <label><input type="radio" name="view-type" value="anomalies" onchange="toggleSeriesView('anomalies')"> Anomalías Desestacionalizadas</label>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+      <p class="chart-explanation text-muted">
+        <strong>Nota Científica:</strong> La línea punteada roja representa la tendencia calculada mediante mínimos cuadrados (OLS) y validada por la pendiente de Sen (Theil-Sen). El ciclo estacional regular se remueve en la vista de anomalías para evaluar si el cambio de fondo es persistente.
+      </p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Desarrollado para el Reto NASA Space Apps: <em>Earth Science Data Detective - Significant Trend Analysis</em></p>
+    <p>Datos satelitales cortesía de NASA Earthdata, Giovanni, MODIS, MERRA-2, GLDAS y SWOT.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

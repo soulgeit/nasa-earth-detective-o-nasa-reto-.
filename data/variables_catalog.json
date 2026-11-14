@@ -1,0 +1,117 @@
+{
+  "project": "EarthTrend Detective",
+  "version": "1.0.0",
+  "challenge": "NASA Space Apps - Earth Science Data Detective",
+  "variables": [
+    {
+      "id": "MODIS_NDVI",
+      "name": "Índice de Vegetación de Diferencia Normalizada (NDVI)",
+      "satellite_instrument": "MODIS (Satélites Terra y Aqua)",
+      "agency": "NASA",
+      "unit": "Índice (-0.2 a 1.0)",
+      "domain": "Biosfera y Vegetación",
+      "simple_definition": "Mide qué tan verde y saludable está la vegetación en la superficie terrestre usando luz roja e infrarroja cercana.",
+      "what_up_means": "Aumento de la cobertura vegetal, recuperación forestal o reverdecimiento por estaciones húmedas.",
+      "what_down_means": "Deforestación, sequía prolongada, degradación del suelo, incendios forestales o pérdida de cultivos.",
+      "typical_range": [0.0, 0.9]
+    },
+    {
+      "id": "MERRA2_T2M",
+      "name": "Temperatura del Aire a 2 Metros",
+      "satellite_instrument": "MERRA-2 (Modelo de Reanálisis Asimilado con Múltiples Satélites)",
+      "agency": "NASA GMAO",
+      "unit": "°C (Grados Celsius)",
+      "domain": "Atmósfera y Clima",
+      "simple_definition": "La temperatura del aire que sentimos las personas al nivel del suelo (a 2 metros de altura).",
+      "what_up_means": "Calentamiento de la región, olas de calor más intensas, aceleración del derretimiento de glaciares o permafrost.",
+      "what_down_means": "Enfriamiento relativo o perturbaciones en corrientes de aire polar.",
+      "typical_range": [-50.0, 50.0]
+    },
+    {
+      "id": "GPM_PRECIP",
+      "name": "Tasa de Precipitación y Lluvia Acumulada",
+      "satellite_instrument": "GPM (Global Precipitation Measurement)",
+      "agency": "NASA / JAXA",
+      "unit": "mm/mes (Milímetros por mes)",
+      "domain": "Hidrología y Ciclo del Agua",
+      "simple_definition": "Cantidad de agua de lluvia o nieve que cae sobre una zona durante un periodo determinado.",
+      "what_up_means": "Aumento de lluvias, mayor riesgo de inundaciones fluviales o temporadas de monzones más activas.",
+      "what_down_means": "Disminución de precipitaciones, condiciones de sequía meteorológica y estrés hídrico.",
+      "typical_range": [0.0, 600.0]
+    },
+    {
+      "id": "GLDAS_SOILM",
+      "name": "Humedad del Suelo en Capa Superficial (0-10 cm)",
+      "satellite_instrument": "GLDAS (Global Land Data Assimilation System)",
+      "agency": "NASA GSFC",
+      "unit": "kg/m² (o % de saturación volumétrica)",
+      "domain": "Hidrología y Suelos",
+      "simple_definition": "Cantidad de agua retenida en los primeros 10 centímetros de tierra, vital para las raíces de las plantas.",
+      "what_up_means": "Suelos saturados, recarga de acuíferos o exceso de humedad que puede dificultar cultivos.",
+      "what_down_means": "Sequía agrícola, desertificación, fragilidad del terreno ante incendios.",
+      "typical_range": [2.0, 45.0]
+    },
+    {
+      "id": "OMI_OZONE",
+      "name": "Columna Total de Ozono Atmosférico",
+      "satellite_instrument": "OMI (Ozone Monitoring Instrument en satélite Aura)",
+      "agency": "NASA / KNMI",
+      "unit": "DU (Unidades Dobson)",
+      "domain": "Química Atmosférica",
+      "simple_definition": "Espesor de la capa de gas ozono en la estratosfera que protege a la vida en la Tierra de la radiación ultravioleta del Sol.",
+      "what_up_means": "Recuperación de la capa de ozono tras la reducción de gases destructores (CFCs).",
+      "what_down_means": "Adelgazamiento de la capa protectora ('agujero de ozono'), mayor paso de rayos UV dañinos.",
+      "typical_range": [100.0, 500.0]
+    },
+    {
+      "id": "SWOT_WATER_ELEV",
+      "name": "Elevación de la Superficie de Masas de Agua",
+      "satellite_instrument": "SWOT (Surface Water and Ocean Topography)",
+      "agency": "NASA / CNES / CSA / UKSA",
+      "unit": "Metros sobre el nivel del mar",
+      "domain": "Océanos y Aguas Continentales",
+      "simple_definition": "Mide la altura exacta del agua en lagos, ríos, embalses y océanos con precisión milimétrica mediante radar interferométrico.",
+      "what_up_means": "Aumento del volumen hídrico, subida del nivel del mar o desborde de ríos.",
+      "what_down_means": "Vaciado de embalses, secado de lagos por evaporación o sobreexplotación agrícola.",
+      "typical_range": [-50.0, 4000.0]
+    }
+  ],
+  "predefined_regions": [
+    {
+      "id": "aral_sea",
+      "name": "Mar de Aral (Asia Central)",
+      "lat": 45.0,
+      "lon": 60.0,
+      "biome": "Cuenca endorreica semiárida",
+      "primary_variable": "SWOT_WATER_ELEV",
+      "description": "Uno de los mayores desastres ecológicos del siglo XX: desecación masiva de un mar interior por desvío de ríos."
+    },
+    {
+      "id": "arctic_svalbard",
+      "name": "Ártico - Archipiélago de Svalbard",
+      "lat": 78.0,
+      "lon": 16.0,
+      "biome": "Tundra y Casquete Polar",
+      "primary_variable": "MERRA2_T2M",
+      "description": "Región con amplificación polar donde el calentamiento ocurre entre 2 y 4 veces más rápido que la media mundial."
+    },
+    {
+      "id": "amazon_deforestation_arc",
+      "name": "Amazonía - Arco de Deforestación (Brasil/Bolivia)",
+      "lat": -10.0,
+      "lon": -55.0,
+      "biome": "Selva Tropical Húmeda",
+      "primary_variable": "MODIS_NDVI",
+      "description": "Frontera de expansión agrícola y ganadera con pérdida sistemática de biomasa de selva densa."
+    },
+    {
+      "id": "california_central_valley",
+      "name": "Valle Central de California",
+      "lat": 36.8,
+      "lon": -119.8,
+      "biome": "Valle Agrícola Mediterráneo",
+      "primary_variable": "GLDAS_SOILM",
+      "description": "Zona de producción de alimentos sujeta a megasequías recurrentes y agotamiento de aguas subterráneas."
+    }
+  ]
+}
