@@ -110,3 +110,11 @@ size=0.04 MB cells=759 significant=455 (59.9%) elapsed=0.9 min
 ```
 Falta / riesgos: `analyze_grid` del contrato §6 aún no existe; se usa una implementación local equivalente marcada en `method_note`.
 Necesito de otros: Antigravity 2 (`analyze_grid`) para sustituir el fallback.
+
+### Nota de verificación (16:55)
+La evidencia de S2 se obtuvo ejecutando `scripts/validate_datasets.py` de la versión de
+`origin/feature/data-pipeline` (la que acepta rutas de `series.json`). La copia que trae mi
+rama `feature/scrapes` es anterior a ese cambio: solo audita `data/processed/` y da por
+buenos los 4 archivos sintéticos que la v2 manda borrar. No edito ese archivo porque es
+del carril de Antigravity 1; lo señalo para que el arquitecto lo resuelva al integrar
+(la versión vigente es la de `feature/data-pipeline`).
