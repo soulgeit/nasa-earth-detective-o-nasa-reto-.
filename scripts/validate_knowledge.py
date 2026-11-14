@@ -1,4 +1,6 @@
+# SI-assisted: hermes-1 (qwen3.6)
 #!/usr/bin/env python3
+"""Validador del catálogo y corpus de conocimiento (Hermes 1 — Tarea C4)."""
 """Validador del catálogo y corpus de conocimiento (Hermes 1 — Tarea C4)."""
 import json
 import os
