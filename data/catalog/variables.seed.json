@@ -1,0 +1,33 @@
+{
+  "_about": "Semilla del catálogo v2. Fija los variable_id que comparten todos los agentes. Nombres largos y unidades de POWER copiados de la respuesta real del 14-nov-2026 (tests/fixtures/real/power_monthly_point_lima.json). Hermes 1 la convierte en data/catalog/variables.json completando definiciones, DOIs y avisos SOLO con datos verificados.",
+  "_verify": "Los campos start están comprobados en la muestra real (AOD_55: relleno de 1981-01 a 2000-12; CLOUD_AMT y ALLSKY_SFC_SW_DWN: relleno de 1981-01 a 1983-12). Siguen siendo hipótesis a confirmar en la documentación de POWER: homogeneous_since de CLOUD_AMT y ALLSKY_SFC_SW_DWN, y challenge_named_source de AOD_55, CLOUD_AMT y ALLSKY_SFC_SW_DWN.",
+  "live": [
+    {"id": "T2M", "connector": "power", "connector_param": "T2M", "power_longname": "Temperature at 2 Meters", "unit": "°C", "ratio_scale": false, "sphere": "atmosphere", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "TS", "connector": "power", "connector_param": "TS", "power_longname": "Earth Skin Temperature", "unit": "°C", "ratio_scale": false, "sphere": "land", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "PRECTOTCORR", "connector": "power", "connector_param": "PRECTOTCORR", "power_longname": "Precipitation Corrected", "unit": "mm/day", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "GWETTOP", "connector": "power", "connector_param": "GWETTOP", "power_longname": "Surface Soil Wetness", "unit": "fraction (0-1)", "ratio_scale": true, "sphere": "land", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "EVLAND", "connector": "power", "connector_param": "EVLAND", "power_longname": "Evaporation Land", "unit": "mm/day", "ratio_scale": true, "sphere": "land", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "SNODP", "connector": "power", "connector_param": "SNODP", "power_longname": "Snow Depth", "unit": "cm", "ratio_scale": true, "sphere": "cryosphere", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "RH2M", "connector": "power", "connector_param": "RH2M", "power_longname": "Relative Humidity at 2 Meters", "unit": "%", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "TQV", "connector": "power", "connector_param": "TQV", "power_longname": "Total Column Precipitable Water", "unit": "kg/m²", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "TO3", "connector": "power", "connector_param": "TO3", "power_longname": "Total Column Ozone", "unit": "DU", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "MERRA-2", "start": "1981-01", "homogeneous_since": null},
+    {"id": "AOD_55", "connector": "power", "connector_param": "AOD_55", "power_longname": "Aerosol Optical Depth 55", "unit": "dimensionless", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "other", "start": "2001-01", "homogeneous_since": null},
+    {"id": "CLOUD_AMT", "connector": "power", "connector_param": "CLOUD_AMT", "power_longname": "Cloud Amount", "unit": "%", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "other", "start": "1984-01", "homogeneous_since": "2001-01"},
+    {"id": "ALLSKY_SFC_SW_DWN", "connector": "power", "connector_param": "ALLSKY_SFC_SW_DWN", "power_longname": "All Sky Surface Shortwave Downward Irradiance", "unit": "MJ/m²/day", "ratio_scale": true, "sphere": "atmosphere", "challenge_named_source": "other", "start": "1984-01", "homogeneous_since": "2001-01"},
+    {"id": "GISTEMP_TANOM", "connector": "gistemp", "connector_param": "tempanomaly", "unit": "°C (anomaly vs 1951-1980)", "ratio_scale": false, "sphere": "atmosphere", "challenge_named_source": "other", "start": "1880-01", "homogeneous_since": null},
+    {"id": "SEAICE_EXTENT_N", "connector": "nsidc_seaice", "connector_param": "north", "unit": "million km²", "ratio_scale": true, "sphere": "cryosphere", "challenge_named_source": "other", "start": "1978-11", "homogeneous_since": null, "region_fixed": "Arctic"},
+    {"id": "SEAICE_EXTENT_S", "connector": "nsidc_seaice", "connector_param": "south", "unit": "million km²", "ratio_scale": true, "sphere": "cryosphere", "challenge_named_source": "other", "start": "1978-11", "homogeneous_since": null, "region_fixed": "Antarctic"}
+  ],
+  "planned_giovanni": [
+    {"id": "GPM_IMERG_PRECIP", "connector": "giovanni_csv", "challenge_named_source": "GPM", "sphere": "atmosphere", "ratio_scale": true},
+    {"id": "GLDAS_SOILM_0_10", "connector": "giovanni_csv", "challenge_named_source": "GLDAS", "sphere": "land", "ratio_scale": true},
+    {"id": "GLDAS_EVAP", "connector": "giovanni_csv", "challenge_named_source": "GLDAS", "sphere": "land", "ratio_scale": true},
+    {"id": "GLDAS_RUNOFF", "connector": "giovanni_csv", "challenge_named_source": "GLDAS", "sphere": "land", "ratio_scale": true},
+    {"id": "AIRS_SURF_AIR_TEMP", "connector": "giovanni_csv", "challenge_named_source": "AIRS", "sphere": "atmosphere", "ratio_scale": false},
+    {"id": "OMI_NO2_TROP", "connector": "giovanni_csv", "challenge_named_source": "OMI", "sphere": "atmosphere", "ratio_scale": true},
+    {"id": "OMI_O3_TOTAL", "connector": "giovanni_csv", "challenge_named_source": "OMI", "sphere": "atmosphere", "ratio_scale": true},
+    {"id": "MODIS_NDVI", "connector": "giovanni_csv", "challenge_named_source": "MODIS", "sphere": "biosphere", "ratio_scale": true},
+    {"id": "MODIS_LST_DAY", "connector": "giovanni_csv", "challenge_named_source": "MODIS", "sphere": "land", "ratio_scale": false},
+    {"id": "MODIS_AOD", "connector": "giovanni_csv", "challenge_named_source": "MODIS", "sphere": "atmosphere", "ratio_scale": true}
+  ]
+}

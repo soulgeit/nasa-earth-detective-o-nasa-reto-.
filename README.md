@@ -1,48 +1,44 @@
-# EarthTrend Detective - NASA Space Apps Challenge
+# EarthTrend Detective — NASA Space Apps Challenge 2026
 
-Herramienta de Ciencia de Datos y Visualización para detectar, caracterizar y verificar la significancia estadística de cambios en el sistema terrestre utilizando datos satelitales y modelos asimilados de la NASA.
+> **Status (14 Nov 2026): rebuild in progress.** The first prototype in this repository used **synthetic placeholder series**
+> (files under `data/processed/` and the client-side generator in `src/ui/app.js`). They are **not NASA data**, they are being removed,
+> and no result derived from them should be quoted. The rebuild uses real NASA data with visible provenance. See `docs/PLAN_GANADOR.md`.
 
----
+A tool that turns students into data detectives: pick a place on Earth, retrieve real NASA Earth science data for it, see how it changed over time,
+and get an honest answer to four questions: **what** is changing, **where**, **how much**, and whether the change is **statistically significant**.
 
-## 🚀 Inicio Rápido (Demo sin instalación)
+Herramienta para que un estudiante investigue un lugar del planeta con datos reales de la NASA y obtenga una respuesta honesta:
+qué cambia, dónde, cuánto y si el cambio es estadísticamente significativo.
 
-1. Abre directamente `src/ui/index.html` en cualquier navegador web moderno (Edge, Chrome, Firefox).
-2. Haz clic en cualquiera de los **Casos de Estudio Emblemáticos**:
-   - 🌲 **Deforestación Amazonía** (MODIS NDVI): caída drástica y significativa de cobertura vegetal.
-   - ❄️ **Calentamiento Ártico** (MERRA-2 Temp): tendencia al alza a +0.75°C/década (p < 0.001).
-   - 🌊 **Desecación Mar de Aral** (SWOT Nivel de Agua): pérdida sostenida de nivel freático y lacustre.
-   - 🌾 **Sequía California** (GLDAS Humedad del suelo): agotamiento de agua superficial en zona agrícola.
-3. Observa cómo la aplicación responde a las 4 preguntas planteadas por la NASA:
-   - **¿Qué está cambiando?**
-   - **¿Dónde está cambiando?**
-   - **¿Cuánto está cambiando?**
-   - **¿Es estadísticamente significativo?** (Prueba Mann-Kendall y desestacionalización).
+## Documentos
 
----
+| Documento | Para qué |
+|---|---|
+| `docs/PLAN_GANADOR.md` | Diagnóstico, producto, arquitectura, calendario y riesgos |
+| `docs/CONTRATOS.md` | Esquemas de datos, firmas, API y carriles de cada agente |
+| `docs/KIT_ENTREGA.md` | Requisitos oficiales, criterios, borradores y demo |
+| `TASKS.md` | Tablero, puertas y línea de arranque de cada agente |
+| `prompts/` | Un prompt por agente (`00_LEER_PRIMERO.md` es común) |
+| `docs/AI_USE_LOG.md` | Registro de uso de IA (requisito del reto) |
 
-## 🛠️ Ejecución con Backend FastAPI (Opcional)
+## Datos (verificados el 14-nov-2026)
 
-Si deseas levantar el servidor REST en Python:
+- **NASA POWER** (MERRA-2, CERES/SRB), mensual 1981–2025, por punto o por caja, sin cuenta.
+- **NASA GISTEMP v4**, anomalías de temperatura en rejilla desde 1880.
+- **NSIDC Sea Ice Index v4**, hielo marino ártico y antártico.
+- **Giovanni (GES DISC)**: GPM IMERG, GLDAS, AIRS, OMI y MODIS mediante CSV exportado (`data/raw/giovanni/README.md`).
+
+Muestras reales para desarrollo y pruebas: `tests/fixtures/real/`.
+
+## Ejecutar en local (se actualizará en la puerta G1)
 
 ```bash
+python -m venv .venv
+.venv\Scripts\activate          # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
-python src/api/main.py
+python src/api/main.py           # http://localhost:8000  (documentación en /docs)
 ```
-El servidor estará disponible en `http://localhost:8000` con documentación interactiva en `/docs`.
 
----
+## Uso de IA
 
-## 🤖 Organización del Enjambre de Agentes en Herdr
-
-Este repositorio está estructurado para que 8 agentes trabajen en paralelo sin colisiones:
-
-| Agente | Rol | Rama Git | Módulo |
-| :--- | :--- | :--- | :--- |
-| **Claude Fable 5.2** | Arquitecto / Reviewer | `main` | `ARCHITECTURE.md`, `TASKS.md` |
-| **Antigravity 1** | Motor Estadístico | `feature/stats` | `src/stats/` |
-| **Antigravity 2** | Backend API | `feature/api` | `src/api/` |
-| **Claude Omni 1** | Frontend Dashboard | `feature/ui` | `src/ui/` |
-| **Claude Omni 2** | Detective Wizard | `feature/wizard` | `src/detective/` |
-| **Claude Omni 3** | Adaptadores ETL | `feature/etl` | `src/etl/` |
-| **Hermes 1** | Catálogo Científico | `feature/catalog` | `data/variables_catalog.json` |
-| **Hermes 2** | Ingesta de Datos | `feature/scrapes` | `data/raw/`, `data/processed/` |
+Este proyecto se desarrolla con asistencia de agentes de IA bajo la dirección del equipo. El detalle está en `docs/AI_USE_LOG.md`.

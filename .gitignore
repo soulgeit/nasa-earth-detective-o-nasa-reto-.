@@ -48,3 +48,12 @@ yarn-error.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# v2: caché, entornos y modelos (no subir)
+data/cache/
+.venv-ml/
+*.gguf
+*.safetensors
+models/
+dist/
+.pytest_cache/

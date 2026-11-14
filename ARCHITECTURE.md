@@ -1,5 +1,8 @@
 # ARCHITECTURE.md - EarthTrend Detective (NASA Space Apps Challenge)
 
+> **Documento histórico (v1).** Desde el 14-nov-2026 mandan `docs/CONTRATOS.md` (esquemas, firmas, API y carriles) y `docs/PLAN_GANADOR.md`.
+> Los esquemas de la sección 3 y el reparto de agentes de este archivo ya no valen. Se conserva la sección 4 como referencia de las fórmulas básicas.
+
 Sistema multi-agente distribuido para la detección, visualización y análisis de significancia estadística de tendencias en variables de Ciencias de la Tierra de la NASA.
 
 ---
