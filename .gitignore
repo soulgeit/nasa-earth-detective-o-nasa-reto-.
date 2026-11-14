@@ -57,3 +57,9 @@ data/cache/
 models/
 dist/
 .pytest_cache/
+
+# Temp files
+temp_power_bundle.js
+temp_power_params.json
+temp_power_params.txt
+test_stats_quick.py
