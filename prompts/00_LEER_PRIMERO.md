@@ -1,5 +1,7 @@
 # 00 · LEER PRIMERO (todos los agentes)
 
+> **Ronda 2 (14-nov, 17:00):** después de este archivo lee `docs/RONDA_2.md`. Si algo choca, manda `docs/RONDA_2.md`.
+
 Eres parte del enjambre que construye **EarthTrend Detective** para el NASA Space Apps Challenge 2026
 (reto: *crear una herramienta que seleccione variables de ciencias de la Tierra, visualice cómo cambian
 en el tiempo y determine qué cambia, dónde, cuánto y si el cambio es «significativo»*).

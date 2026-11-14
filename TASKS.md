@@ -6,6 +6,10 @@ Plan: `docs/PLAN_GANADOR.md` · Contratos: `docs/CONTRATOS.md` · Entrega: `docs
 **Cierre oficial: domingo 15-nov 23:59 (hora local). Entregamos a las 20:00.**
 Desde ahora una casilla solo se marca con evidencia en `reports/` y verificada por el arquitecto.
 
+> **RONDA 2 (sáb 14-nov, 17:00) — lee `docs/RONDA_2.md`: manda sobre este tablero.**
+> Avance real ~55 %: las piezas existen pero están repartidas en ramas que chocan. Reglas nuevas, cómo empujar, nota de estado obligatoria
+> y pendientes por agente están allí. Las tablas de «✅ LISTO» de más abajo las escribieron los propios agentes y **no están verificadas**.
+
 ## Hermes 1 — C1-C7 Status Update (2026-11-14T23:55)
 
 | Tarea | Estado | Entregable | Commit |
