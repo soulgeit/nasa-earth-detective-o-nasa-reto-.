@@ -14,3 +14,4 @@ imágenes y vídeos generados llevan marca de agua visible. Este archivo es la b
 | Fecha | Agente | Herramienta y modelo | Archivos | Qué se hizo con IA | Revisado por (persona) |
 |---|---|---|---|---|---|
 | 2026-11-14 | Arquitecto | Claude Code (Claude Fable 5.2) | `docs/PLAN_GANADOR.md`, `docs/CONTRATOS.md`, `docs/KIT_ENTREGA.md`, `prompts/*.md`, `TASKS.md`, `README.md`, `data/catalog/variables.seed.json`, `data/raw/giovanni/README.md` | Auditoría del prototipo, verificación de las fuentes de datos con llamadas reales, redacción del plan, de los contratos y de los prompts de los agentes | pendiente |
+| 2026-11-14 | Claude Omni 3 | Claude Code (Claude Opus 5.5) | `src/api/*.py`, `tests/api/`, `Dockerfile`, `scripts/smoke_api.py`, `reports/claude-omni-3.md` | Reescritura de la API v2 por contrato: esquemas, errores con código, validación, caché, límite de peticiones, informe imprimible, despliegue en un servicio y pruebas | pendiente |
