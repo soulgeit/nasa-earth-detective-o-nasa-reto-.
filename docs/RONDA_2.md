@@ -2,6 +2,7 @@
 
 **Auditoría del arquitecto: sábado 14-nov, 17:00 · Integración en `main`: 17:45 (hora de Perú). Entrega: domingo 15-nov, 20:00.**
 Este archivo **manda** sobre `prompts/00_LEER_PRIMERO.md` y sobre tu prompt individual cuando choquen.
+> **Actualización de las 18:00:** Hermes 1 queda fuera y su carril pasa a Claude Omni 1; el LoRA se entrena en la GPU local, sin ninguna API. Ver §9.
 
 Línea de arranque que el humano pega a cada agente:
 
@@ -148,7 +149,7 @@ del conector descartado.
    haya años suficientes; si no, baja de escalón y añade el aviso `TESTS_DISAGREE`. Prueba que lo fije con la muestra real de Lima.
 2. **Visto, textos:** `answers.what` dice «T2M se encuentra aumentando» (usa el identificador) y `answers.where` dice «Observado en None».
 3. **Urgente:** rehacer `eval_lora.py` con inferencia real (Ollama o `transformers`); sin modelo, termina con «modelo no disponible» y no escribe cifras.
-4. Entrenar el LoRA **de verdad** con `data/lora/` de Hermes 2 (4323/814/632). Dónde: lo decide el humano (§7).
+4. Entrenar el LoRA **de verdad** en la GPU local siguiendo §9.2 (dataset de Hermes 2: 4323/814/632).
    Entregar adaptador, registro de entrenamiento y evaluación real de reglas vs. base vs. LoRA.
 5. `docs/VALIDACION_ESTADISTICA.md`: cada cifra «publicada» con su URL. Borrar tu generador de dataset duplicado.
 
@@ -173,7 +174,7 @@ del conector descartado.
 2. `/api/cases` da 503 hasta que exista `data/cases/index.json` (Hermes 2). Pasar a `analyze_series` el nombre del lugar y de la variable.
 3. A6: respaldo estático regenerado con los casos reales. Fijar versiones en `requirements.txt`.
 
-### Hermes 1 — catálogo y conocimiento (`feature/catalog`)
+### Catálogo y conocimiento (`feature/catalog`) — lo asume Claude Omni 1; Hermes 1 queda fuera (§9.1)
 1. **Visto:** `python scripts/validate_knowledge.py` → 8 fallos (p. ej. 404 en `https://glossary.ametsoc.org/wiki/biome`). Una fuente que no abre no se cita.
 2. Decidir con el arquitecto cómo se declaran las variables de Giovanni aún no disponibles (hoy el catálogo las omite y el detective no puede decir «esa no la tenemos»).
 3. Añadir las dos fuentes verificadas por Claude Omni 2 (Acker et al. 2009 y la ficha de SWOT de la CSA). `docs/REFERENCES.md` en inglés.
@@ -186,7 +187,7 @@ del conector descartado.
 ## 7. Pendientes del humano
 
 1. Pegar a cada agente la línea de arranque de arriba y dejar **una sola instancia por rol**.
-2. Decidir dónde se entrena el LoRA: liberar la GPU del PC unas horas, o Google Colab (GPU T4 gratuita).
+2. LoRA: decidido, se entrena en la GPU local (§9.2). Mantener parado todo lo que use el modelo de 35B mientras dure.
 3. Cuenta Earthdata y 2 CSV de Giovanni en `data/raw/giovanni/` (pasos en su `README.md`).
 4. Inicio de sesión en el hosting para la URL pública.
 5. Decisiones de `docs/PLAN_GANADOR.md` §7 (casos, historia, nombre, vídeo o láminas).
@@ -201,3 +202,41 @@ del conector descartado.
 | Congelación | dom 14:00 | Solo arreglos de errores |
 | G4 | dom 18:00 | Página del proyecto, vídeo o láminas y textos en inglés |
 | **Entrega** | **dom 20:00** | **Submit for Judging** |
+
+## 9. Cambios de las 18:00 (decisión del humano)
+
+### 9.1 Hermes 1 queda fuera; su carril pasa a Claude Omni 1
+
+- Hermes 1 no participa en lo que queda (usaba el modelo local que ocupaba la GPU). Su rama `feature/catalog` y sus carpetas
+  (`data/catalog/`, `data/knowledge/`, `scripts/validate_knowledge.py`, `scripts/hermes1/`, `docs/REFERENCES.md`) pasan a **Claude Omni 1**.
+- Si es la misma instancia que lleva la interfaz: primero los defectos «vistos» de la interfaz (§6), después los pendientes de catálogo (§6).
+  Trabaja cada carril en su rama (`feature/ui` y `feature/catalog`) y escribe un solo bloque ESTADO en `reports/claude-omni-1.md`.
+- Si el humano lanza otra instancia para esto, se llama `claude-omni-1b`, trabaja solo en `feature/catalog` y reporta en `reports/claude-omni-1b.md`.
+- `reports/hermes-1.md` queda como historial: no se edita.
+
+### 9.2 El LoRA se entrena en la GPU local. No hace falta ninguna API ni pagar nada
+
+Responsable: **Antigravity 2**. La GPU (RTX 4070 SUPER, 12 GB) quedó libre el sábado a las 18:00.
+**Mientras dure el entrenamiento nadie llama al modelo de 35B de Ollama**: cualquier petición lo vuelve a cargar y ocupa la GPU otra vez.
+
+Un LoRA se entrena en local con librerías abiertas (PyTorch con CUDA, `transformers`, `peft`, `datasets`) sobre un modelo base abierto
+que se descarga gratis de Hugging Face. No hay API ni clave si el modelo no es de acceso restringido.
+
+1. **Entorno aparte:** `python -m venv .venv-ml` (ya está en `.gitignore`). Instala la rueda de PyTorch con CUDA que indique pytorch.org
+   para Windows y comprueba `python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"` → `True`.
+2. **Modelo base:** ≤ 4 000 millones de parámetros, licencia permisiva y **sin acceso restringido**. Candidatos (comprueba en huggingface.co
+   que el ID existe y su licencia antes de descargar): `microsoft/Phi-4-mini-instruct`, `ibm-granite/granite-3.3-2b-instruct`,
+   `HuggingFaceTB/SmolLM2-1.7B-Instruct`. **No** `google/gemma-2-2b-it`: pide cuenta y aceptar licencia, y hoy es el valor por defecto de `train_lora.py`.
+3. **Entrenamiento real, un solo script que se ejecuta de principio a fin** (hoy `train_lora.py` solo genera otro script y un cuaderno):
+   datos `data/lora/train.jsonl` y `val.jsonl` con el `system_prompt.txt` tal cual; modelo en `bfloat16` (cabe en 12 GB sin cuantizar);
+   LoRA r = 16, alpha = 32, dropout 0,05; longitud máxima 512; lote 4 con acumulación 4; 2 o 3 épocas; la pérdida solo sobre la respuesta JSON;
+   semilla fija. Guarda el adaptador en `models/etd-planner-lora/` (ignorado por git) y el registro en `reports/lora/training_log.json`
+   (pérdida por paso, pérdida de validación por época, duración, GPU, versiones de las librerías, modelo base y semilla).
+4. **Evaluación real** sobre `data/lora/test.jsonl` (632 ejemplos), generando texto de verdad en los tres casos: reglas, modelo base sin ajustar
+   y modelo base + adaptador, con el mismo mensaje. Métricas: JSON válido, esquema válido, intención, variables exactas, lugar e hipótesis.
+   Escribe `reports/lora/eval.json` y `reports/lora/predictions.jsonl` (una línea por ejemplo con las tres respuestas) para que cualquiera lo audite.
+   Sin modelo cargado, el script sale con error y no escribe cifras. Si el LoRA no supera a las reglas, se dice tal cual.
+5. **Uso:** `src/ml/serve.py` carga base + adaptador con `transformers` y `src/detective/planner.py` lo llama cuando `PLANNER_MODEL=local-lora`.
+   Pasarlo a Ollama (fusionar, convertir a GGUF, `ollama create etd-planner`) es opcional. En producción la app sigue en `AI_MODE=extractive`.
+6. **Límite:** adaptador y evaluación antes de la puerta G2 (sáb 23:30). Si no se llega, el planificador queda en reglas y la entrega dice
+   «dataset y código de entrenamiento publicados; modelo sin entrenar». Nunca cifras simuladas.
