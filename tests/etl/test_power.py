@@ -157,3 +157,31 @@ def test_missing_coordinates_raises():
     with pytest.raises(DataUnavailable) as exc:
         power.series("T2M")
     assert exc.value.code == "OUT_OF_COVERAGE"
+
+
+# --------------------------------------------------------------------------- #
+# adaptadores de compatibilidad que usa el motor v2 (src/api/main.py)
+# --------------------------------------------------------------------------- #
+def test_year_to_month_accepts_all_shapes():
+    assert power._year_to_month(2000) == "2000-01"
+    assert power._year_to_month("2000") == "2000-01"
+    assert power._year_to_month(202412) == "2024-12"
+    assert power._year_to_month("2024-12") == "2024-12"
+    assert power._year_to_month(None) is None
+
+
+def test_period_end_year_means_december():
+    # Bug real: "2024-12" mide 7 caracteres y caia en la rama de ano -> 2024-01.
+    assert power._period(2000, 2024) == ("2000-01", "2024-12")
+    assert power._period(2000, "2024-12") == ("2000-01", "2024-12")
+    assert power._period(2000, 202412) == ("2000-01", "2024-12")
+    assert power._period(2000, None) == ("2000-01", None)
+
+
+def test_compat_wrapper_signature_matches_motor():
+    import inspect
+
+    sig = inspect.signature(power.get_power_point_series)
+    assert list(sig.parameters) == ["param", "lat", "lon", "start_year", "end_year", "name"]
+    assert callable(power.get_power_regional_series)
+    assert callable(power.get_power_grid)

@@ -485,3 +485,52 @@ def grid(variable_id: str, bbox, *, start=None, end=None) -> dict:
         "unit": _unit(card, data["unit"], card.get("power_longname")),
         "provenance": data["provenance"],
     }
+
+
+# --------------------------------------------------------------------------- #
+# Adaptadores de compatibilidad para el motor v2 (`src/api/main.py`)
+# --------------------------------------------------------------------------- #
+def _year_to_month(value) -> str | None:
+    """Acepta 2000, "2000", 202001, "2020-01" o "20240131" -> "AAAA-MM". None pasa None."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if len(text) >= 7 and text[4] == "-":          # ya viene como AAAA-MM
+        return text[:7]
+    if len(text) >= 6 and text[:4].isdigit() and text[4:6].isdigit():
+        return f"{text[:4]}-{text[4:6]}"
+    return f"{text[:4]}-01"
+
+
+def _period(start_year, end_year) -> tuple[str | None, str | None]:
+    start = _year_to_month(start_year)
+    if end_year is None:
+        return start, None
+    text = str(end_year)
+    # Un ano suelto (2000 o "2000") significa "hasta diciembre de ese ano".
+    # Ojo: "2024-12" ya mide 7 caracteres; comprobar la longitud seria un bug.
+    if len(text) == 4:
+        text = f"{text}-12"
+    return start, _year_to_month(text)
+
+
+def get_power_point_series(param, lat, lon, start_year=None, end_year=None, name=None) -> dict:
+    """Firma del conector anterior, sobre el conector vigente (datos reales)."""
+    start, end = _period(start_year, end_year)
+    ts = series(param, lat=lat, lon=lon, start=start, end=end)
+    if name:
+        ts["region"]["name"] = name
+    return ts
+
+
+def get_power_regional_series(param, bbox, start_year=None, end_year=None, name=None) -> dict:
+    start, end = _period(start_year, end_year)
+    ts = series(param, bbox=bbox, start=start, end=end)
+    if name:
+        ts["region"]["name"] = name
+    return ts
+
+
+def get_power_grid(param, bbox, start_year=None, end_year=None) -> dict:
+    start, end = _period(start_year, end_year)
+    return grid(param, bbox, start=start, end=end)
