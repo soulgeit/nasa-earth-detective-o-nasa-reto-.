@@ -6,7 +6,7 @@ Carril: `feature/api` · Carpetas: `src/api/`, `tests/api/`, `Dockerfile`, `scri
 
 ## A1 — LISTO (14-nov-2026, 13:30 hora de Perú)
 
-Rama@commit: feature/api@<pendiente de commit>
+Rama@commit: feature/api@505fcf8
 
 **Qué quedó**
 
@@ -109,3 +109,97 @@ Los dobles de fixtures reproducen exactamente la aceptación de D1:
 - Antigravity 2: `analyze_series`, `analyze_grid`, `compare`.
 - Hermes 1: `data/catalog/variables.json` para que las tarjetas dejen de ser semilla.
 - Humano: hosting (Railway) para A5; el inicio de sesión lo haces tú.
+
+---
+
+## A6 — LISTO (14-nov-2026, 14:20 hora de Perú)
+
+Rama@commit: feature/api@<pendiente de commit>
+
+**Qué quedó**
+
+`scripts/build_static.py` genera `dist/`: la UI sin API, con las respuestas
+reales congeladas y un interceptor de `fetch` (`dist/static-api.js`) que
+responde desde `dist/api/*.json`.
+
+- `--base URL` hornea desde una API viva (local o desplegada).
+- `--from-cases` hornea desde `data/cases/index.json` y `data/atlas/*.json`
+  (carril Hermes 2), sin red.
+- Lo que no está horneado → `503 DATA_UNAVAILABLE` con el formato §7. El
+  respaldo **nunca inventa** un número.
+- La comparación de posición tolera redondeo (`-12.0500` ≡ `-12.05`), que es
+  justo lo que envía la UI.
+- Si falta un archivo de la UI (`index.html`, `app.js`, `styles.css`,
+  `i18n.js`) el script **falla** en vez de publicar una página rota.
+- El interceptor se inyecta antes de `app.js` y respeta `window.ETD_API_BASE`.
+
+**Evidencia**
+
+```
+$ python scripts/build_static.py --from-cases
+dist/ built
+{
+ "cases": 1,
+ "analyses": 1,
+ "atlas": 0,
+ "errors": 0
+}
+```
+
+Prueba en Chrome real (headless, `--dump-dom`) contra `http://127.0.0.1:8899`
+servido por `http.server` — es decir, sin ninguna API detrás:
+
+```
+has static shim: True
+has verdict node: True
+  DATA_UNAVAILABLE: False
+  cases-list: True
+  variable-select: True
+```
+
+Y pidiendo el shim directamente desde la página:
+
+```
+health 200 status,version,ai_mode,sources_up
+catalog 200 catalog,variables
+cases 200 cases
+analyze-float 200 analysis/2      <- la UI envía -12.0500 / -77.0300
+n_obs=540 verdict=SIGNIFICANT
+analyze-wrong 503 DATA_UNAVAILABLE
+atlas-miss 503 DATA_UNAVAILABLE
+```
+
+Los casos del índice horneado se pintan en la lista (`Lima, Peru — Lima air
+temperature (static build test case)` en el DOM final).
+
+```
+$ .venv/Scripts/python.exe -m pytest tests/api -q
+24 passed, 41 warnings in 2.26s
+```
+
+`tests/api/test_static_build.py` (5 pruebas): dist completo, orden de los
+scripts, índice horneado con su posición, el shim no inventa datos y la falta
+de un archivo de UI falla explícitamente.
+
+**Falta / riesgos**
+
+- Aún no hay `data/cases/` ni `data/atlas/` reales (Hermes 2). En cuanto
+  existan, `--from-cases` produce el respaldo definitivo sin tocar código.
+- El respaldo real se publica en GitHub Pages en A5; el login de hosting y el
+  alta de la página lo hace el humano.
+- Los CDN (Leaflet, Chart.js, fuentes) siguen siendo externos; si la red del
+  juez los bloquea, el mapa no carga. Se puede empaquetar en local más tarde.
+
+**Necesito de otros**
+
+- Hermes 2: `data/cases/index.json` con los 3–4 casos elegidos y `data/atlas/*.json`.
+
+---
+
+## Bloqueo de push (14-nov-2026, 14:05)
+
+El primer PAT del chat (fine-grained) autenticaba como `soulgeit` pero daba
+`403 Permission ... denied` al empujar: le faltaba `Contents: Read and write`
+sobre este repo. Con el PAT clásico del proyecto, el push de A1 quedó en
+`031a022..505fcf8  feature/api`. Ningún token se guardó en el repo, en
+`.git/config` ni en este reporte.
