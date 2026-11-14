@@ -38,6 +38,9 @@ _DATE_PATTERNS = (
 )
 _DATE_HEADER_HINTS = ("time", "date", "fecha", "year", "month", "day")
 
+# Rellenos conocidos cuando la cabecera no lo declara.
+DEFAULT_FILLS = (-999.0, -999, -9999.0, -9999)
+
 
 def _is_date(text: str) -> bool:
     text = text.strip().strip('"')
@@ -59,14 +62,23 @@ def _clean(line: str) -> str:
     return line.strip().strip(",")
 
 
-def _split_metadata(lines: list[str]) -> tuple[list[str], list[str]]:
-    """Separa cabecera de metadatos y tabla de datos."""
+def _split_metadata(lines: list[str]) -> tuple[list[str], list[str], list[str]]:
+    """Separa (metadatos, cabecera de la tabla, filas de datos).
+
+    La cabecera de la tabla es la ultima linea no comentada **antes** de la
+    primera fila con fecha. Sin esto se tomaba la primera fila de datos como
+    cabecera y se perdia ese dato (detectado por el test del otro agente).
+    """
     for idx, line in enumerate(lines):
-        if "," not in line:
+        if "," not in line or line.lstrip().startswith("#"):
             continue
         cells = [_clean(c) for c in next(csv.reader([line]))]
         if any(_is_date(c) for c in cells):
-            return lines[:idx], lines[idx:]
+            if idx == 0:
+                raise DataUnavailable(
+                    "UPSTREAM_ERROR", "CSV de Giovanni sin cabecera de columnas antes de los datos"
+                )
+            return lines[: idx - 1], [lines[idx - 1]], lines[idx:]
     raise DataUnavailable(
         "UPSTREAM_ERROR",
         "CSV de Giovanni sin fila de fechas reconocible; no se interpreta a ciegas",
@@ -114,9 +126,9 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
     if not text or not text.strip():
         raise DataUnavailable("UPSTREAM_ERROR", "CSV vacio")
     lines = text.splitlines()
-    meta_lines, table_lines = _split_metadata(lines)
+    meta_lines, header_lines, table_lines = _split_metadata(lines)
     reader = csv.reader(io.StringIO("\n".join(table_lines)))
-    header = next(reader)
+    header = next(csv.reader([header_lines[0]]))
     date_idx, value_idx = _pick_columns(header, variable_id)
     fill = _fill_from_header(meta_lines)
     unit = _unit_from_header(meta_lines)
@@ -137,16 +149,21 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
         except ValueError:
             points.append((iso, None))
             continue
-        if fill is not None and val == fill:
+        if val is not None and (val == fill if fill is not None else False):
             val = None
-        elif val < -1e20:
+        elif val is not None and (val in DEFAULT_FILLS or val < -1e20):
+            # Sin cabecera de relleno, -999/-999.0/-9999 son relleno en Giovanni y
+            # en POWER. Es preferible un null a un numero inventado (contrato §3).
             val = None
         points.append((iso, val))
     if not points:
         raise DataUnavailable("UPSTREAM_ERROR", "CSV sin filas de datos utiles")
 
-    daily = any(len(iso) == 10 for iso, _ in points)
-    data = _to_monthly(points) if daily and _looks_daily(points) else _to_monthly_keep(points)
+    is_daily = any(len(iso) == 10 for iso, _ in points)
+    if is_daily:
+        data = _to_monthly(points)
+    else:
+        data = _to_monthly_keep(points)
     if not data:
         raise DataUnavailable("OUT_OF_COVERAGE", "sin meses con cobertura suficiente (>=70%)")
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -170,11 +187,6 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
             "header_metadata": [line.strip() for line in meta_lines if line.strip()],
         },
     }
-
-
-def _looks_daily(points: list[tuple[str, float | None]]) -> bool:
-    days = [iso for iso, _ in points]
-    return len(days) > 40 and len(days[:40]) == len(set(days[:40]))
 
 
 def _to_monthly(points: list[tuple[str, float | None]]) -> list[dict]:
