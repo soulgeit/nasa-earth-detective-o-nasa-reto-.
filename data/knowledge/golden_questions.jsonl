@@ -1,0 +1,99 @@
+{"question": "¿Está lloviendo menos en Piura últimamente?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR", "T2M"]}
+{"question": "¿Cuánto ha subido la temperatura en Lima en los últimos 30 años?", "lang": "es", "expected_variable_ids": ["T2M"]}
+{"question": "¿Se está reduciendo el hielo en los Andes peruanos?", "lang": "es", "expected_variable_ids": ["SNODP", "T2M"]}
+{"question": "¿Cuál es la tendencia de lluvia en la Amazonía peruana?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "¿Cómo ha cambiado el NDVI (vegetación) en Madre de Dios?", "lang": "es", "expected_variable_ids": ["MODIS_NDVI", "PRECTOTCORR"]}
+{"question": "¿Está aumentando la temperatura superficial del suelo en Ica?", "lang": "es", "expected_variable_ids": ["TS"]}
+{"question": "¿Cuánta humedad tiene el suelo en Piura durante la sequía?", "lang": "es", "expected_variable_ids": ["GWETTOP"]}
+{"question": "¿Cómo varía la radiación solar en Lima con las estaciones?", "lang": "es", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN", "CLOUD_AMT"]}
+{"question": "¿El ozono atmosférico está cambiando en los trópicos?", "lang": "es", "expected_variable_ids": ["TO3"]}
+{"question": "¿Qué pasa con la humedad relativa en la costa peruana?", "lang": "es", "expected_variable_ids": ["RH2M"]}
+{"question": "¿La evaporación está aumentando en el desierto de Sechura?", "lang": "es", "expected_variable_ids": ["EVLAND"]}
+{"question": "¿Hay más o menos vapor de agua en la atmósfera ahora que antes?", "lang": "es", "expected_variable_ids": ["TQV"]}
+{"question": "¿Qué tipo de aerosoles hay sobre Lima durante el invierno?", "lang": "es", "expected_variable_ids": ["AOD_55"]}
+{"question": "¿Cómo ha cambiado la temperatura global desde 1880?", "lang": "es", "expected_variable_ids": ["GISTEMP_TANOM"]}
+{"question": "¿El hielo marino ártico se está derritiendo más rápido?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_N"]}
+{"question": "¿Qué pasa con el hielo marino antártico comparado con el ártico?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_S", "SEAICE_EXTENT_N"]}
+{"question": "¿La temperatura del mar está subiendo en la costa peruana?", "lang": "es", "expected_variable_ids": ["TS", "PRECTOTCORR"]}
+{"question": "¿Cuántos años faltan para detectar una tendencia clara de cambio climático en Perú?", "lang": "es", "expected_variable_ids": ["T2M", "PRECTOTCORR"]}
+{"question": "¿Está cambiando la nubosidad sobre el Amazonas?", "lang": "es", "expected_variable_ids": ["CLOUD_AMT"]}
+{"question": "¿Hay más sequía en Piura ahora que en los años 90?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR", "GWETTOP"]}
+{"question": "¿La deforestación de la Amazonía ha afectado el clima local?", "lang": "es", "expected_variable_ids": ["MODIS_NDVI", "PRECTOTCORR", "T2M"]}
+{"question": "¿El hielo en los Andes ha disminuido más rápido que lo previsto?", "lang": "es", "expected_variable_ids": ["SNODP"]}
+{"question": "¿Hay una tendencia de aumento o disminución de lluvias en el Sahel?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "¿Cómo cambian las temperaturas entre zonas tropicales y polares?", "lang": "es", "expected_variable_ids": ["T2M"]}
+{"question": "¿El permafrost en Siberia se está descongelando?", "lang": "es", "expected_variable_ids": ["SNODP", "T2M"]}
+{"question": "¿La precipitación en el Himalaya está cambiando por el calentamiento global?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR", "T2M"]}
+{"question": "¿Los glaciares de Groenlandia pierden hielo más rápido ahora que hace 30 años?", "lang": "es", "expected_variable_ids": ["SNODP"]}
+{"question": "¿La radiación solar en la Península Antártica ha aumentado?", "lang": "es", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
+{"question": "¿Cómo afecta el Niño a las lluvias y temperatura de Piura?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR", "T2M"]}
+{"question": "¿La calidad del aire en Lima ha mejorado o empeorado?", "lang": "es", "expected_variable_ids": ["AOD_55"]}
+{"question": "¿Hay un patrón de cambio en la humedad del suelo para cultivos andinos?", "lang": "es", "expected_variable_ids": ["GWETTOP"]}
+{"question": "¿El NDVI muestra que la Amazonía se está reverdeciendo o secando?", "lang": "es", "expected_variable_ids": ["MODIS_NDVI"]}
+{"question": "¿La evaporación en la selva amazónica es mayor ahora que antes?", "lang": "es", "expected_variable_ids": ["EVLAND"]}
+{"question": "¿Hay más nubosidad o menos sobre el desierto de Atacama?", "lang": "es", "expected_variable_ids": ["CLOUD_AMT"]}
+{"question": "¿El nivel del mar está subiendo a mayor velocidad en los últimos 10 años?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR", "TS"]}
+{"question": "¿La temperatura en el valle de Ica ha sido más alta este siglo que antes?", "lang": "es", "expected_variable_ids": ["T2M", "TS"]}
+{"question": "¿Cómo se compara la tendencia de temperatura entre Lima y Piura?", "lang": "es", "expected_variable_ids": ["T2M"]}
+{"question": "¿El ozono protector está cambiando sobre Sudamérica?", "lang": "es", "expected_variable_ids": ["TO3"]}
+{"question": "¿Hay un patrón de aumento en la precipitación extrema en Perú?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "¿El hielo marino del Ártico y Antártida siguen tendencias opuestas?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_N", "SEAICE_EXTENT_S"]}
+{"question": "¿La evaporación terrestre es mayor en zonas tropicales que polares?", "lang": "es", "expected_variable_ids": ["EVLAND"]}
+{"question": "¿Cómo varía la humedad relativa entre Lima (desierto) y Iquitos (selva)?", "lang": "es", "expected_variable_ids": ["RH2M"]}
+{"question": "¿La radiación solar en Piura cambia significativamente con el Niño?", "lang": "es", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
+{"question": "¿El NDVI de la Cordillera Blanca muestra cambios estacionales o tendencias a largo plazo?", "lang": "es", "expected_variable_ids": ["MODIS_NDVI"]}
+{"question": "¿Hay más vapor de agua atmosférico sobre los océanos cálidos?", "lang": "es", "expected_variable_ids": ["TQV"]}
+{"question": "¿La temperatura superficial del suelo en California aumenta más que la del aire?", "lang": "es", "expected_variable_ids": ["TS", "T2M"]}
+{"question": "¿El hielo marino antártico se está reduciendo igual de rápido que el ártico?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_S", "SEAICE_EXTENT_N"]}
+{"question": "¿La precipitación en el Himalaya sigue un patrón creciente o decreciente?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "¿Las temperaturas en la selva amazónica están aumentando más que en otras regiones tropicales?", "lang": "es", "expected_variable_ids": ["T2M"]}
+{"question": "¿El ozono troposférico sobre Sudamérica es mayor ahora que hace 20 años?", "lang": "es", "expected_variable_ids": ["TO3"]}
+{"question": "Is it raining less in Piura lately?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR", "T2M"]}
+{"question": "How much has temperature risen in Lima over the last 30 years?", "lang": "en", "expected_variable_ids": ["T2M"]}
+{"question": "Is Arctic sea ice melting faster than before?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_N"]}
+{"question": "What is the precipitation trend in the Peruvian Amazon?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "How has NDVI (vegetation) changed in Madre de Dios?", "lang": "en", "expected_variable_ids": ["MODIS_NDVI", "PRECTOTCORR"]}
+{"question": "Is the surface soil temperature rising in Ica?", "lang": "en", "expected_variable_ids": ["TS"]}
+{"question": "What is happening with Antarctic sea ice compared to the Arctic?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_S", "SEAICE_EXTENT_N"]}
+{"question": "Is the ocean temperature rising along Peru's coast?", "lang": "en", "expected_variable_ids": ["TS", "PRECTOTCORR"]}
+{"question": "How has global temperature changed since 1880?", "lang": "en", "expected_variable_ids": ["GISTEMP_TANOM"]}
+{"question": "Is deforestation in the Amazon affecting local climate?", "lang": "en", "expected_variable_ids": ["MODIS_NDVI", "PRECTOTCORR", "T2M"]}
+{"question": "Has precipitation increased or decreased in the Sahel region?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "How do temperatures compare between tropical and polar regions?", "lang": "en", "expected_variable_ids": ["T2M"]}
+{"question": "Is permafrost in Siberia thawing?", "lang": "en", "expected_variable_ids": ["SNODP", "T2M"]}
+{"question": "Is Himalayan precipitation changing due to global warming?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR", "T2M"]}
+{"question": "Are Greenland glaciers losing ice faster now than 30 years ago?", "lang": "en", "expected_variable_ids": ["SNODP"]}
+{"question": "Has solar radiation increased over the Antarctic Peninsula?", "lang": "en", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
+{"question": "How does El Niño affect rainfall and temperature in Piura?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR", "T2M"]}
+{"question": "Has air quality in Lima improved or worsened?", "lang": "en", "expected_variable_ids": ["AOD_55"]}
+{"question": "Is there a soil moisture pattern for Andean crops?", "lang": "en", "expected_variable_ids": ["GWETTOP"]}
+{"question": "Does NDVI show the Amazon is greening or drying?", "lang": "en", "expected_variable_ids": ["MODIS_NDVI"]}
+{"question": "Is evaporation higher in the tropical rainforest now than before?", "lang": "en", "expected_variable_ids": ["EVLAND"]}
+{"question": "Is there more or less cloud cover over the Atacama Desert?", "lang": "en", "expected_variable_ids": ["CLOUD_AMT"]}
+{"question": "Is sea level rising faster in recent decades?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR", "TS"]}
+{"question": "How does temperature trend compare between Lima and Piura?", "lang": "en", "expected_variable_ids": ["T2M"]}
+{"question": "Is protective ozone changing over South America?", "lang": "en", "expected_variable_ids": ["TO3"]}
+{"question": "Is there a pattern of increasing extreme rainfall in Peru?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "Are Arctic and Antarctic sea ice trends opposite?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_N", "SEAICE_EXTENT_S"]}
+{"question": "Is land evaporation higher in tropical zones than polar ones?", "lang": "en", "expected_variable_ids": ["EVLAND"]}
+{"question": "How does relative humidity compare between Lima (desert) and Iquitos (rainforest)?", "lang": "en", "expected_variable_ids": ["RH2M"]}
+{"question": "Does solar radiation in Piura change significantly with El Niño?", "lang": "en", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
+{"question": "Is the surface soil temperature in California rising faster than air temperature?", "lang": "en", "expected_variable_ids": ["TS", "T2M"]}
+{"question": "Are Himalayan glaciers melting faster than projected?", "lang": "en", "expected_variable_ids": ["SNODP"]}
+{"question": "Is there a long-term temperature trend in the Andes mountains?", "lang": "en", "expected_variable_ids": ["T2M"]}
+{"question": "How has snow depth changed in tropical glaciers since 1980?", "lang": "en", "expected_variable_ids": ["SNODP"]}
+{"question": "Is atmospheric water vapor increasing globally?", "lang": "en", "expected_variable_ids": ["TQV"]}
+{"question": "Does the Peruvian coastal desert experience more rainfall during El Niño?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR", "CLOUD_AMT"]}
+{"question": "How has the NDVI of the Amazon basin changed over the past 20 years?", "lang": "en", "expected_variable_ids": ["MODIS_NDVI"]}
+{"question": "Is ozone protection recovering over the Antarctic?", "lang": "en", "expected_variable_ids": ["TO3"]}
+{"question": "What is the relationship between surface temperature and land evaporation in deserts?", "lang": "en", "expected_variable_ids": ["TS", "EVLAND"]}
+{"question": "Is there a trend of increasing humidity in tropical regions?", "lang": "en", "expected_variable_ids": ["RH2M"]}
+{"question": "How do aerosol levels vary between urban Lima and rural Peru?", "lang": "en", "expected_variable_ids": ["AOD_55"]}
+{"question": "Is the water vapor content in the atmosphere higher over warm oceans?", "lang": "en", "expected_variable_ids": ["TQV"]}
+{"question": "How has cloud cover changed over the Amazon basin in recent decades?", "lang": "en", "expected_variable_ids": ["CLOUD_AMT"]}
+{"question": "Are tropical glaciers retreating at an accelerating rate?", "lang": "en", "expected_variable_ids": ["SNODP", "T2M"]}
+{"question": "What is the trend of global precipitation intensity over the last 40 years?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "Is sea ice extent in the Southern Ocean showing different patterns than the Arctic?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_S", "SEAICE_EXTENT_N"]}
+{"question": "How has surface skin temperature changed over urban areas compared to rural ones?", "lang": "en", "expected_variable_ids": ["TS"]}
+{"question": "Is there a detectable trend in rainfall for the Peruvian coast?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "How does solar radiation vary across different biomes?", "lang": "en", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
