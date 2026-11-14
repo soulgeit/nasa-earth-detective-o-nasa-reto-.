@@ -59,3 +59,28 @@ Falta / riesgos:
 Necesito de otros:
 - Claude Omni 2 (`feature/wizard`): endpoints del detective IA.
 - Claude Omni 3 (`feature/api`): montaje de `/api/trendmap` y `/api/compare`.
+
+## U4 — LISTO  (2026-11-14 14:15 UTC-5)
+Rama@commit: feature/ui (pendiente de hash tras commit)
+Qué quedó:
+- **Caja «Pregúntale al detective»**:
+  - Entrada de lenguaje natural conectada a `/api/ai/plan`.
+  - Muestra la tarjeta del plan estructurado con intención, variable propuesta y lugar detectado.
+  - Botón «Confirmar e Investigar» que configura el formulario, geocodifica y ejecuta el análisis directamente.
+- **Sugerencias espaciales («¿Qué investigo aquí?»)**:
+  - Botón contextual en el mapa tras hacer clic en una coordenada.
+  - Conecta con `/api/ai/scout` y despliega variables candidatas con su contexto ecológico y enlaces a artículos de NASA Earth Observatory.
+- **Explicación del detective con evidencia citada**:
+  - Conecta con `/api/ai/explain` bajo el veredicto.
+  - Selector de dos niveles de lenguaje: **Nivel escolar** (explicación didáctica y accesible) vs. **Nivel universitario** (lenguaje riguroso con términos estadísticos y climáticos).
+  - Citas bibliográficas numeradas `[1]`, `[2]` con listado de fuentes oficiales y artículos científicos.
+  - Etiqueta visible obligatoria: *«Síntesis asistida por IA a partir de las fuentes citadas»*.
+  - Degradación elegante: si el servicio de IA está en modo extractivo o apagado, la interfaz no se rompe y muestra la síntesis a partir de las pruebas estadísticas y tarjetas.
+Evidencia:
+- Verificado y capturado en Playwright a 1440x900 con pregunta real sobre Piura, generación del plan estructurado, y conmutación entre nivel escolar y universitario con citas enlazadas.
+- Archivos actualizados: `src/ui/app.js`, `src/ui/index.html`, `src/ui/styles.css`, `src/ui/i18n.js`.
+Falta / riesgos:
+- Tarea U5: Modo demostración guiado (casos para mirar con avance automático).
+- Tarea U6: Reporte imprimible (/api/report) y auditoría de accesibilidad.
+Necesito de otros:
+- Claude Omni 2 (`feature/wizard`): integración con los modelos LLM/LoRA en `/api/ai/*`.

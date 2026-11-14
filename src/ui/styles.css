@@ -656,3 +656,151 @@ details.method[open] summary::before { content: "–"; }
   color: var(--ink);
   font-size: 1rem;
 }
+
+/* ---------- detective AI (U4) ---------- */
+.detective-box {
+  padding: 0.85rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.4rem;
+}
+.detective-box label {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--teal-ink);
+}
+.detective-plan-card {
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--plate);
+  border: 1px solid var(--teal);
+  border-left: 3px solid var(--teal);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.4rem;
+}
+.plan-heading {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--teal-ink);
+}
+.plan-intent {
+  font-family: var(--serif);
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.scout-bar {
+  padding: 0.35rem 0.6rem;
+  background: var(--plate);
+  border-top: 1px solid var(--rule);
+  text-align: right;
+}
+.scout-drawer {
+  padding: 1rem;
+  background: var(--plate);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.75rem;
+}
+.scout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.scout-header h3 {
+  font-size: var(--step-0);
+  font-weight: 700;
+}
+.btn-close {
+  background: none;
+  border: 0;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--muted);
+}
+.scout-item {
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--rule-soft);
+  display: grid;
+  gap: 0.25rem;
+}
+.scout-item h4 {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--ink);
+}
+.scout-item p {
+  font-family: var(--serif);
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+.scout-item .scout-sources a {
+  font-size: var(--step--1);
+  color: var(--teal);
+  text-decoration: underline;
+  margin-right: 0.5rem;
+}
+
+.detective-explain-plate {
+  padding: 1.25rem 1.5rem;
+  background: var(--plate);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.75rem;
+}
+.explain-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.explain-head h3 {
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.ai-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  background: var(--teal-wash);
+  color: var(--teal-ink);
+  border-radius: var(--radius);
+}
+.explain-text {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.explain-sources {
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 0.65rem;
+}
+.explain-sources h4 {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+.explain-sources ol {
+  padding-left: 1.25rem;
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-2);
+}
+.explain-sources li {
+  margin-bottom: 0.25rem;
+}
+.explain-sources li a {
+  color: var(--teal);
+}

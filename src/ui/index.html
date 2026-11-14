@@ -35,6 +35,21 @@
   <main class="workbench">
     <!-- ============ RAIL: place + variable + period ============ -->
     <form class="rail" id="investigate-form" novalidate>
+            <!-- ============ ASK THE DETECTIVE (U4) ============ -->
+      <section class="detective-box plate" id="detective-box">
+        <label for="detective-input" data-i18n="detective.title">Ask the Detective</label>
+        <div class="search-row">
+          <input type="text" id="detective-input" autocomplete="off"
+                 data-i18n-placeholder="detective.placeholder" placeholder="e.g. Is it raining less in Piura?">
+          <button type="button" class="btn btn-primary btn-small" id="detective-ask-btn" data-i18n="detective.ask">Ask</button>
+        </div>
+        <div class="detective-plan-card" id="detective-plan-card" hidden>
+          <p class="plan-heading" data-i18n="detective.plan.heading">Investigation Plan</p>
+          <p class="plan-intent" id="plan-intent-text"></p>
+          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run">Confirm & Investigate</button>
+        </div>
+      </section>
+
       <section class="field">
         <label for="place-search" data-i18n="panel.search.label">Search a place</label>
         <div class="search-row">
@@ -60,6 +75,9 @@
 
       <section class="map-frame">
         <div id="map" role="application" aria-label="Map" data-i18n-aria="panel.location"></div>
+        <div class="scout-bar" id="scout-bar" hidden>
+          <button type="button" class="btn btn-ghost btn-small" id="btn-scout" data-i18n="detective.scout.btn">¿Qué investigo aquí?</button>
+        </div>
         <p class="map-hint" data-i18n="panel.map.hint">Click the map to pick a point. Hold Shift and drag to pick a box.</p>
               <div class="trendmap-bar" id="trendmap-bar" hidden>
           <button type="button" class="btn btn-primary btn-small" id="btn-calc-trendmap" data-i18n="trendmap.btn">Show trend map for box</button>
@@ -129,6 +147,22 @@
               <span class="state" id="verdict-state"></span>
               <span class="step" id="verdict-step"></span>
             </p>
+          </div>
+        </article>
+
+        <article class="plate detective-explain-plate" id="explain-plate">
+          <div class="explain-head">
+            <h3 data-i18n="detective.explain.title">Explicación del Detective</h3>
+            <div class="seg seg-level" role="group">
+              <button type="button" id="lvl-school" class="is-active" aria-pressed="true" data-i18n="detective.explain.level.school">Nivel escolar</button>
+              <button type="button" id="lvl-uni" aria-pressed="false" data-i18n="detective.explain.level.uni">Nivel universitario</button>
+            </div>
+          </div>
+          <span class="ai-badge" data-i18n="detective.explain.badge">Síntesis asistida por IA a partir de las fuentes citadas</span>
+          <p class="serif explain-text" id="explain-text"></p>
+          <div class="explain-sources" id="explain-sources-box" hidden>
+            <h4 data-i18n="detective.explain.sources">Evidencias citadas</h4>
+            <ol id="explain-citations-list"></ol>
           </div>
         </article>
 

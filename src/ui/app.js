@@ -188,6 +188,7 @@ function setPoint(lat, lon) {
     }).addTo(map);
   }
   $('#place-chosen').textContent = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  const sc = $('#scout-bar'); if (sc) sc.hidden = false;
 }
 
 function setPointA(lat, lon) {
@@ -410,6 +411,7 @@ function renderAnalysis(a) {
   renderFindings(a);
   renderMethod(a);
   renderProvenance(a);
+  loadExplanation(a, currentExplainLevel);
   $('#results').focus({ preventScroll: true });
 }
 
@@ -1025,6 +1027,253 @@ async function devFixtureAnalysis() {
   };
 }
 
+
+/* ---------------------------------------------------------------- U4: AI Detective */
+
+let currentPlan = null;
+let currentExplainLevel = 'school';
+
+async function askDetective(question) {
+  if (!question || question.trim().length < 3) return;
+  const btn = $('#detective-ask-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    let planData;
+    if (DEV_FIXTURE) {
+      planData = devFixturePlan(question);
+    } else {
+      const res = await fetch(`${API_BASE}/api/ai/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ question, lang: state.lang }),
+      });
+      if (!res.ok) throw new Error('AI Planner unavailable');
+      planData = await res.json();
+    }
+    renderPlan(planData);
+  } catch (err) {
+    showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
+      ? 'El planificador con IA no está disponible en este momento. Selecciona lugar y variable manualmente.'
+      : 'AI planner is not available right now. Please select location and variable manually.'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('detective.ask');
+  }
+}
+
+function renderPlan(plan) {
+  currentPlan = plan;
+  const card = $('#detective-plan-card');
+  card.hidden = false;
+
+  const varId = plan.variable_ids && plan.variable_ids[0] ? plan.variable_ids[0] : 'T2M';
+  const v = state.catalog.find(x => x.id === varId);
+  const varName = v ? (v.names?.[state.lang] || v.id) : varId;
+  const placeName = plan.place || (state.lang === 'es' ? 'el lugar seleccionado' : 'the selected place');
+
+  $('#plan-intent-text').textContent = t('detective.plan.intent', { var: varName, place: placeName });
+}
+
+async function confirmPlan() {
+  if (!currentPlan) return;
+  $('#detective-plan-card').hidden = true;
+
+  const varId = currentPlan.variable_ids && currentPlan.variable_ids[0] ? currentPlan.variable_ids[0] : 'T2M';
+  const select = $('#variable-select');
+  if (select) {
+    select.value = varId;
+    onVariableChange();
+  }
+
+  if (currentPlan.place) {
+    await searchPlace(currentPlan.place, false);
+  }
+
+  investigate();
+}
+
+async function scoutLocation() {
+  if (!state.point) return;
+  const btn = $('#btn-scout');
+  btn.disabled = true;
+
+  try {
+    let scoutData;
+    if (DEV_FIXTURE) {
+      scoutData = devFixtureScout(state.point.lat, state.point.lon);
+    } else {
+      const res = await fetch(`${API_BASE}/api/ai/scout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ lat: state.point.lat, lon: state.point.lon, lang: state.lang }),
+      });
+      if (!res.ok) throw new Error('AI Scout unavailable');
+      scoutData = await res.json();
+    }
+    renderScout(scoutData);
+  } catch (err) {
+    showError(new ApiError('AI_SCOUT_ERROR', state.lang === 'es'
+      ? 'No se pudieron recuperar recomendaciones para esta zona.'
+      : 'Could not retrieve recommendations for this area.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderScout(data) {
+  const drawer = $('#scout-drawer');
+  const list = $('#scout-list');
+  list.innerHTML = '';
+  drawer.hidden = false;
+
+  const candidates = data.candidates || [];
+  for (const c of candidates) {
+    const item = el('div', { class: 'scout-item' });
+    item.appendChild(el('h4', null, `${c.variable_id} — ${c.name?.[state.lang] || c.variable_id}`));
+    item.appendChild(el('p', null, c.why?.[state.lang] || c.why?.en || ''));
+
+    const srcDiv = el('div', { class: 'scout-sources' });
+    for (const src of c.sources || []) {
+      const a = el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer' }, src.title || 'NASA EO');
+      srcDiv.appendChild(a);
+    }
+    item.appendChild(srcDiv);
+
+    const pickBtn = el('button', { type: 'button', class: 'btn btn-ghost btn-small' },
+      state.lang === 'es' ? 'Investigar esta variable' : 'Investigate this variable');
+    pickBtn.addEventListener('click', () => {
+      $('#variable-select').value = c.variable_id;
+      onVariableChange();
+      drawer.hidden = true;
+      investigate();
+    });
+    item.appendChild(pickBtn);
+
+    list.appendChild(item);
+  }
+}
+
+async function loadExplanation(analysis, level = 'school') {
+  currentExplainLevel = level;
+  $('#lvl-school').classList.toggle('is-active', level === 'school');
+  $('#lvl-uni').classList.toggle('is-active', level === 'uni');
+  $('#lvl-school').setAttribute('aria-pressed', String(level === 'school'));
+  $('#lvl-uni').setAttribute('aria-pressed', String(level === 'uni'));
+
+  const textEl = $('#explain-text');
+  const sourcesBox = $('#explain-sources-box');
+  const listEl = $('#explain-citations-list');
+
+  textEl.textContent = t('detective.explain.loading');
+  sourcesBox.hidden = true;
+
+  try {
+    let exp;
+    if (DEV_FIXTURE) {
+      exp = devFixtureExplain(analysis, level);
+    } else {
+      const res = await fetch(`${API_BASE}/api/ai/explain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ analysis, level, lang: state.lang }),
+      });
+      if (!res.ok) throw new Error('Explain unavailable');
+      exp = await res.json();
+    }
+
+    textEl.textContent = exp.text || '';
+    if (exp.citations && exp.citations.length) {
+      sourcesBox.hidden = false;
+      listEl.innerHTML = '';
+      for (const cit of exp.citations) {
+        const li = el('li');
+        li.appendChild(el('strong', null, `[${cit.id}] `));
+        li.appendChild(document.createTextNode(`${cit.title}. `));
+        if (cit.url) {
+          const a = el('a', { href: cit.url, target: '_blank', rel: 'noopener noreferrer' }, '(NASA Earth Observatory)');
+          li.appendChild(a);
+        }
+        listEl.appendChild(li);
+      }
+    }
+  } catch (err) {
+    textEl.textContent = state.lang === 'es'
+      ? 'La explicación con IA está en modo extractivo. Revisa las 4 tarjetas del veredicto y las pruebas estadísticas comprobadas arriba.'
+      : 'AI explanation is in extractive mode. Please review the 4 verdict cards and statistical tests above.';
+  }
+}
+
+function devFixturePlan(question) {
+  const isPrecip = /lluv|precip|rain/i.test(question);
+  return {
+    intent: 'investigate',
+    variable_ids: [isPrecip ? 'PRECTOTCORR' : 'T2M'],
+    place: 'Piura, Peru',
+    place_b: null,
+    hypothesis: 'unknown',
+    lang: state.lang,
+  };
+}
+
+function devFixtureScout(lat, lon) {
+  return {
+    lat, lon,
+    candidates: [
+      {
+        variable_id: 'PRECTOTCORR',
+        name: { es: 'Precipitación acumulada', en: 'Precipitation' },
+        why: {
+          es: 'Región vulnerable a episodios extremos de El Niño (ENSO) con oscilaciones marcadas de precipitación.',
+          en: 'Region vulnerable to extreme El Niño events with marked precipitation anomalies.',
+        },
+        sources: [
+          { title: 'NASA Earth Observatory: El Niño patterns', url: 'https://earthobservatory.nasa.gov/' }
+        ]
+      },
+      {
+        variable_id: 'T2M',
+        name: { es: 'Temperatura a 2m', en: 'Temperature at 2m' },
+        why: {
+          es: 'Mide la tendencia sostenida de calentamiento superficial a lo largo de más de 40 años.',
+          en: 'Measures sustained surface warming trends across more than 40 years.',
+        },
+        sources: [
+          { title: 'NASA POWER Climatology Resource', url: 'https://power.larc.nasa.gov/' }
+        ]
+      }
+    ]
+  };
+}
+
+function devFixtureExplain(analysis, level) {
+  const isSchool = level === 'school';
+  const slope = analysis.trend?.sen_slope_per_decade ?? 0.31;
+
+  if (state.lang === 'es') {
+    return {
+      text: isSchool
+        ? `Al analizar los datos de satélite y reanálisis de la NASA [1], vemos que la temperatura promedio ha cambiado a un ritmo de ${signed(slope, 2)} °C por década. Las pruebas estadísticas confirman que este cambio no se debe a fluctuaciones aleatorias [2], sino a un cambio persistente en el clima local.`
+        : `La evaluación econométrica y climática sobre la serie desestacionalizada confirma una pendiente de Theil-Sen de ${signed(slope, 3)} °C/década (p < 0.001 con corrección Hamed & Rao para autocorrelación lag-1) [1]. La serie supera el umbral de detectabilidad de Weatherhead et al. (1998) [2], validando la señal frente a la variabilidad natural.`,
+      citations: [
+        { id: 1, title: 'NASA Goddard Institute for Space Studies / POWER MERRA-2', url: 'https://power.larc.nasa.gov/' },
+        { id: 2, title: 'Weatherhead et al. (1998): Factors affecting the detection of trends', url: 'https://doi.org/10.1029/98JD00995' }
+      ]
+    };
+  } else {
+    return {
+      text: isSchool
+        ? `Analyzing NASA satellite and reanalysis records [1], we observe temperature changing at a rate of ${signed(slope, 2)} °C per decade. Statistical tests confirm that this trend is not due to random fluctuations [2], but represents a consistent change in the local climate.`
+        : `Evaluation on the deseasonalized monthly series confirms a Sen slope of ${signed(slope, 3)} °C/decade (p < 0.001 with Hamed & Rao autocorrelation adjustment) [1]. The series exceeds the Weatherhead et al. (1998) detectability threshold [2], confirming signal emergence.`,
+      citations: [
+        { id: 1, title: 'NASA Goddard Institute for Space Studies / POWER MERRA-2', url: 'https://power.larc.nasa.gov/' },
+        { id: 2, title: 'Weatherhead et al. (1998): Factors affecting the detection of trends', url: 'https://doi.org/10.1029/98JD00995' }
+      ]
+    };
+  }
+}
+
 /* ---------------------------------------------------------------- boot */
 
 function boot() {
@@ -1052,6 +1301,14 @@ function boot() {
   $('#place-search-btn').addEventListener('click', () => searchPlace($('#place-search').value, false));
   $('#place-search-btn-b').addEventListener('click', () => searchPlace($('#place-search-b').value, true));
   $('#btn-calc-trendmap').addEventListener('click', runTrendMap);
+  $('#detective-ask-btn')?.addEventListener('click', () => askDetective($('#detective-input').value));
+  $('#detective-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askDetective($('#detective-input').value); } });
+  $('#plan-confirm-btn')?.addEventListener('click', confirmPlan);
+  $('#btn-scout')?.addEventListener('click', scoutLocation);
+  $('#btn-scout-close')?.addEventListener('click', () => { $('#scout-drawer').hidden = true; });
+  $('#lvl-school')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'school'); });
+  $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'uni'); });
+
 
   for (const [id, view] of [['view-monthly', 'monthly'], ['view-anomalies', 'anomalies'], ['view-annual', 'annual']]) {
     $(`#${id}`).addEventListener('click', () => {
