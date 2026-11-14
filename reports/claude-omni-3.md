@@ -203,3 +203,70 @@ El primer PAT del chat (fine-grained) autenticaba como `soulgeit` pero daba
 sobre este repo. Con el PAT clásico del proyecto, el push de A1 quedó en
 `031a022..505fcf8  feature/api`. Ningún token se guardó en el repo, en
 `.git/config` ni en este reporte.
+
+---
+
+## A2 (parcial) — orquestación blindada con dobles (14-nov-2026, 14:45)
+
+`src/etl` y `src/stats` aún no han empujado, así que la integración real sigue
+pendiente. Mientras, se fijó con pruebas lo que **sí** puedo garantizar hoy:
+que la orquestación no sustituya, no invente y traduzca bien los fallos.
+
+`tests/api/doubles.py` + `tests/api/test_service.py` (12 pruebas):
+
+- `analysis/2` con la tarjeta del catálogo añadida por la API.
+- Caché: la segunda petición idéntica sale de caché (`hits >= 1`).
+- `DataUnavailable` → `504 UPSTREAM_TIMEOUT` / `404 OUT_OF_COVERAGE`.
+- **Un ETL que devuelve otra variable → `502 UPSTREAM_ERROR`** con el id pedido
+  en el `hint`. Igual que la sustitución silenciosa de un archivo, la de una
+  variable se corta.
+- Serie vacía → `OUT_OF_COVERAGE`; serie corta → `422 INSUFFICIENT_DATA`.
+- Esquema de análisis inesperado → `502`.
+- `/trendmap` y `/compare` con el motor inyectado.
+- `/report` en `en` y `es`, HTML autocontenido (sin una sola URL externa).
+- `/analyze/upload` con CSV tipo Giovanni → `provenance.kind = user_upload`.
+- Límite por IP → `429 RATE_LIMITED` con el formato §7.
+
+```
+$ .venv/Scripts/python.exe -m pytest tests/api -q
+36 passed, 41 warnings in 2.06s
+```
+
+---
+
+## A4/A5 (parcial) — UI en la raíz y registro estructurado (14-nov-2026, 14:35)
+
+**Qué quedó**
+
+- La UI se sirve **en la raíz** (`/`, `/app.js`, `/styles.css`, `/i18n.js`), que
+  es donde los `index.html` de la UI buscan sus assets relativos. Antes solo
+  estaba bajo `/ui` y los assets daban 404 en producción.
+- Un asset que falta devuelve **404 JSON** con el formato §7, no la página HTML:
+  un 200 con HTML donde el navegador espera JavaScript rompería la página sin
+  decir por qué (fallo detectado y corregido durante la prueba).
+- Rutas normales desconocidas → fallback SPA (la página), sin 404 secos.
+- `/api/*` siempre tiene prioridad sobre el fallback.
+- HTML con `Cache-Control: no-cache`; assets con `max-age=3600`.
+- Registro estructurado por petición en JSON: método, ruta, estado y ms.
+  **Sin IP, sin User-Agent, sin cabeceras ni cuerpos** (A4, sin datos personales).
+
+**Evidencia**
+
+```
+$ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8765/            -> 200
+$ curl ... /app.js   -> 200 text/javascript
+$ curl ... /nope.js  -> 404
+$ grep '"event"' uvicorn.log
+{"event": "request", "method": "GET", "path": "/", "status": 200, "ms": 3}
+{"event": "request", "method": "GET", "path": "/app.js", "status": 200, "ms": 2}
+{"event": "request", "method": "GET", "path": "/nope.js", "status": 404, "ms": 28}
+```
+
+```
+$ .venv/Scripts/python.exe -m pytest tests/api -q
+41 passed, 51 warnings in 2.57s
+```
+
+**Riesgo abierto**: los assets son los de `main` (UI v1) hasta que el arquitecto
+fusione `feature/ui`. La UI nueva usa `i18n.js`, que no está en esta rama; el
+servidor lo devuelve 404 en JSON (fallo explícito) en vez de servir HTML.

@@ -155,3 +155,38 @@ def test_root_serves_ui_or_metadata(client: TestClient) -> None:
     r = client.get("/")
     assert r.status_code == 200
     assert r.text
+
+
+# --- UI servida por el mismo servicio (A5) --------------------------------
+
+
+def test_ui_is_served_from_root_with_relative_assets(client: TestClient) -> None:
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert r.headers["cache-control"] == "no-cache"
+
+
+def test_ui_assets_are_served_with_the_right_media_type(client: TestClient) -> None:
+    r = client.get("/app.js")
+    assert r.status_code == 200
+    assert "javascript" in r.headers["content-type"]
+    assert "max-age" in r.headers["cache-control"]
+
+
+def test_missing_asset_is_json_404_not_html(client: TestClient) -> None:
+    """Un 200 con HTML donde el navegador espera JS rompe la página en silencio."""
+    r = client.get("/nope.js")
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_api_routes_win_over_the_spa_fallback(client: TestClient) -> None:
+    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/does-not-exist").status_code == 404
+
+
+def test_unknown_page_falls_back_to_the_spa(client: TestClient) -> None:
+    r = client.get("/some/deep/link")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]

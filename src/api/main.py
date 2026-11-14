@@ -13,13 +13,13 @@ from __future__ import annotations
 import json
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import catalog, modules, service, validation
@@ -32,6 +32,7 @@ from .config import (
     UI_DIR,
 )
 from .errors import ApiError, api_error_handler, http_exception_handler
+from .logging_mw import StructuredAccessLog
 from .ratelimit import limiter
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -60,6 +61,7 @@ app.add_middleware(
 
 app.add_exception_handler(ApiError, api_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_middleware(StructuredAccessLog)
 
 
 @app.exception_handler(RequestValidationError)
@@ -464,19 +466,68 @@ def report_endpoint(
 
 
 # --------------------------------------------------------------------------
-# UI estática en / (A5)
+# UI estática servida por el mismo servicio (A5)
 # --------------------------------------------------------------------------
+#
+# La UI referencia `app.js`, `styles.css` e `i18n.js` de forma relativa, así que
+# tiene que vivir en la raíz, no bajo `/ui`. Los assets se sirven con caché; el
+# HTML, siempre revalidado, para que un despliegue nuevo se vea al recargar.
 
-if UI_DIR.exists():
-    app.mount("/ui", StaticFiles(directory=str(UI_DIR), html=True), name="ui")
+_CACHE_HEADERS = {"Cache-Control": "public, max-age=3600"}
+_HTML_HEADERS = {"Cache-Control": "no-cache"}
+
+
+def _ui_asset(path: str):
+    candidate = (UI_DIR / path).resolve()
+    try:
+        candidate.relative_to(UI_DIR.resolve())
+    except ValueError:
+        return None  # fuera del directorio de la UI: no se sirve
+    if candidate.is_file() and candidate.suffix in {".js", ".css", ".map", ".svg", ".png", ".ico", ".woff2"}:
+        media = {
+            ".js": "text/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".svg": "image/svg+xml",
+            ".png": "image/png",
+            ".ico": "image/x-icon",
+            ".woff2": "font/woff2",
+        }.get(candidate.suffix, "application/octet-stream")
+        return Response(content=candidate.read_bytes(), media_type=media, headers=_CACHE_HEADERS)
+    return None
 
 
 @app.get("/", include_in_schema=False)
 def root() -> Any:
     index = UI_DIR / "index.html"
     if index.exists():
-        return HTMLResponse(index.read_text(encoding="utf-8"))
+        return HTMLResponse(index.read_text(encoding="utf-8"), headers=_HTML_HEADERS)
     return JSONResponse({"service": API_TITLE, "version": API_VERSION, "docs": "/docs", "api": "/api"})
+
+
+_ASSET_SUFFIXES = {".js", ".css", ".map", ".svg", ".png", ".ico", ".woff2", ".jpg", ".webp"}
+
+
+@app.get("/{asset_path:path}", include_in_schema=False)
+def static_ui(asset_path: str) -> Any:
+    """Assets de la UI en la raíz. Las rutas /api/* las gana el router de la API."""
+    if asset_path.startswith("api/") or asset_path.startswith(("docs", "openapi.json", "redoc")):
+        raise ApiError("NOT_FOUND", hint=asset_path)
+    served = _ui_asset(asset_path)
+    if served is not None:
+        return served
+    if Path(asset_path).suffix.lower() in _ASSET_SUFFIXES:
+        # Un asset que falta NO puede caer en el fallback HTML: el navegador
+        # recibiría HTML donde espera JavaScript y fallaría sin decir por qué.
+        raise ApiError(
+            "NOT_FOUND",
+            message={"es": "Ese archivo de la interfaz no existe.", "en": "That interface asset does not exist."},
+            hint=asset_path,
+        )
+    index = UI_DIR / "index.html"
+    if index.exists():
+        # SPA fallback: cualquier ruta desconocida devuelve la página, no un 404 seco.
+        return HTMLResponse(index.read_text(encoding="utf-8"), headers=_HTML_HEADERS)
+    raise ApiError("NOT_FOUND", hint=asset_path)
 
 
 @app.middleware("http")
