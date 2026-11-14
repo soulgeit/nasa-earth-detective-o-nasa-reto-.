@@ -19,16 +19,9 @@ from typing import List
 ALLOWED_KINDS = {"nasa_api", "nasa_file", "user_upload", "fixture"}
 
 
-def validate_file(filepath: Path) -> List[str]:
+def validate_dataset(data: dict) -> List[str]:
+    """Valida la estructura en memoria de un dataset bajo contrato timeseries/2."""
     errors = []
-    if not filepath.exists():
-        return [f"Archivo no existe: {filepath}"]
-
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception as e:
-        return [f"JSON inválido en {filepath}: {e}"]
 
     # 1. Esquema
     schema = data.get("schema")
@@ -82,6 +75,19 @@ def validate_file(filepath: Path) -> List[str]:
                     errors.append(f"Valor de relleno -999 no transformado a null en fecha '{dt}'")
 
     return errors
+
+
+def validate_file(filepath: Path) -> List[str]:
+    if not filepath.exists():
+        return [f"Archivo no existe: {filepath}"]
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        return [f"JSON inválido en {filepath}: {e}"]
+
+    return validate_dataset(data)
 
 
 def main():
