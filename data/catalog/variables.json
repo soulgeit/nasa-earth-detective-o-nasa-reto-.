@@ -1999,5 +1999,10 @@
       },
       "verified": null
     }
+  ],
+  "_si_assisted": "hermes-1 (qwen3.6)",
+  "_si_files_written": [
+    "data/catalog/variables.json",
+    "data/catalog/regions.json"
   ]
 }
