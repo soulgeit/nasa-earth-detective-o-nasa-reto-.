@@ -14,3 +14,4 @@ imágenes y vídeos generados llevan marca de agua visible. Este archivo es la b
 | Fecha | Agente | Herramienta y modelo | Archivos | Qué se hizo con IA | Revisado por (persona) |
 |---|---|---|---|---|---|
 | 2026-11-14 | Arquitecto | Claude Code (Claude Fable 5.2) | `docs/PLAN_GANADOR.md`, `docs/CONTRATOS.md`, `docs/KIT_ENTREGA.md`, `prompts/*.md`, `TASKS.md`, `README.md`, `data/catalog/variables.seed.json`, `data/raw/giovanni/README.md` | Auditoría del prototipo, verificación de las fuentes de datos con llamadas reales, redacción del plan, de los contratos y de los prompts de los agentes | pendiente |
+| 2026-11-14 | Antigravity 1 | Claude Code (Claude Opus 5.5) | `src/etl/*.py`, `scripts/validate_datasets.py`, `tests/etl/*`, `tests/conftest.py`, `reports/antigravity-1.md` | Conectores NASA POWER/GISTEMP/NSIDC y validador de datasets; verificacion de limites y esquemas con llamadas reales | pendiente |
