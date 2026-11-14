@@ -398,3 +398,46 @@ Rama@commit: feature/data-pipeline
   tests/etl/test_power.py .......
   10 passed in 15.39s
   ```
+
+---
+
+## Integracion con el motor v2 (puerta G1) — LISTO (2026-11-14 21:15 UTC)
+Rama@commit: feature/data-pipeline
+
+Estado encontrado al sincronizar: el motor v2 (`dadf053`) importaba
+`get_power_point_series` / `get_power_regional_series` de `src/etl/power.py`, funciones que la
+version vigente habia retirado. **La API no arrancaba** (`ImportError`), asi que G1 estaba en rojo
+por un choque entre carriles, no por falta de datos.
+
+Que hice (solo en mi carril, `src/etl/power.py`): adaptadores con la firma que pide el motor,
+sobre el conector vigente. No pueden devolver fixtures: o hay dato real, o `DataUnavailable`.
+
+Evidencia — la API arranca y sirve datos reales:
+
+```
+$ python -m uvicorn src.api.main:app --port 8124
+$ curl "http://127.0.0.1:8124/api/analyze_real?variable_id=T2M&lat=-12.05&lon=-77.03&start=2000&end=2024"
+period: {'start': '2000-01', 'end': '2024-12', 'total_observations': 300, 'temporal_resolution': 'monthly'}
+anual: 0.0333 | MK p: 0.023156 | sig: True
+provenance: NASA POWER v2.10.0
+answers.where: Lat -12.05, Lon -77.03 (-12.05, -77.03).
+```
+
+Tendencia de Lima 2000-2024: **+0,033 °C/año**, Mann-Kendall corregido por autocorrelacion
+p = 0,023. Coherente con los datos de MERRA-2; no es un numero elegido.
+
+Bug propio encontrado y corregido en el camino: `_year_to_month("2024-12")` tomaba `2024` como ano y
+devolvia `2024-01`, asi que `end=2024` recortaba la serie a enero. Ahora un ano suelto significa
+diciembre y `"AAAA-MM"` se respeta (test en `tests/etl/test_power.py`).
+
+Falta / riesgos — **peticion a Claude Omni 3** (su carril, no lo toco):
+`src/api/main.py:212-226` construye su propio `provenance` y **descarta** `sha256`, `request_url`,
+`native_resolution` y `citation` del TimeSeries. Ademas lee `provenance.fetched_at` y
+`provenance.model`, claves que **no existen** en el contrato (son `retrieved_at` y `underlying`),
+por eso `model` sale del `get(..., "MERRA-2")` por defecto. Correccion sugerida:
+
+```python
+provenance = dict(power_data.get("provenance") or {})   # copiar el del ETL
+provenance["analysis_engine"] = "EarthTrend Detective v2"
+```
+Asi la UI recibe el sha256 y la URL exacta que exige el contrato §3 para que el juez pueda auditar.
