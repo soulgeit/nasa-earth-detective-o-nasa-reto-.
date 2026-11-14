@@ -128,7 +128,13 @@
         </div>
       </section>
 
-      <button type="submit" class="btn btn-primary" id="investigate-btn" data-i18n="panel.investigate">Investigate</button>
+            <button type="submit" class="btn btn-primary" id="investigate-btn" data-i18n="panel.investigate">Investigate</button>
+
+      <div class="upload-csv-box">
+        <input type="file" id="csv-file-input" accept=".csv" hidden>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-upload-csv" style="width: 100%;" data-i18n="panel.upload.csv">📁 Upload Giovanni CSV</button>
+      </div>
+
 
       <div class="cases">
         <h2 data-i18n="cases.title">Frozen cases</h2>

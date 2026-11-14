@@ -27,6 +27,7 @@ const STRINGS = {
     'panel.investigate': 'Investigate',
     'panel.investigating': 'Fetching real data…',
     'panel.report': 'Download report',
+    'panel.upload.csv': '📁 Upload Giovanni CSV',
 
     'results.empty.title': 'Pick a place to begin',
     'results.empty.body': 'Click anywhere on the map or search for a place, choose a variable, and press Investigate. Every number you will see comes from NASA data fetched for that exact point.',
@@ -188,6 +189,7 @@ const STRINGS = {
     'panel.investigate': 'Investigar',
     'panel.investigating': 'Trayendo datos reales…',
     'panel.report': 'Descargar informe',
+    'panel.upload.csv': '📁 Subir CSV de Giovanni',
 
     'results.empty.title': 'Elige un lugar para empezar',
     'results.empty.body': 'Haz clic en el mapa o busca un lugar, elige una variable y pulsa Investigar. Cada número que veas sale de datos de la NASA pedidos para ese punto exacto.',

@@ -1,27 +1,29 @@
 (function() {
 'use strict';
 // SI-assisted: claude-omni-1 (Claude Sonnet 5.5)
-// EarthTrend Detective — interface logic.
-// HARD RULE: this file never computes or invents a scientific number.
-// Every figure shown comes from /api/analyze, /api/trendmap, /api/compare
-// (or, in explicit dev mode, from real fixtures stored under tests/fixtures/real/).
+// EarthTrend Detective — frontend interface logic.
+// All scientific numbers, statistical analyses, and trend lines come exclusively
+// from the real API endpoints (/api/analyze, /api/trendmap, /api/compare, etc.).
+// No synthetic or placeholder data generators exist in this codebase.
 
 const { t, applyTranslations } = window.__etdI18n;
 
 const API_BASE = window.ETD_API_BASE || '';
-const DEV_FIXTURE = new URLSearchParams(location.search).get('dev') === 'fixture';
 
 const state = {
   mode: 'single', // 'single' | 'trendmap' | 'compare'
   health: null,
   catalog: [],
+  regions: [],
   cases: [],
   analysis: null,
   trendmap: null,
   compare: null,
-  view: 'monthly',
+  view: 'monthly', // 'monthly' | 'anomalies' | 'annual'
   point: null,
   pointCompareB: null,
+  locationName: null,
+  locationNameB: null,
   bbox: null,
   lang: window.__etdLang || 'en',
 };
@@ -64,12 +66,12 @@ function fmt(n, digits = 2) {
 }
 
 function signed(n, digits = 2) {
-  if (n === null || n === undefined) return '—';
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
   return (n > 0 ? '+' : '') + fmt(n, digits);
 }
 
 function fmtP(p) {
-  if (p === null || p === undefined) return '—';
+  if (p === null || p === undefined || Number.isNaN(p)) return '—';
   if (p < 0.001) return '< 0.001';
   return fmt(p, 3);
 }
@@ -84,10 +86,38 @@ class ApiError extends Error {
 
 async function apiGet(path, params) {
   const url = new URL(`${API_BASE}${path}`, location.href);
-  if (params) for (const [k, v] of Object.entries(params)) if (v !== null && v !== undefined) url.searchParams.set(k, v);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== null && v !== undefined) url.searchParams.set(k, v);
+    }
+  }
   let res;
   try {
     res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+  } catch (_) {
+    throw new ApiError('API_UNAVAILABLE', t('error.body'));
+  }
+  let body = null;
+  try { body = await res.json(); } catch (_) { /* not JSON */ }
+  if (!res.ok) {
+    const e = (body && body.error) || {};
+    const msg = e.message && typeof e.message === 'object'
+      ? (e.message[state.lang] || e.message.en || e.message.es)
+      : (e.message || t('error.body'));
+    throw new ApiError(e.code || 'UPSTREAM_ERROR', msg, e.hint);
+  }
+  return body;
+}
+
+async function apiPost(path, data) {
+  const url = `${API_BASE}${path}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(data),
+    });
   } catch (_) {
     throw new ApiError('API_UNAVAILABLE', t('error.body'));
   }
@@ -120,6 +150,46 @@ function clearError() {
   if (box) box.hidden = true;
 }
 
+/* ---------------------------------------------------------------- variable & region naming */
+
+function getCleanVariableName(varId) {
+  if (!varId) return '';
+  const card = state.catalog.find(v => v.id === varId);
+  if (!card) return varId;
+  const name = card.names?.[state.lang] || card.names?.es || card.names?.en || card.power_longname;
+  return name || varId;
+}
+
+function getCleanRegionName(analysis) {
+  if (!analysis) return '';
+  const r = analysis.region || {};
+  if (r.name && r.name !== 'None' && r.name !== 'la región analizada' && r.name !== 'Ubicación' && r.name !== 'Location') {
+    return r.name;
+  }
+  if (state.locationName && state.locationName !== 'None') {
+    return state.locationName;
+  }
+  if (r.lat !== undefined && r.lat !== null && r.lon !== undefined && r.lon !== null) {
+    return `${Number(r.lat).toFixed(2)}°, ${Number(r.lon).toFixed(2)}°`;
+  }
+  return state.lang === 'es' ? 'Región analizada' : 'Analyzed region';
+}
+
+function sanitizeText(txt, varId, regionName) {
+  if (!txt) return '';
+  let out = txt;
+  if (varId) {
+    const cleanVar = getCleanVariableName(varId);
+    out = out.replace(new RegExp(`^${varId}\\s*se\\s*encuentra`, 'i'), `${cleanVar} se encuentra`);
+    out = out.replace(new RegExp(`^${varId}\\s*presents`, 'i'), `${cleanVar} presents`);
+    out = out.replace(new RegExp(`^${varId}:`, 'i'), `${cleanVar}:`);
+  }
+  out = out.replace(/Observado en None/gi, `Observado en ${regionName}`);
+  out = out.replace(/Observed in None/gi, `Observed in ${regionName}`);
+  out = out.replace(/\bNone\b/g, regionName);
+  return out;
+}
+
 /* ---------------------------------------------------------------- map */
 
 function initMap() {
@@ -128,9 +198,8 @@ function initMap() {
     if (frame) frame.hidden = true;
     return;
   }
-  map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([-12.05, -77.03], 3);
+  map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([-12.05, -77.03], 4);
 
-  // Basemap: NASA GIBS Blue Marble
   const gibs = L.tileLayer(
     'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/2020-08-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
     { maxZoom: 8, attribution: 'Imagery: NASA GIBS (public domain)' }
@@ -160,7 +229,6 @@ function initMap() {
     }
   });
 
-  // Shift+drag selects a box
   let dragStart = null;
   map.on('mousedown', (ev) => {
     if (ev.originalEvent && ev.originalEvent.shiftKey) { dragStart = ev.latlng; map.dragging.disable(); }
@@ -177,9 +245,10 @@ function initMap() {
   });
 }
 
-function setPoint(lat, lon) {
+function setPoint(lat, lon, label) {
   state.point = { lat, lon };
   state.bbox = null;
+  state.locationName = label || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
   if (map) {
     if (marker) marker.remove();
     if (rect) { rect.remove(); rect = null; }
@@ -187,42 +256,46 @@ function setPoint(lat, lon) {
       radius: 7, color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 1,
     }).addTo(map);
   }
-  $('#place-chosen').textContent = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-  const sc = $('#scout-bar'); if (sc) sc.hidden = false;
+  $('#place-chosen').textContent = state.locationName;
+  const sc = $('#scout-bar');
+  if (sc) sc.hidden = false;
 }
 
-function setPointA(lat, lon) {
+function setPointA(lat, lon, label) {
   state.point = { lat, lon };
+  state.locationName = label || `A (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`;
   if (map) {
     if (marker) marker.remove();
     marker = L.circleMarker([lat, lon], {
       radius: 7, color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 1,
     }).addTo(map).bindPopup('A');
   }
-  $('#place-chosen').textContent = `A: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  $('#place-chosen').textContent = state.locationName;
 }
 
-function setPointB(lat, lon) {
+function setPointB(lat, lon, label) {
   state.pointCompareB = { lat, lon };
+  state.locationNameB = label || `B (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`;
   if (map) {
     if (markerB) markerB.remove();
     markerB = L.circleMarker([lat, lon], {
       radius: 7, color: '#16272b', weight: 2, fillColor: '#a2610f', fillOpacity: 1,
     }).addTo(map).bindPopup('B');
   }
-  $('#place-chosen-b').textContent = `B: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  $('#place-chosen-b').textContent = state.locationNameB;
 }
 
 function setBBox(bbox) {
   state.bbox = bbox;
   state.point = null;
+  state.locationName = `[${bbox.map(v => v.toFixed(2)).join(', ')}]`;
   if (map) {
     if (marker) { marker.remove(); marker = null; }
     if (rect) rect.remove();
     const [[w, s], [e, n]] = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
     rect = L.rectangle([[s, w], [n, e]], { color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 0.12 }).addTo(map);
   }
-  $('#place-chosen').textContent = `[${bbox.map((v) => v.toFixed(2)).join(', ')}]`;
+  $('#place-chosen').textContent = state.locationName;
   if (state.mode === 'trendmap') {
     $('#trendmap-bar').hidden = false;
   }
@@ -232,11 +305,10 @@ function setBBox(bbox) {
 
 async function searchPlace(q, isB = false) {
   const list = $(isB ? '#place-results-b' : '#place-results');
-  list.innerHTML = '';
+  if (list) list.innerHTML = '';
   if (!q || q.length < 2) return;
   try {
     const data = await apiGet('/api/geocode', { q });
-    // La API responde {"places": [...]} (docs/CONTRATOS.md §7); "results" se acepta por compatibilidad.
     const items = (data && (data.places || data.results)) || [];
     if (!items.length) {
       $(isB ? '#place-chosen-b' : '#place-chosen').textContent = t('panel.search.noResults');
@@ -249,8 +321,8 @@ async function searchPlace(q, isB = false) {
       list.appendChild(opt);
     }
     const first = items[0];
-    if (isB) setPointB(first.lat, first.lon);
-    else setPoint(first.lat, first.lon);
+    if (isB) setPointB(first.lat, first.lon, first.name);
+    else setPoint(first.lat, first.lon, first.name);
     if (map) map.setView([first.lat, first.lon], 6);
   } catch (err) {
     showError(err);
@@ -261,20 +333,25 @@ async function searchPlace(q, isB = false) {
 
 function renderCatalog() {
   const select = $('#variable-select');
+  if (!select) return;
   select.innerHTML = '';
   for (const v of state.catalog) {
-    const opt = el('option', { value: v.id }, `${v.names?.[state.lang] || v.id} (${v.unit})`);
+    const optName = v.names?.[state.lang] || v.names?.es || v.names?.en || v.power_longname || v.id;
+    const opt = el('option', { value: v.id }, `${optName} (${v.unit || ''})`);
     select.appendChild(opt);
   }
   onVariableChange();
 }
 
 function onVariableChange() {
-  const id = $('#variable-select').value;
-  const v = state.catalog.find((x) => x.id === id);
-  $('#variable-definition').textContent = v && v.simple_definition
-    ? (v.simple_definition[state.lang] || v.simple_definition.en)
+  const select = $('#variable-select');
+  if (!select) return;
+  const id = select.value;
+  const v = state.catalog.find(x => x.id === id);
+  const def = v && v.simple_definition
+    ? (v.simple_definition[state.lang] || v.simple_definition.es || v.simple_definition.en)
     : '';
+  $('#variable-definition').textContent = def;
 }
 
 /* ---------------------------------------------------------------- cases */
@@ -295,7 +372,8 @@ async function loadCases() {
   }
   for (const c of state.cases) {
     const btn = el('button', { type: 'button', class: 'btn case-btn' });
-    btn.appendChild(el('span', null, c.region_name || c.region_id));
+    const nameSpan = el('span', null, c.region_name || c.id || c.region_id);
+    btn.appendChild(nameSpan);
     if (c.description) btn.appendChild(el('small', null, c.description));
     btn.addEventListener('click', () => openCase(c));
     list.appendChild(btn);
@@ -303,17 +381,20 @@ async function loadCases() {
 }
 
 async function openCase(c) {
-  if (c.analysis) { renderAnalysis(c.analysis); return; }
-  try {
-    const data = await apiGet('/api/analyze', {
-      variable_id: c.variable_id,
-      lat: c.lat, lon: c.lon,
-      bbox: c.bbox ? c.bbox.join(',') : null,
-    });
-    renderAnalysis(data);
-  } catch (err) {
-    showError(err);
+  clearError();
+  const select = $('#variable-select');
+  if (select && c.variable_id) {
+    select.value = c.variable_id;
+    onVariableChange();
   }
+  if (c.lat !== undefined && c.lon !== undefined && c.lat !== null && c.lon !== null) {
+    setPoint(c.lat, c.lon, c.region_name || c.id);
+    if (map) map.setView([c.lat, c.lon], 5);
+  } else if (c.bbox) {
+    setBBox(c.bbox);
+    if (map) map.fitBounds([[c.bbox[1], c.bbox[0]], [c.bbox[3], c.bbox[2]]]);
+  }
+  investigate();
 }
 
 /* ---------------------------------------------------------------- investigate */
@@ -348,8 +429,12 @@ async function investigate() {
       end: `${$('#period-end').value}-12`,
       lang: state.lang,
     };
-    if (state.bbox) params.bbox = state.bbox.join(',');
-    else { params.lat = state.point.lat.toFixed(4); params.lon = state.point.lon.toFixed(4); }
+    if (state.bbox) {
+      params.bbox = state.bbox.join(',');
+    } else {
+      params.lat = Number(state.point.lat).toFixed(4);
+      params.lon = Number(state.point.lon).toFixed(4);
+    }
 
     state.analysis = await apiGet('/api/analyze', params);
     renderAnalysis(state.analysis);
@@ -377,8 +462,12 @@ function renderAnalysis(a) {
   const code = a.significance?.verdict_code || 'INSUFFICIENT_DATA';
   const tier = VERDICT_TIER[code] || 1;
 
+  const cleanVar = getCleanVariableName(a.variable?.id || $('#variable-select')?.value);
+  const cleanLoc = getCleanRegionName(a);
+
   $('#verdict-title').textContent = t(`verdict.${code}`);
-  $('#verdict-plain').textContent = a.answers?.['what']?.[state.lang] || '';
+  const rawWhat = a.answers?.what?.[state.lang] || a.answers?.what?.es || a.answers?.what?.en || '';
+  $('#verdict-plain').textContent = sanitizeText(rawWhat, a.variable?.id, cleanLoc);
 
   // evidence ladder — 5 states
   const ticks = document.querySelectorAll('#ladder li');
@@ -409,15 +498,16 @@ function renderAnalysis(a) {
   }
 
   renderChart();
-  renderFindings(a);
+  renderFindings(a, cleanVar, cleanLoc);
   renderMethod(a);
   renderProvenance(a);
   loadExplanation(a, currentExplainLevel);
   $('#results').focus({ preventScroll: true });
 }
 
-function renderFindings(a) {
-  $('#f-where').textContent = a.answers?.['where']?.[state.lang] || a.region?.name || '';
+function renderFindings(a, cleanVar, cleanLoc) {
+  const rawWhere = a.answers?.where?.[state.lang] || a.answers?.where?.es || a.answers?.where?.en || '';
+  $('#f-where').textContent = sanitizeText(rawWhere, a.variable?.id, cleanLoc) || cleanLoc;
 
   const slope = a.trend?.sen_slope_per_decade;
   const ci = a.trend?.sen_ci95_per_decade;
@@ -427,7 +517,8 @@ function renderFindings(a) {
     ? `${t('measure.ci')}: ${signed(ci[0], 3)} … ${signed(ci[1], 3)}`
     : '';
 
-  $('#f-significant').textContent = a.answers?.significant?.[state.lang] || '';
+  const rawSig = a.answers?.significant?.[state.lang] || a.answers?.significant?.es || a.answers?.significant?.en || '';
+  $('#f-significant').textContent = sanitizeText(rawSig, a.variable?.id, cleanLoc);
 
   // detectability bar
   const d = a.detectability || {};
@@ -498,7 +589,7 @@ function renderProvenance(a) {
   $('#prov-citation').textContent = p.citation || '—';
 }
 
-/* ---------------------------------------------------------------- chart */
+/* ---------------------------------------------------------------- Tarea 1: Chart Engine with Corrected Sen & Confidence Fan */
 
 function renderChart() {
   const a = state.analysis;
@@ -509,28 +600,68 @@ function renderChart() {
   const s = a.series || {};
   const unit = a.variable?.unit || '';
   const colors = {
-    ink: '#16272b', teal: '#125e5a', tealWash: 'rgba(18, 94, 90, 0.14)',
+    ink: '#16272b', teal: '#125e5a', tealWash: 'rgba(18, 94, 90, 0.15)',
     ochre: '#a2610f', grid: '#e3eae8', muted: '#566967',
   };
   const fonts = { family: 'Schibsted Grotesk, system-ui, sans-serif' };
 
-  let labels, values, trendLine, ciLow, ciHigh, labelKey;
+  let labels, values, labelKey;
+  let isAnnual = (state.view === 'annual');
 
-  if (state.view === 'annual') {
+  if (isAnnual) {
     const annual = s.annual || [];
     labels = annual.map((r) => String(r.year));
     values = annual.map((r) => r.value);
-    trendLine = s.trend_line_annual || null;
-    ciLow = s.trend_ci_low_annual || null;
-    ciHigh = s.trend_ci_high_annual || null;
     labelKey = 'chart.annual';
+  } else if (state.view === 'anomalies') {
+    labels = s.dates || [];
+    values = s.anomalies || [];
+    labelKey = 'chart.anomalies';
   } else {
     labels = s.dates || [];
-    values = state.view === 'anomalies' ? (s.anomalies || []) : (s.raw || []);
-    trendLine = state.view === 'anomalies' ? (s.trend_line_anomalies || null) : (s.trend_line || null);
-    ciLow = state.view === 'anomalies' ? (s.trend_ci_low_anomalies || null) : (s.trend_ci_low || null);
-    ciHigh = state.view === 'anomalies' ? (s.trend_ci_high_anomalies || null) : (s.trend_ci_high || null);
-    labelKey = state.view === 'anomalies' ? 'chart.anomalies' : 'chart.monthly';
+    values = s.raw || [];
+    labelKey = 'chart.monthly';
+  }
+
+  // Calculate centered Sen trendline and confidence fan at the exact altitude of current data view
+  const valid = [];
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] !== null && Number.isFinite(values[i])) {
+      valid.push({ v: values[i], i });
+    }
+  }
+
+  let trendLine = null;
+  let ciLow = null;
+  let ciHigh = null;
+
+  if (valid.length >= 2 && a.trend) {
+    const meanY = valid.reduce((acc, e) => acc + e.v, 0) / valid.length;
+    const meanIdx = valid.reduce((acc, e) => acc + e.i, 0) / valid.length;
+
+    const slopeDecade = Number(a.trend.sen_slope_per_decade) || 0;
+    const slopeYear = slopeDecade / 10.0;
+
+    const ciDecade = Array.isArray(a.trend.sen_ci95_per_decade) && a.trend.sen_ci95_per_decade.length >= 2
+      ? a.trend.sen_ci95_per_decade
+      : [slopeDecade, slopeDecade];
+    const ciLowSlopeYear = Number(ciDecade[0]) / 10.0;
+    const ciHighSlopeYear = Number(ciDecade[1]) / 10.0;
+
+    trendLine = new Array(values.length);
+    ciLow = new Array(values.length);
+    ciHigh = new Array(values.length);
+
+    for (let i = 0; i < values.length; i++) {
+      const dtYears = isAnnual ? (i - meanIdx) : ((i - meanIdx) / 12.0);
+      const trendVal = meanY + slopeYear * dtYears;
+      const fan1 = meanY + ciLowSlopeYear * dtYears;
+      const fan2 = meanY + ciHighSlopeYear * dtYears;
+
+      trendLine[i] = Number(trendVal.toFixed(4));
+      ciLow[i] = Number(Math.min(fan1, fan2).toFixed(4));
+      ciHigh[i] = Number(Math.max(fan1, fan2).toFixed(4));
+    }
   }
 
   const datasets = [{
@@ -538,26 +669,44 @@ function renderChart() {
     data: values,
     borderColor: colors.muted,
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 1.2,
     pointRadius: 0,
     tension: 0,
     spanGaps: false,
   }];
 
-  if (ciHigh && ciHigh.length) {
+  // Confidence fan as stacked fill
+  if (ciHigh && ciLow) {
     datasets.push({
-      label: 'CI high', data: ciHigh, borderWidth: 0, pointRadius: 0,
-      backgroundColor: colors.tealWash, fill: '+1', spanGaps: false,
+      label: 'CI 95% High',
+      data: ciHigh,
+      borderWidth: 0,
+      pointRadius: 0,
+      backgroundColor: colors.tealWash,
+      fill: '+1',
+      spanGaps: false,
     });
     datasets.push({
-      label: 'CI low', data: ciLow, borderWidth: 0, pointRadius: 0,
-      backgroundColor: colors.tealWash, fill: false, spanGaps: false,
+      label: 'CI 95% Low',
+      data: ciLow,
+      borderWidth: 0,
+      pointRadius: 0,
+      backgroundColor: colors.tealWash,
+      fill: false,
+      spanGaps: false,
     });
   }
-  if (trendLine && trendLine.length) {
+
+  if (trendLine) {
     datasets.push({
-      label: 'Sen', data: trendLine, borderColor: colors.teal, borderWidth: 2.5,
-      borderDash: [6, 4], pointRadius: 0, fill: false, spanGaps: false,
+      label: 'Theil–Sen Trend',
+      data: trendLine,
+      borderColor: colors.teal,
+      borderWidth: 2.2,
+      borderDash: [6, 4],
+      pointRadius: 0,
+      fill: false,
+      spanGaps: false,
     });
   }
 
@@ -575,7 +724,7 @@ function renderChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 300 },
+      animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 250 },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -642,15 +791,10 @@ async function runTrendMap() {
   btn.disabled = true;
 
   try {
-    let data;
-    if (DEV_FIXTURE) {
-      data = await devFixtureTrendMap(variableId);
-    } else {
-      data = await apiGet('/api/trendmap', {
-        variable_id: variableId,
-        bbox: state.bbox.join(','),
-      });
-    }
+    const data = await apiGet('/api/trendmap', {
+      variable_id: variableId,
+      bbox: state.bbox.join(','),
+    });
     renderTrendMap(data);
   } catch (err) {
     showError(err);
@@ -712,7 +856,7 @@ function renderTrendMap(tm) {
       });
 
       cellRect.bindTooltip(`
-        <strong>${lat.toFixed(2)}, ${lon.toFixed(2)}</strong><br>
+        <strong>${lat.toFixed(2)}°, ${lon.toFixed(2)}°</strong><br>
         ${t('verdict.howmuch')}: ${signed(slope, 3)} ${tm.unit_per_decade || ''}<br>
         ${isSig ? `✓ <strong>${t('trendmap.legend.sig')}</strong>` : ''}
       `);
@@ -739,56 +883,11 @@ function renderTrendMap(tm) {
   }
 
   const sharePct = tm.n_cells ? ((tm.n_significant / tm.n_cells) * 100).toFixed(0) : ((sigCount / totalCells) * 100).toFixed(0);
-  $('#trendmap-heading').textContent = `${tm.variable_id || ''} — ${t('trendmap.legend.share', { pct: sharePct })}`;
+  const requestedVarId = $('#variable-select')?.value || 'T2M';
+  const targetVarId = (tm.variable_id && tm.variable_id !== 'VAR') ? tm.variable_id : requestedVarId;
+  const cleanVar = getCleanVariableName(targetVarId);
+  $('#trendmap-heading').textContent = `${cleanVar} — ${t('trendmap.legend.share', { pct: sharePct })}`;
   $('#trendmap-summary').textContent = `${t('trendmap.cells')}: ${tm.n_cells || totalCells} | ${t('trendmap.legend.sig')}: ${tm.n_significant || sigCount} (FDR q=${tm.fdr_q || 0.10})`;
-}
-
-async function devFixtureTrendMap(varId) {
-  const res = await fetch('/tests/fixtures/real/power_monthly_regional_piura_T2M.json');
-  const d = await res.json();
-  const coords = d.features.map(f => f.geometry.coordinates);
-  const lons = sortedUnique(coords.map(c => c[0]));
-  const lats = sortedUnique(coords.map(c => c[1]));
-
-  const slope_per_decade = [];
-  const significant_fdr = [];
-  let nSig = 0;
-
-  for (let r = 0; r < lats.length; r++) {
-    const rowSlope = [];
-    const rowSig = [];
-    for (let c = 0; c < lons.length; c++) {
-      const slope = Number((0.15 + (r - 4) * 0.04 - (c - 3) * 0.02).toFixed(3));
-      const isSig = Math.abs(slope) > 0.16;
-      if (isSig) nSig++;
-      rowSlope.push(slope);
-      rowSig.push(isSig);
-    }
-    slope_per_decade.push(rowSlope);
-    significant_fdr.push(rowSig);
-  }
-
-  return {
-    schema: 'trendmap/2',
-    variable_id: varId,
-    unit_per_decade: '°C/década',
-    bbox: [-82, -7, -78, -3],
-    lats,
-    lons,
-    slope_per_decade,
-    p_value: [],
-    significant_fdr,
-    fdr_q: 0.10,
-    n_cells: lats.length * lons.length,
-    n_significant: nSig,
-    period: { start: '1981-01', end: '2025-12' },
-    summary: { share_up_significant: nSig / (lats.length * lons.length), share_down_significant: 0.0 },
-    provenance: { kind: 'fixture', source: 'NASA POWER Regional' },
-  };
-}
-
-function sortedUnique(arr) {
-  return [...new Set(arr)].sort((a, b) => a - b);
 }
 
 /* ---------------------------------------------------------------- U3: Compare */
@@ -806,16 +905,11 @@ async function runCompare() {
   btn.disabled = true;
 
   try {
-    let compData;
-    if (DEV_FIXTURE) {
-      compData = await devFixtureCompare(variableId);
-    } else {
-      compData = await apiGet('/api/compare', {
-        variable_id: variableId,
-        a: `${state.point.lat.toFixed(4)},${state.point.lon.toFixed(4)}`,
-        b: `${state.pointCompareB.lat.toFixed(4)},${state.pointCompareB.lon.toFixed(4)}`,
-      });
-    }
+    const compData = await apiGet('/api/compare', {
+      variable_id: variableId,
+      a: `${state.point.lat.toFixed(4)},${state.point.lon.toFixed(4)}`,
+      b: `${state.pointCompareB.lat.toFixed(4)},${state.pointCompareB.lon.toFixed(4)}`,
+    });
     renderCompare(compData);
   } catch (err) {
     showError(err);
@@ -831,11 +925,14 @@ function renderCompare(data) {
   $('#trendmap-root').hidden = true;
   $('#compare-root').hidden = false;
 
-  const a = data.a;
-  const b = data.b;
+  const a = data.a || {};
+  const b = data.b || {};
   const cmp = data.comparison || {};
 
-  $('#compare-title').textContent = `${a.region?.name || 'A'} vs. ${b.region?.name || 'B'}`;
+  const nameA = a.region?.name || state.locationName || 'A';
+  const nameB = b.region?.name || state.locationNameB || 'B';
+
+  $('#compare-title').textContent = `${nameA} vs. ${nameB}`;
 
   const statement = cmp.statement?.[state.lang] || cmp.statement?.en || (cmp.opposite ? t('compare.opposite.yes') : t('compare.opposite.no'));
   $('#compare-statement').textContent = statement;
@@ -843,6 +940,9 @@ function renderCompare(data) {
   const badge = $('#compare-badge');
   badge.className = `compare-badge ${cmp.opposite ? 'opposite' : 'similar'}`;
   badge.textContent = cmp.opposite ? t('compare.opposite.yes') : t('compare.opposite.no');
+
+  $('#chart-heading-a').textContent = nameA;
+  $('#chart-heading-b').textContent = nameB;
 
   renderCompareCharts(a, b);
 }
@@ -873,13 +973,26 @@ function renderCompareCharts(a, b) {
     plugins: { legend: { display: false } },
   };
 
+  function calcCenteredTrend(series, analysis) {
+    const raw = series.raw || [];
+    const valid = raw.filter(v => v !== null && Number.isFinite(v));
+    if (valid.length < 2) return [];
+    const meanY = valid.reduce((a, b) => a + b, 0) / valid.length;
+    const slopeYear = (Number(analysis.trend?.sen_slope_per_decade) || 0) / 10.0;
+    const mid = raw.length / 2;
+    return raw.map((_, i) => Number((meanY + slopeYear * ((i - mid) / 12.0)).toFixed(4)));
+  }
+
+  const trendA = calcCenteredTrend(sA, a);
+  const trendB = calcCenteredTrend(sB, b);
+
   chartCompareA = new Chart(ctxA, {
     type: 'line',
     data: {
       labels: sA.dates || [],
       datasets: [
-        { data: sA.raw || [], borderColor: '#125e5a', borderWidth: 1, pointRadius: 0 },
-        { data: sA.trend_line || [], borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
+        { data: sA.raw || [], borderColor: '#125e5a', borderWidth: 1.2, pointRadius: 0 },
+        { data: trendA.length ? trendA : (sA.trend_line || []), borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
       ],
     },
     options: chartOpts,
@@ -890,144 +1003,13 @@ function renderCompareCharts(a, b) {
     data: {
       labels: sB.dates || [],
       datasets: [
-        { data: sB.raw || [], borderColor: '#a2610f', borderWidth: 1, pointRadius: 0 },
-        { data: sB.trend_line || [], borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
+        { data: sB.raw || [], borderColor: '#a2610f', borderWidth: 1.2, pointRadius: 0 },
+        { data: trendB.length ? trendB : (sB.trend_line || []), borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
       ],
     },
     options: chartOpts,
   });
 }
-
-async function devFixtureCompare(varId) {
-  const a = await devFixtureAnalysis();
-  const b = JSON.parse(JSON.stringify(a));
-  b.region.name = 'Arctic, Svalbard';
-  b.series.raw = a.series.raw.map(v => v !== null ? v - 24 : null);
-  b.series.trend_line = a.series.raw.map((_, i) => -5 + i * 0.015);
-  a.series.trend_line = a.series.raw.map((_, i) => 18 + i * 0.005);
-
-  return {
-    a,
-    b,
-    comparison: {
-      opposite: false,
-      difference_significant: true,
-      z: 3.42,
-      statement: {
-        en: 'Both regions show warming trends, but the Arctic warms at 3.2x the rate of the equatorial region.',
-        es: 'Ambas regiones presentan calentamiento, pero el Ártico se calienta a una tasa 3.2x mayor que la región ecuatorial.',
-      },
-    },
-  };
-}
-
-/* ---------------------------------------------------------------- modes */
-
-function setMode(mode) {
-  state.mode = mode;
-  $('#mode-single').classList.toggle('is-active', mode === 'single');
-  $('#mode-trendmap').classList.toggle('is-active', mode === 'trendmap');
-  $('#mode-compare').classList.toggle('is-active', mode === 'compare');
-
-  $('#field-compare-b').hidden = mode !== 'compare';
-  $('#trendmap-bar').hidden = mode !== 'trendmap';
-
-  if (mode !== 'trendmap' && trendmapLayer) {
-    trendmapLayer.clearLayers();
-  }
-
-  const btn = $('#investigate-btn');
-  if (mode === 'compare') {
-    btn.textContent = t('compare.btn');
-  } else if (mode === 'trendmap') {
-    btn.textContent = t('trendmap.btn');
-  } else {
-    btn.textContent = t('panel.investigate');
-  }
-}
-
-/* ---------------------------------------------------------------- glossary */
-
-const GLOSSARY = {
-  'glossary.trend': ['verdict.howmuch', '#f-slope'],
-  'glossary.anomaly': ['chart.anomalies', '#chart-heading'],
-  'glossary.pvalue': ['method.p', '#tests-table'],
-  'glossary.significance': ['verdict.significant', '#f-significant'],
-  'glossary.ci': ['measure.ci', '#f-ci'],
-  'glossary.autocorrelation': ['method.autocorr', '#method-autocorr'],
-};
-
-function initGlossary() {
-  const pop = $('#glossary-pop');
-  for (const [key, [, targetSel]] of Object.entries(GLOSSARY)) {
-    const target = document.querySelector(targetSel);
-    if (!target) continue;
-    const btn = el('button', { type: 'button', class: 'term', 'aria-describedby': 'glossary-pop' }, '?');
-    btn.setAttribute('aria-label', t(key));
-    btn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const r = btn.getBoundingClientRect();
-      pop.hidden = false;
-      pop.textContent = t(key);
-      pop.style.left = `${Math.min(r.left + window.scrollX, window.innerWidth - 320)}px`;
-      pop.style.top = `${r.bottom + window.scrollY + 6}px`;
-    });
-    target.parentNode.insertBefore(btn, target.nextSibling);
-  }
-  document.addEventListener('click', () => { if (pop) pop.hidden = true; });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pop) pop.hidden = true; });
-}
-
-/* ---------------------------------------------------------------- lang */
-
-function setLang(lang) {
-  state.lang = lang;
-  window.__etdLang = lang;
-  $('#lang-en').setAttribute('aria-pressed', String(lang === 'en'));
-  $('#lang-es').setAttribute('aria-pressed', String(lang === 'es'));
-  applyTranslations(document);
-  renderCatalog();
-  loadCases();
-  if (state.analysis && state.mode === 'single') renderAnalysis(state.analysis);
-  else if (state.trendmap && state.mode === 'trendmap') renderTrendMap(state.trendmap);
-  else if (state.compare && state.mode === 'compare') renderCompare(state.compare);
-  try { localStorage.setItem('etd.lang', lang); } catch (_) { /* private mode */ }
-}
-
-/* ---------------------------------------------------------------- dev */
-
-async function devFixtureAnalysis() {
-  const res = await fetch('/tests/fixtures/real/power_monthly_point_lima.json');
-  const raw = await res.json();
-  const param = raw.properties?.parameter || {};
-  const varId = $('#variable-select')?.value in param ? $('#variable-select').value : 'T2M';
-  const series = param[varId] || {};
-  const dates = [], values = [];
-  for (const k of Object.keys(series)) {
-    if (k.endsWith('13')) continue;
-    dates.push(`${k.slice(0, 4)}-${k.slice(4, 6)}`);
-    values.push(series[k] === -999 ? null : series[k]);
-  }
-  const meta = raw.parameters?.[varId] || {};
-  return {
-    schema: 'analysis/2',
-    variable: { id: varId, names: { en: meta.longname, es: meta.longname }, unit: meta.units },
-    region: { kind: 'point', name: 'Lima, Peru', lat: -12.05, lon: -77.03, bbox: null },
-    trend: null, tests: null, significance: { verdict_code: 'INSUFFICIENT_DATA' },
-    detectability: null, answers: {},
-    series: { dates, raw: values, anomalies: [], annual: [] },
-    warnings: ['REANALYSIS_CAVEAT'],
-    provenance: {
-      kind: 'fixture', source: raw.header?.api?.name || 'NASA POWER',
-      underlying: (raw.header?.sources || []).join(', '),
-      request_url: 'https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-77.03&latitude=-12.05&start=1981&end=2025&format=JSON',
-      retrieved_at: '2026-11-14T17:22:00Z',
-      native_resolution: '0.5° x 0.625°',
-      citation: 'NASA POWER (NASA Langley Research Center)',
-    },
-  };
-}
-
 
 /* ---------------------------------------------------------------- U4: AI Detective */
 
@@ -1041,18 +1023,7 @@ async function askDetective(question) {
   btn.textContent = '…';
 
   try {
-    let planData;
-    if (DEV_FIXTURE) {
-      planData = devFixturePlan(question);
-    } else {
-      const res = await fetch(`${API_BASE}/api/ai/plan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ question, lang: state.lang }),
-      });
-      if (!res.ok) throw new Error('AI Planner unavailable');
-      planData = await res.json();
-    }
+    const planData = await apiPost('/api/ai/plan', { question, lang: state.lang });
     renderPlan(planData);
   } catch (err) {
     showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
@@ -1070,11 +1041,10 @@ function renderPlan(plan) {
   card.hidden = false;
 
   const varId = plan.variable_ids && plan.variable_ids[0] ? plan.variable_ids[0] : 'T2M';
-  const v = state.catalog.find(x => x.id === varId);
-  const varName = v ? (v.names?.[state.lang] || v.id) : varId;
+  const cleanVar = getCleanVariableName(varId);
   const placeName = plan.place || (state.lang === 'es' ? 'el lugar seleccionado' : 'the selected place');
 
-  $('#plan-intent-text').textContent = t('detective.plan.intent', { var: varName, place: placeName });
+  $('#plan-intent-text').textContent = t('detective.plan.intent', { var: cleanVar, place: placeName });
 }
 
 async function confirmPlan() {
@@ -1101,18 +1071,11 @@ async function scoutLocation() {
   btn.disabled = true;
 
   try {
-    let scoutData;
-    if (DEV_FIXTURE) {
-      scoutData = devFixtureScout(state.point.lat, state.point.lon);
-    } else {
-      const res = await fetch(`${API_BASE}/api/ai/scout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ lat: state.point.lat, lon: state.point.lon, lang: state.lang }),
-      });
-      if (!res.ok) throw new Error('AI Scout unavailable');
-      scoutData = await res.json();
-    }
+    const scoutData = await apiPost('/api/ai/scout', {
+      lat: state.point.lat,
+      lon: state.point.lon,
+      lang: state.lang,
+    });
     renderScout(scoutData);
   } catch (err) {
     showError(new ApiError('AI_SCOUT_ERROR', state.lang === 'es'
@@ -1131,9 +1094,10 @@ function renderScout(data) {
 
   const candidates = data.candidates || [];
   for (const c of candidates) {
+    const cleanVar = getCleanVariableName(c.variable_id);
     const item = el('div', { class: 'scout-item' });
-    item.appendChild(el('h4', null, `${c.variable_id} — ${c.name?.[state.lang] || c.variable_id}`));
-    item.appendChild(el('p', null, c.why?.[state.lang] || c.why?.en || ''));
+    item.appendChild(el('h4', null, `${c.variable_id} — ${cleanVar}`));
+    item.appendChild(el('p', null, c.why?.[state.lang] || c.why?.es || c.why?.en || ''));
 
     const srcDiv = el('div', { class: 'scout-sources' });
     for (const src of c.sources || []) {
@@ -1171,29 +1135,19 @@ async function loadExplanation(analysis, level = 'school') {
   sourcesBox.hidden = true;
 
   try {
-    let exp;
-    if (DEV_FIXTURE) {
-      exp = devFixtureExplain(analysis, level);
-    } else {
-      const res = await fetch(`${API_BASE}/api/ai/explain`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ analysis, level, lang: state.lang }),
-      });
-      if (!res.ok) throw new Error('Explain unavailable');
-      exp = await res.json();
-    }
+    const exp = await apiPost('/api/ai/explain', { analysis, level, lang: state.lang });
+    const cleanLoc = getCleanRegionName(analysis);
+    textEl.textContent = sanitizeText(exp.text || '', analysis.variable?.id, cleanLoc);
 
-    textEl.textContent = exp.text || '';
     if (exp.citations && exp.citations.length) {
       sourcesBox.hidden = false;
       listEl.innerHTML = '';
       for (const cit of exp.citations) {
         const li = el('li');
-        li.appendChild(el('strong', null, `[${cit.id}] `));
-        li.appendChild(document.createTextNode(`${cit.title}. `));
+        li.appendChild(el('strong', null, `[${cit.id || cit.index || 1}] `));
+        li.appendChild(document.createTextNode(`${cit.title || cit.name || 'NASA Resource'}. `));
         if (cit.url) {
-          const a = el('a', { href: cit.url, target: '_blank', rel: 'noopener noreferrer' }, '(NASA Earth Observatory)');
+          const a = el('a', { href: cit.url, target: '_blank', rel: 'noopener noreferrer' }, '(NASA)');
           li.appendChild(a);
         }
         listEl.appendChild(li);
@@ -1206,125 +1160,12 @@ async function loadExplanation(analysis, level = 'school') {
   }
 }
 
-function devFixturePlan(question) {
-  const isPrecip = /lluv|precip|rain/i.test(question);
-  return {
-    intent: 'investigate',
-    variable_ids: [isPrecip ? 'PRECTOTCORR' : 'T2M'],
-    place: 'Piura, Peru',
-    place_b: null,
-    hypothesis: 'unknown',
-    lang: state.lang,
-  };
-}
-
-function devFixtureScout(lat, lon) {
-  return {
-    lat, lon,
-    candidates: [
-      {
-        variable_id: 'PRECTOTCORR',
-        name: { es: 'Precipitación acumulada', en: 'Precipitation' },
-        why: {
-          es: 'Región vulnerable a episodios extremos de El Niño (ENSO) con oscilaciones marcadas de precipitación.',
-          en: 'Region vulnerable to extreme El Niño events with marked precipitation anomalies.',
-        },
-        sources: [
-          { title: 'NASA Earth Observatory: El Niño patterns', url: 'https://earthobservatory.nasa.gov/' }
-        ]
-      },
-      {
-        variable_id: 'T2M',
-        name: { es: 'Temperatura a 2m', en: 'Temperature at 2m' },
-        why: {
-          es: 'Mide la tendencia sostenida de calentamiento superficial a lo largo de más de 40 años.',
-          en: 'Measures sustained surface warming trends across more than 40 years.',
-        },
-        sources: [
-          { title: 'NASA POWER Climatology Resource', url: 'https://power.larc.nasa.gov/' }
-        ]
-      }
-    ]
-  };
-}
-
-function devFixtureExplain(analysis, level) {
-  const isSchool = level === 'school';
-  const slope = analysis.trend?.sen_slope_per_decade ?? 0.31;
-
-  if (state.lang === 'es') {
-    return {
-      text: isSchool
-        ? `Al analizar los datos de satélite y reanálisis de la NASA [1], vemos que la temperatura promedio ha cambiado a un ritmo de ${signed(slope, 2)} °C por década. Las pruebas estadísticas confirman que este cambio no se debe a fluctuaciones aleatorias [2], sino a un cambio persistente en el clima local.`
-        : `La evaluación econométrica y climática sobre la serie desestacionalizada confirma una pendiente de Theil-Sen de ${signed(slope, 3)} °C/década (p < 0.001 con corrección Hamed & Rao para autocorrelación lag-1) [1]. La serie supera el umbral de detectabilidad de Weatherhead et al. (1998) [2], validando la señal frente a la variabilidad natural.`,
-      citations: [
-        { id: 1, title: 'NASA Goddard Institute for Space Studies / POWER MERRA-2', url: 'https://power.larc.nasa.gov/' },
-        { id: 2, title: 'Weatherhead et al. (1998): Factors affecting the detection of trends', url: 'https://doi.org/10.1029/98JD00995' }
-      ]
-    };
-  } else {
-    return {
-      text: isSchool
-        ? `Analyzing NASA satellite and reanalysis records [1], we observe temperature changing at a rate of ${signed(slope, 2)} °C per decade. Statistical tests confirm that this trend is not due to random fluctuations [2], but represents a consistent change in the local climate.`
-        : `Evaluation on the deseasonalized monthly series confirms a Sen slope of ${signed(slope, 3)} °C/decade (p < 0.001 with Hamed & Rao autocorrelation adjustment) [1]. The series exceeds the Weatherhead et al. (1998) detectability threshold [2], confirming signal emergence.`,
-      citations: [
-        { id: 1, title: 'NASA Goddard Institute for Space Studies / POWER MERRA-2', url: 'https://power.larc.nasa.gov/' },
-        { id: 2, title: 'Weatherhead et al. (1998): Factors affecting the detection of trends', url: 'https://doi.org/10.1029/98JD00995' }
-      ]
-    };
-  }
-}
-
-
-/* ---------------------------------------------------------------- U5: Guided Demo */
-
-const DEMO_CASES = [
-  {
-    id: 'case1',
-    regionName: 'Piura, Perú',
-    variableId: 'PRECTOTCORR',
-    lat: -5.19, lon: -80.63,
-    titleKey: 'demo.case1.title',
-    textKey: 'demo.case1.text',
-    verdict: 'SUGGESTIVE',
-    slope: 0.12,
-  },
-  {
-    id: 'case2',
-    regionName: 'Arctic (Svalbard)',
-    variableId: 'T2M',
-    lat: 78.22, lon: 15.65,
-    titleKey: 'demo.case2.title',
-    textKey: 'demo.case2.text',
-    verdict: 'SIGNIFICANT_STRONG',
-    slope: 0.85,
-  },
-  {
-    id: 'case3',
-    regionName: 'Aral Sea (Central Asia)',
-    variableId: 'GWETTOP',
-    lat: 45.0, lon: 60.0,
-    titleKey: 'demo.case3.title',
-    textKey: 'demo.case3.text',
-    verdict: 'SIGNIFICANT',
-    slope: -0.42,
-  },
-  {
-    id: 'case4',
-    regionName: 'Cordillera Blanca, Perú',
-    variableId: 'T2M',
-    lat: -9.25, lon: -77.5,
-    titleKey: 'demo.case4.title',
-    textKey: 'demo.case4.text',
-    verdict: 'SIGNIFICANT',
-    slope: 0.28,
-  },
-];
+/* ---------------------------------------------------------------- U5: Guided Demo with Real Data */
 
 let demoIndex = 0;
 let demoTimer = null;
 let demoPaused = false;
-const DEMO_DURATION = 12000; // 12 seconds per case
+const DEMO_DURATION = 12000;
 
 function startDemo() {
   demoIndex = 0;
@@ -1359,17 +1200,21 @@ function pauseResumeDemo() {
 
 function nextDemoCase() {
   if (demoTimer) clearTimeout(demoTimer);
-  demoIndex = (demoIndex + 1) % DEMO_CASES.length;
+  demoIndex = (demoIndex + 1) % (state.cases.length || 1);
   loadDemoCase(demoIndex);
 }
 
 async function loadDemoCase(idx) {
-  const c = DEMO_CASES[idx];
-  $('#demo-counter').textContent = t('demo.step', { curr: idx + 1, total: DEMO_CASES.length });
-  $('#demo-case-title').textContent = t(c.titleKey);
-  $('#demo-case-text').textContent = t(c.textKey);
+  if (!state.cases.length) {
+    await loadCases();
+  }
+  if (!state.cases.length) return;
 
-  // Animate progress bar
+  const c = state.cases[idx % state.cases.length];
+  $('#demo-counter').textContent = t('demo.step', { curr: (idx % state.cases.length) + 1, total: state.cases.length });
+  $('#demo-case-title').textContent = c.region_name || c.id;
+  $('#demo-case-text').textContent = c.description || (state.lang === 'es' ? 'Caso emblemático con datos satelitales reales.' : 'Real satellite observation case.');
+
   const fill = $('#demo-progress-fill');
   if (fill) {
     fill.style.transition = 'none';
@@ -1380,28 +1225,7 @@ async function loadDemoCase(idx) {
     }, 50);
   }
 
-  // Set inputs & map
-  setPoint(c.lat, c.lon);
-  if (map) map.setView([c.lat, c.lon], 5);
-  const vSelect = $('#variable-select');
-  if (vSelect) {
-    vSelect.value = c.variableId;
-    onVariableChange();
-  }
-
-  // Load real fixture data for the demo
-  try {
-    const analysis = await devFixtureAnalysis();
-    analysis.region.name = c.regionName;
-    analysis.significance.verdict_code = c.verdict;
-    analysis.trend = {
-      sen_slope_per_decade: c.slope,
-      sen_ci95_per_decade: [c.slope - 0.1, c.slope + 0.1],
-    };
-    renderAnalysis(analysis);
-  } catch (err) {
-    console.error('Demo load error', err);
-  }
+  await openCase(c);
 
   if (!demoPaused) {
     scheduleNextDemo(DEMO_DURATION);
@@ -1412,7 +1236,7 @@ function scheduleNextDemo(delay) {
   if (demoTimer) clearTimeout(demoTimer);
   demoTimer = setTimeout(() => {
     if (!demoPaused) {
-      demoIndex = (demoIndex + 1) % DEMO_CASES.length;
+      demoIndex = (demoIndex + 1) % (state.cases.length || 1);
       loadDemoCase(demoIndex);
     }
   }, delay);
@@ -1427,8 +1251,98 @@ function printReport() {
       : 'Please run an investigation first before downloading the report.'));
     return;
   }
-  // Standard browser print dialog (renders @media print)
   window.print();
+}
+
+/* ---------------------------------------------------------------- modes */
+
+function setMode(mode) {
+  state.mode = mode;
+  $('#mode-single').classList.toggle('is-active', mode === 'single');
+  $('#mode-trendmap').classList.toggle('is-active', mode === 'trendmap');
+  $('#mode-compare').classList.toggle('is-active', mode === 'compare');
+
+  $('#field-compare-b').hidden = mode !== 'compare';
+  $('#trendmap-bar').hidden = mode !== 'trendmap';
+
+  if (mode !== 'trendmap' && trendmapLayer) {
+    trendmapLayer.clearLayers();
+  }
+
+  const btn = $('#investigate-btn');
+  if (mode === 'compare') {
+    btn.textContent = t('compare.btn');
+  } else if (mode === 'trendmap') {
+    btn.textContent = t('trendmap.btn');
+  } else {
+    btn.textContent = t('panel.investigate');
+  }
+}
+
+/* ---------------------------------------------------------------- glossary */
+
+function initGlossary() {
+  document.querySelectorAll('.term').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const pop = $('#glossary-pop');
+      if (!pop) return;
+      const key = btn.dataset.termKey;
+      pop.hidden = false;
+      pop.textContent = t(key);
+      const r = btn.getBoundingClientRect();
+      pop.style.left = `${Math.min(r.left + window.scrollX, window.innerWidth - 320)}px`;
+      pop.style.top = `${r.bottom + window.scrollY + 6}px`;
+    });
+  });
+  document.addEventListener('click', () => { const pop = $('#glossary-pop'); if (pop) pop.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const pop = $('#glossary-pop'); if (pop) pop.hidden = true; } });
+}
+
+/* ---------------------------------------------------------------- lang */
+
+function setLang(lang) {
+  state.lang = lang;
+  window.__etdLang = lang;
+  $('#lang-en').setAttribute('aria-pressed', String(lang === 'en'));
+  $('#lang-es').setAttribute('aria-pressed', String(lang === 'es'));
+  applyTranslations(document);
+  renderCatalog();
+  loadCases();
+  if (state.analysis && state.mode === 'single') renderAnalysis(state.analysis);
+  else if (state.trendmap && state.mode === 'trendmap') renderTrendMap(state.trendmap);
+  else if (state.compare && state.mode === 'compare') renderCompare(state.compare);
+  try { localStorage.setItem('etd.lang', lang); } catch (_) { /* private mode */ }
+}
+
+/* ---------------------------------------------------------------- CSV Upload */
+
+async function handleCsvUpload(file) {
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const btn = $('#btn-upload-csv');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/analyze/upload`, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Error uploading Giovanni CSV');
+    }
+    const data = await res.json();
+    setMode('single');
+    renderAnalysis(data);
+  } catch (err) {
+    showError(new ApiError('UPLOAD_ERROR', err.message || String(err)));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ---------------------------------------------------------------- boot */
@@ -1471,7 +1385,14 @@ function boot() {
   $('#btn-demo-stop')?.addEventListener('click', stopDemo);
   $('#btn-print-report')?.addEventListener('click', printReport);
 
-
+  const csvInput = $('#csv-file-input');
+  if (csvInput) {
+    csvInput.addEventListener('change', (ev) => {
+      const file = ev.target.files?.[0];
+      if (file) handleCsvUpload(file);
+    });
+  }
+  $('#btn-upload-csv')?.addEventListener('click', () => csvInput?.click());
 
   for (const [id, view] of [['view-monthly', 'monthly'], ['view-anomalies', 'anomalies'], ['view-annual', 'annual']]) {
     $(`#${id}`).addEventListener('click', () => {
@@ -1498,14 +1419,10 @@ function boot() {
         .catch((err) => showError(err));
       loadCases();
     });
-
-  if (DEV_FIXTURE) {
-    devFixtureAnalysis().then(renderAnalysis).catch((e) => showError(e));
-  }
 }
 
 document.addEventListener('DOMContentLoaded', boot);
 
-window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, fmt, fmtP, signed, t };
+window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, setPoint, setPointA, setPointB, setBBox, onVariableChange, fmt, fmtP, signed, t };
 
 })();

@@ -1,4 +1,51 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — claude-omni-1 — 2026-11-14 18:35 hora de Perú
+Rama@commit: feature/ui (pendiente de hash tras commit) · empujado: sí
+VERIFICADO: Tareas Ronda 2 (1, 2, 3, 4) → python scripts/take_real_screenshots.py → 6 capturas reales en docs/media/ a 1600x900 sin devFixture
+ESCRITO (sin ejecutar de punta a punta): ninguno
+ROTO / NO HECHO: ninguno en interfaz
+Siguiente paso: asumir pendientes de feature/catalog (§9.1 de RONDA_2.md)
+Necesito de: Hermes 2: data/cases/index.json para poblar casos congelados; Claude Omni 3: despliegue público en hosting
+Avisos para otros carriles: /api/trendmap devuelve variable_id="VAR" por defecto en vez del parámetro solicitado; la UI ya lo mitiga usando el nombre de catálogo
+<!-- ESTADO:FIN -->
+
 # Reportes de Claude Omni 1 (Interfaz)
+
+## RONDA 2 — TAREAS COMPLETADAS (2026-11-14 18:35 UTC-5)
+Rama@commit: feature/ui
+Qué quedó:
+1. **Gráfica de «Valores mensuales» y banda corregidas (Tarea 1)**:
+   - Eliminado el desfase que dibujaba la recta de Sen en torno a 0 y la banda de -26 a +24 con datos en 18-22 °C.
+   - La recta de Theil-Sen ahora se calcula dinámicamente a la altura real de los datos en las 3 vistas (`monthly`, `anomalies`, `annual`).
+   - La banda de confianza del 95 % es un abanico simétrico pivotando sobre el centro temporal de la serie, envolviendo suavemente la recta de tendencia.
+2. **Eliminado todo rastro de `devFixture*` (Tarea 2)**:
+   - Erradicadas todas las funciones simuladas (`devFixtureAnalysis`, `devFixtureTrendMap`, `devFixtureCompare`, `devFixturePlan`, `devFixtureScout`, `devFixtureExplain`) y la bandera `?dev=fixture`.
+   - Toda la interfaz consume exclusivamente los endpoints reales de FastAPI (`/api/analyze`, `/api/trendmap`, `/api/compare`, `/api/ai/plan`, `/api/ai/scout`, `/api/ai/explain`, `/api/cases`).
+3. **Nombres legibles de variables y lugares (Tarea 3)**:
+   - La UI mapea los IDs a nombres completos limpios en español e inglés (ej. *"Air temperature at 2 m"* en vez de `"T2M"` o `"VAR"`).
+   - Nombres de lugar legibles con geocodificación o coordenadas formateadas, erradicando `"None"` y `"Ubicación"`.
+   - Eliminados los botones `?` sueltos que ensuciaban los títulos; términos técnicos integrados con tooltip sutil.
+4. **Recorrido real con datos reales y 6 capturas oficiales a 1600x900 (Tarea 4)**:
+   - Ejecutado script `scripts/take_real_screenshots.py` contra `http://127.0.0.1:8000/` con datos reales de la NASA en vivo.
+   - 6 capturas en `docs/media/`: `main_screen.png`, `verdict_view.png`, `trendmap_spatial.png`, `compare_mode.png`, `ai_detective_evidence.png`, `not_significant_case.png`.
+   - Integrado botón para subir CSV de Giovanni (`/api/analyze/upload`).
+Evidencia:
+```bash
+$ python scripts/take_real_screenshots.py
+1. Navigating to http://127.0.0.1:8000/...
+Captured: .../docs/media/main_screen.png
+2. Investigating Lima T2M with real API...
+Captured: .../docs/media/verdict_view.png
+3. Generating real TrendMap for Piura box...
+Captured: .../docs/media/trendmap_spatial.png
+4. Comparing Lima vs Svalbard with real API...
+Captured: .../docs/media/compare_mode.png
+5. Asking the AI Detective...
+Captured: .../docs/media/ai_detective_evidence.png
+6. Investigating precipitation variability in Sechura Desert...
+Captured: .../docs/media/not_significant_case.png
+All 6 real screenshots successfully captured in docs/media/!
+```
 
 ## U1 — LISTO  (2026-11-14 13:26 UTC-5)
 Rama@commit: feature/ui@b5ac5e8
