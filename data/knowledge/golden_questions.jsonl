@@ -1,0 +1,50 @@
+{"question": "¿Está lloviendo menos en Piura en los últimos años?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "¿Hace más calor ahora en Lima que cuando era niño?", "lang": "es", "expected_variable_ids": ["T2M"]}
+{"question": "¿El suelo de Ica se está secando?", "lang": "es", "expected_variable_ids": ["GWETTOP", "EVLAND"]}
+{"question": "¿Cae más nieve en la Cordillera Blanca que antes?", "lang": "es", "expected_variable_ids": ["SNODP", "PRECTOTCORR"]}
+{"question": "¿El aire de Lima está más sucio que hace veinte años?", "lang": "es", "expected_variable_ids": ["AOD_55"]}
+{"question": "¿Por qué hay más humo en el cielo de la Amazonía en septiembre?", "lang": "es", "expected_variable_ids": ["AOD_55", "PRECTOTCORR"]}
+{"question": "¿Las nubes cubren más el cielo de Cusco ahora?", "lang": "es", "expected_variable_ids": ["CLOUD_AMT"]}
+{"question": "¿Hay más radiación solar en Arequipa en los últimos años?", "lang": "es", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
+{"question": "¿El hielo del Ártico está desapareciendo?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_N"]}
+{"question": "¿El hielo de la Antártida crece o se reduce?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_S"]}
+{"question": "¿El planeta se está calentando de verdad?", "lang": "es", "expected_variable_ids": ["GISTEMP_TANOM", "T2M"]}
+{"question": "¿La humedad del aire en Iquitos cambió en las últimas décadas?", "lang": "es", "expected_variable_ids": ["RH2M", "TQV"]}
+{"question": "¿Cómo va la evaporación en el valle de Ica?", "lang": "es", "expected_variable_ids": ["EVLAND", "GWETTOP"]}
+{"question": "¿Está aumentando el ozono sobre el Perú?", "lang": "es", "expected_variable_ids": ["TO3"]}
+{"question": "¿Qué ha pasado con la lluvia en la selva de Madre de Dios?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "Temperatura de la superficie del suelo en Puno, tendencia", "lang": "es", "expected_variable_ids": ["TS"]}
+{"question": "¿El lago Titicaca está perdiendo agua por más evaporación?", "lang": "es", "expected_variable_ids": ["EVLAND", "GWETTOP"]}
+{"question": "¿La garúa de Lima se está volviendo más frecuente?", "lang": "es", "expected_variable_ids": ["RH2M", "CLOUD_AMT"]}
+{"question": "¿El vapor de agua sobre la costa peruana está cambiando?", "lang": "es", "expected_variable_ids": ["TQV"]}
+{"question": "¿Qué variable debo mirar para saber si Piura se desertifica?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR", "GWETTOP"]}
+{"question": "¿La nieve de los Andes se derrite antes ahora?", "lang": "es", "expected_variable_ids": ["SNODP", "T2M"]}
+{"question": "¿Las olas de calor en la selva son más largas?", "lang": "es", "expected_variable_ids": ["T2M"]}
+{"question": "¿El polvo del desierto de Sechura llega más lejos ahora?", "lang": "es", "expected_variable_ids": ["AOD_55"]}
+{"question": "¿La radiación ultravioleta en la puna ha cambiado?", "lang": "es", "expected_variable_ids": ["TO3", "ALLSKY_SFC_SW_DWN"]}
+{"question": "¿Las lluvias de El Niño son más intensas en Tumbes?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "Is it raining less in Piura than it used to?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "Is Lima getting hotter over the decades?", "lang": "en", "expected_variable_ids": ["T2M"]}
+{"question": "Is the soil in Ica drying out?", "lang": "en", "expected_variable_ids": ["GWETTOP", "EVLAND"]}
+{"question": "Is there less snow in the Cordillera Blanca now?", "lang": "en", "expected_variable_ids": ["SNODP", "PRECTOTCORR"]}
+{"question": "Is the air over Lima dirtier than twenty years ago?", "lang": "en", "expected_variable_ids": ["AOD_55"]}
+{"question": "Why is there more smoke over the Amazon in September?", "lang": "en", "expected_variable_ids": ["AOD_55", "PRECTOTCORR"]}
+{"question": "Is the sky over Cusco cloudier than before?", "lang": "en", "expected_variable_ids": ["CLOUD_AMT"]}
+{"question": "Is Arequipa getting more solar radiation?", "lang": "en", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"]}
+{"question": "Is Arctic sea ice disappearing?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_N"]}
+{"question": "Is Antarctic sea ice growing or shrinking?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_S"]}
+{"question": "Is the planet really warming?", "lang": "en", "expected_variable_ids": ["GISTEMP_TANOM", "T2M"]}
+{"question": "Has the humidity in Iquitos changed in recent decades?", "lang": "en", "expected_variable_ids": ["RH2M", "TQV"]}
+{"question": "How is evaporation in the Ica Valley changing?", "lang": "en", "expected_variable_ids": ["EVLAND", "GWETTOP"]}
+{"question": "Is ozone over Peru increasing?", "lang": "en", "expected_variable_ids": ["TO3"]}
+{"question": "What is happening to rainfall in the Madre de Dios rainforest?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
+{"question": "Ground surface temperature in Puno, trend", "lang": "en", "expected_variable_ids": ["TS"]}
+{"question": "Is Lake Titicaca losing water to more evaporation?", "lang": "en", "expected_variable_ids": ["EVLAND", "GWETTOP"]}
+{"question": "Is Lima's drizzle becoming more frequent?", "lang": "en", "expected_variable_ids": ["RH2M", "CLOUD_AMT"]}
+{"question": "Is the water vapour over the Peruvian coast changing?", "lang": "en", "expected_variable_ids": ["TQV"]}
+{"question": "Which variable tells me if Piura is turning into desert?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR", "GWETTOP"]}
+{"question": "Is Andean snow melting earlier now?", "lang": "en", "expected_variable_ids": ["SNODP", "T2M"]}
+{"question": "Are heat waves in the rainforest getting longer?", "lang": "en", "expected_variable_ids": ["T2M"]}
+{"question": "Is dust from the Sechura Desert travelling farther now?", "lang": "en", "expected_variable_ids": ["AOD_55"]}
+{"question": "Has ultraviolet radiation on the high plateau changed?", "lang": "en", "expected_variable_ids": ["TO3", "ALLSKY_SFC_SW_DWN"]}
+{"question": "Are El Nino rains stronger in Tumbes?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
