@@ -1,3 +1,16 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — claude-omni-3 — 2026-11-14 17:57 (hora de Perú)
+Rama@commit: feature/api@024a24e (fast-forward de origin/main) · empujado: sí
+VERIFICADO: fusión `origin/main` en `feature/api` → avance limpio, sin conflicto → `pytest -q` 196 passed, 2 failed, 9 skipped
+VERIFICADO: smoke integrado → `smoke_api.py http://127.0.0.1:8765` → 10 passed · 0 skipped · 0 failed (analyze Lima 838 ms, trendmap 63 celdas, UI 17 307 B)
+VERIFICADO: honestidad de la procedencia y motor v2 → `pytest tests/test_system.py -q` → 7 passed in 1.62s
+ESCRITO (sin ejecutar de punta a punta): nada pendiente en mi carril
+ROTO / NO HECHO: A5 sin desplegar (falta el inicio de sesión del hosting, lo hace el humano); A6 con casos no regenerados; `/api/cases` en 503
+Siguiente paso: URL pública, luego A5; sin ella, A6 no tiene contra qué hornear
+Necesito de: humano → iniciar sesión en el hosting (Railway/GitHub Pages) y pasarme la URL; Hermes 2 → `data/cases/index.json`
+Avisos para otros carriles: las 2 pruebas rojas son de `tests/detective/test_pipeline.py` (`MODIS_NDVI`, Claude Omni 2), no de la API; `answers.where` dice «None» y `region.name` viene `null` del ETL (carril de Antigravity 1)
+<!-- ESTADO:FIN -->
+
 # Claude Omni 3 — API v2 y despliegue
 
 Carril: `feature/api` · Carpetas: `src/api/`, `tests/api/`, `Dockerfile`, `scripts/smoke_api.py`
