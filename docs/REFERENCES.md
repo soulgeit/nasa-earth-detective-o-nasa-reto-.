@@ -1,5 +1,8 @@
 # References — Space Agency Partner Data and Other References
 
+> **SI-assisted: hermes-1 (qwen3.6)** — Redactado con ayuda de IA, contenido verificado.
+References — Space Agency Partner Data and Other References
+
 ## Space Agency Partner Data
 
 ### NASA POWER (NASA Langley Research Center)
