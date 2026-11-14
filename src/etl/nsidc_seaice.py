@@ -1,213 +1,151 @@
-# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
+# SI-assisted: Antigravity 1 (Claude Opus 5.5)
 """
-Conector oficial para NSIDC Sea Ice Index v4 (National Snow and Ice Data Center / NOAA).
-Obtiene series temporales mensuales de extensión de hielo marino en el Ártico y Antártico (1979-presente).
-Cumple con el contrato timeseries/2 y las reglas de cero datos sintéticos.
+Conector NSIDC Sea Ice Index v4 (extension mensual, hemisferios norte y sur).
+
+Formato verificado en vivo el 2026-11-14
+(`https://noaadata.apps.nsidc.org/NOAA/G02135/{north|south}/monthly/data/{N|S}_{MM}_extent_v4.0.csv`):
+
+    year, mo,source_dataset, region, extent,   area
+    1979,  9,    NSIDC-0051,      N,   7.05,   4.58
+
+- 12 ficheros por hemisferio, uno por mes: se piden todos y se ordenan.
+- `extent` en millones de km^2 (la columna `area` es la superficie con hielo).
+- La columna `source_dataset` cambia a mitad de serie (NSIDC-0051 -> NSIDC-0803):
+  se anota en `provenance` como aviso de continuidad.
 """
 
-import os
+from __future__ import annotations
+
 import csv
-import time
 import hashlib
-from pathlib import Path
-from typing import Dict, Any, List, Optional
-import urllib.request
-import urllib.error
+import io
+from datetime import datetime, timezone
 
-from src.etl.power import DataUnavailable
+from . import cache, catalog
+from .errors import DataUnavailable
+from .http import UpstreamError, UpstreamTimeout, get as http_get
 
-NSIDC_BASE_URL = "https://noaadata.apps.nsidc.org/NOAA/G02135"
-CACHE_TTL_SECONDS = 30 * 24 * 3600  # 30 días
-
-
-def _get_cache_dir() -> Path:
-    """Retorna directorio de caché persistente para NSIDC."""
-    root_dir = Path(__file__).resolve().parent.parent.parent
-    cache_dir = root_dir / "data" / "cache" / "nsidc"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
+BASE = "https://noaadata.apps.nsidc.org/NOAA/G02135"
+CACHE_TTL_DAYS = 30.0
+CITATION = "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135"
 
 
-def _get_fixtures_dir() -> Path:
-    """Retorna directorio de fixtures reales."""
-    root_dir = Path(__file__).resolve().parent.parent.parent
-    return root_dir / "tests" / "fixtures" / "real"
+def _hemisphere(card: dict) -> tuple[str, str]:
+    param = str(card.get("connector_param") or "").lower()
+    if param.startswith("south") or param == "s":
+        return "south", "S"
+    return "north", "N"
 
 
-def fetch_nsidc_monthly_series(hemi: str, code: str) -> tuple[List[Dict[str, Any]], str, str]:
-    """
-    Obtiene la serie temporal completa de extensión mensual para el hemisferio dado ('N' o 'S').
-    Retorna tupla: (lista_records, sha256_hash, kind_provenance).
-    """
-    cache_dir = _get_cache_dir()
-    cache_file = cache_dir / f"nsidc_{code}_monthly_all.csv"
-
-    # 1. Intentar caché vigente
-    if cache_file.exists():
-        age = time.time() - cache_file.stat().st_mtime
-        if age < CACHE_TTL_SECONDS:
-            try:
-                content = cache_file.read_text(encoding="utf-8")
-                h = hashlib.sha256(content.encode("utf-8")).hexdigest()
-                records = _parse_compiled_csv(content)
-                return records, h, "nasa_api"
-            except Exception:
-                pass
-
-    # 2. Intentar leer fixture compilado local (real NASA/NOAA data)
-    fixture_file = _get_fixtures_dir() / f"nsidc_seaice_{code}_monthly_all.csv"
-    if fixture_file.exists():
-        try:
-            content = fixture_file.read_text(encoding="utf-8")
-            h = hashlib.sha256(content.encode("utf-8")).hexdigest()
-            records = _parse_compiled_csv(content)
-            # Guardar en cache para próximas llamadas
-            try:
-                cache_file.write_text(content, encoding="utf-8")
-            except Exception:
-                pass
-            return records, h, "nasa_file"
-        except Exception:
-            pass
-
-    # 3. Intentar descarga en vivo de los 12 archivos mensuales si la red está disponible
-    all_points = {}
-    total_bytes = b""
-    try:
-        hemi_name = "north" if code == "N" else "south"
-        for m in range(1, 13):
-            url = f"{NSIDC_BASE_URL}/{hemi_name}/monthly/data/{code}_{m:02d}_extent_v4.0.csv"
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "EarthTrend-Detective/2.0 (NASA Space Apps Challenge 2026)"}
-            )
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                raw_chunk = resp.read()
-                total_bytes += raw_chunk
-                lines = raw_chunk.decode("utf-8").splitlines()
-                reader = csv.reader(lines)
-                header = next(reader, None)
-                for row in reader:
-                    if len(row) >= 5:
-                        try:
-                            yr = int(row[0].strip())
-                            mo = int(row[1].strip())
-                            val_str = row[4].strip()
-                            val = float(val_str)
-                            if val < -900:
-                                val = None
-                            ym = f"{yr:04d}-{mo:02d}"
-                            all_points[ym] = val
-                        except (ValueError, IndexError):
-                            continue
-
-        if all_points:
-            sorted_ym = sorted(all_points.keys())
-            records = [{"date": ym, "value": all_points[ym]} for ym in sorted_ym]
-            h = hashlib.sha256(total_bytes).hexdigest()
-
-            # Guardar en caché
-            try:
-                with open(cache_file, "w", encoding="utf-8", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(["date", "extent_million_sq_km"])
-                    for ym in sorted_ym:
-                        writer.writerow([ym, all_points[ym]])
-            except Exception:
-                pass
-
-            return records, h, "nasa_api"
-    except Exception:
-        pass
-
-    raise DataUnavailable(
-        "SOURCE_DOWN",
-        f"No fue posible contactar NSIDC ({NSIDC_BASE_URL}) ni cargar fixture local de hielo marino."
-    )
+def _url(hemisphere: str, letter: str, month: int) -> str:
+    return f"{BASE}/{hemisphere}/monthly/data/{letter}_{month:02d}_extent_v4.0.csv"
 
 
-def _parse_compiled_csv(csv_text: str) -> List[Dict[str, Any]]:
-    """Parsea el archivo compilado date,extent_million_sq_km."""
-    records = []
-    lines = csv_text.strip().splitlines()
-    reader = csv.reader(lines)
-    header = next(reader, None)
-    for row in reader:
-        if len(row) >= 2:
-            ym = row[0].strip()
-            val_str = row[1].strip()
-            if not val_str or val_str.lower() in ("none", "null", "nan"):
-                val = None
-            else:
-                try:
-                    val = float(val_str)
-                    if val < -900:
-                        val = None
-                except ValueError:
-                    val = None
-            records.append({"date": ym, "value": val})
-    records.sort(key=lambda x: x["date"])
-    return records
-
-
-def get_nsidc_series(
-    variable_id: str = "SEAICE_EXTENT_N",
-    *,
-    start_year: int = 1979,
-    end_year: int = 2025
-) -> Dict[str, Any]:
-    """
-    Obtiene la serie temporal mensual de extensión de hielo marino de NSIDC (schema: timeseries/2).
-    Soporta:
-      - SEAICE_EXTENT_N: Extensión Ártico (mensual)
-      - SEAICE_EXTENT_S: Extensión Antártico (mensual)
-    """
-    var_upper = variable_id.upper()
-    if var_upper.endswith("_S") or "ANTARCTIC" in var_upper or "_SOUTH" in var_upper:
-        code = "S"
-        hemi_name = "south"
-        region_name = "Southern Ocean (Antarctic Sea Ice)"
-        lat = -90.0
-        bbox = [-180.0, -90.0, 180.0, -50.0]
+def _fetch_csv(url: str) -> tuple[str, dict]:
+    cached = cache.load(url, ttl_days=CACHE_TTL_DAYS)
+    if cached is not None:
+        body, meta = cached["body"], cached["meta"]
     else:
-        code = "N"
-        hemi_name = "north"
-        region_name = "Arctic Ocean (Northern Hemisphere Sea Ice)"
-        lat = 90.0
-        bbox = [-180.0, 60.0, 180.0, 90.0]
+        try:
+            resp = http_get(url)
+        except UpstreamTimeout as exc:
+            raise DataUnavailable("UPSTREAM_TIMEOUT", f"{url}: {exc}") from exc
+        except UpstreamError as exc:
+            raise DataUnavailable("UPSTREAM_ERROR", f"{url}: {exc}") from exc
+        if resp.status_code != 200:
+            raise DataUnavailable("UPSTREAM_ERROR", f"HTTP {resp.status_code} {url}")
+        body = resp.content
+        meta = cache.store(url, body, status=resp.status_code)
+    return body.decode("utf-8", errors="replace"), meta
 
-    all_records, sha256_hash, provenance_kind = fetch_nsidc_monthly_series(hemi_name, code)
 
-    # Filtrar por rango
-    start_ym = f"{start_year:04d}-01"
-    end_ym = f"{end_year:04d}-12"
-    filtered_data = [d for d in all_records if start_ym <= d["date"] <= end_ym]
+def parse_csv(text: str) -> list[dict]:
+    """Parsea un fichero mensual de NSIDC -> [{'date','value','area','source'}]."""
+    rows = []
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
+        clean = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
+        try:
+            year = int(clean["year"])
+            month = int(clean["mo"])
+            extent = float(clean["extent"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        rows.append(
+            {
+                "date": f"{year:04d}-{month:02d}",
+                "value": extent,
+                "area": float(clean.get("area") or "nan"),
+                "source": clean.get("source_dataset"),
+            }
+        )
+    return rows
 
-    if not filtered_data:
-        raise DataUnavailable("OUT_OF_COVERAGE", f"No hay datos para NSIDC entre {start_ym} y {end_ym}")
 
+def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=None) -> dict:
+    card = catalog.get_variable(variable_id)
+    if card.get("connector") != "nsidc_seaice":
+        raise DataUnavailable("VARIABLE_UNKNOWN", f"{variable_id} no es de NSIDC")
+    if (lat is not None or lon is not None or bbox is not None) and card.get("region_fixed") is None:
+        raise DataUnavailable("OUT_OF_COVERAGE", "NSIDC Sea Ice Index es hemisferico, no por punto")
+
+    hemisphere, letter = _hemisphere(card)
+    merged: dict[str, dict] = {}
+    hashes: list[str] = []
+    retrieved: list[str] = []
+    last_meta = None
+    for month in range(1, 13):
+        url = _url(hemisphere, letter, month)
+        text, meta = _fetch_csv(url)
+        hashes.append(f"{url.rsplit('/', 1)[-1]}:{meta.get('sha256', '')[:16]}")
+        retrieved.append(str(meta.get("fetched_at")))
+        last_meta = meta
+        for row in parse_csv(text):
+            merged[row["date"]] = row
+    if not merged:
+        raise DataUnavailable("UPSTREAM_ERROR", "NSIDC devolvio CSV vacios")
+    dates = sorted(merged)
+    if start:
+        lo = str(start)[:7]
+        dates = [d for d in dates if d >= lo]
+    if end:
+        hi = str(end)[:7]
+        dates = [d for d in dates if d <= hi]
+    if len(dates) < 12:
+        raise DataUnavailable("OUT_OF_COVERAGE", f"solo {len(dates)} meses entre {start} y {end}")
+
+    sources = sorted({merged[d]["source"] for d in dates if merged[d]["source"]})
+    provenance = {
+        "kind": "nasa_file",
+        "source": "NSIDC Sea Ice Index v4",
+        "underlying": ", ".join(sources) if sources else None,
+        "request_url": _url(hemisphere, letter, 1),
+        "request_urls_pattern": f"{BASE}/{hemisphere}/monthly/data/{letter}_{{MM}}_extent_v4.0.csv",
+        "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "sha256": hashlib.sha256("|".join(hashes).encode()).hexdigest(),
+        "native_resolution": "hemispheric monthly index",
+        "citation": CITATION,
+        "files_fetched": len(hashes),
+        "files_retrieved_at": retrieved[0] if retrieved else None,
+    }
+    if len(sources) > 1:
+        provenance["source_splice"] = sources
+        provenance["source_splice_note"] = (
+            "the NSIDC monthly files change source_dataset mid-series; no data were adjusted"
+        )
     return {
         "schema": "timeseries/2",
-        "variable_id": f"SEAICE_EXTENT_{code}",
-        "unit": "10^6 km²",
+        "variable_id": variable_id,
+        "unit": card.get("unit") or "million km2",
         "cadence": "monthly",
         "region": {
             "kind": "named",
-            "name": region_name,
-            "lat": lat,
-            "lon": 0.0,
-            "bbox": bbox
+            "name": card.get("region_fixed"),
+            "lat": None,
+            "lon": None,
+            "bbox": None,
         },
-        "aggregation": "area_mean_coslat",
-        "data": filtered_data,
-        "provenance": {
-            "kind": provenance_kind,
-            "source": "NSIDC Sea Ice Index, Version 4",
-            "underlying": "DMSP SSM/I-SSMIS / Nimbus-7 SMMR (Fetterer et al. 2024)",
-            "request_url": f"{NSIDC_BASE_URL}/{hemi_name}/monthly/data/",
-            "retrieved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "sha256": sha256_hash,
-            "native_resolution": "25 km grid polar stereographic",
-            "citation": "Fetterer, F., et al. 2024. Sea Ice Index, Version 4. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center."
-        }
+        "aggregation": "point",
+        "data": [{"date": d, "value": merged[d]["value"]} for d in dates],
+        "provenance": provenance,
     }

@@ -1,154 +1,235 @@
-# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
+# SI-assisted: Antigravity 1 (Claude Opus 5.5)
 """
-Parser de exportaciones CSV de NASA Giovanni (GES DISC).
-Parsea metadatos de cabecera, extrae series temporales, convierte valores de relleno a null,
-y agrega series diarias a mensuales con el criterio del >= 70 % de días válidos.
-Cumple con el esquema TimeSeries v2 (provenance.kind = "user_upload").
+Parser de CSV exportado de Giovanni (GES DISC) -> TimeSeries v2 (`user_upload`).
+
+ESTADO: PARCIAL (2026-11-14). En `data/raw/giovanni/` todavia no hay ninguna
+exportacion real, y la regla 3 del equipo prohibe programar contra un formato
+imaginado. Este modulo implementa solo lo que se puede afirmar sin muestra:
+
+- Giovanni antepone lineas de metadatos (`#` o texto) antes de la tabla: se saltan
+  hasta la primera linea que contenga comas y una columna de fecha reconocible.
+- La primera fila de la tabla se toma como cabecera; se localiza la columna de
+  fecha y la primera columna numerica del producto.
+- El valor de relleno se detecta por cabecera (`fill`, `missing`, `nodata`) y,
+  si no aparece, se tratan como nulos los valores negativos absurdos y los vacios
+  NO se inventan: se quedan en `null`.
+- Serie diaria -> mensual solo si el mes tiene >= 70 % de dias con dato (contrato §4).
+
+Pendiente de validar contra una exportacion real (tarea D5, bloqueada por el humano).
 """
+
+from __future__ import annotations
 
 import csv
-import io
 import hashlib
+import io
+import re
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-from collections import defaultdict
 
-from src.etl.power import DataUnavailable
+from .errors import DataUnavailable
+
+_DATE_PATTERNS = (
+    re.compile(r"^\d{4}-\d{2}-\d{2}$"),
+    re.compile(r"^\d{4}-\d{2}$"),
+    re.compile(r"^\d{4}/\d{2}/\d{2}$"),
+    re.compile(r"^\d{4}/\d{2}$"),
+    re.compile(r"^\d{8}$"),
+    re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"),
+)
+_DATE_HEADER_HINTS = ("time", "date", "fecha", "year", "month", "day")
+
+# Rellenos conocidos cuando la cabecera no lo declara.
+DEFAULT_FILLS = (-999.0, -999, -9999.0, -9999)
 
 
-def parse_giovanni_csv(text: str, variable_id: Optional[str] = None) -> dict:
-    """
-    Parsea el contenido de texto de un archivo CSV exportado desde Giovanni.
-    Devuelve un diccionario con formato TimeSeries v2.
-    """
-    if not text or not text.strip():
-        raise DataUnavailable("UPSTREAM_ERROR", "El contenido CSV de Giovanni está vacío")
+def _is_date(text: str) -> bool:
+    text = text.strip().strip('"')
+    return any(p.match(text) for p in _DATE_PATTERNS)
 
-    lines = [line.strip() for line in text.splitlines()]
-    header_meta: Dict[str, str] = {}
-    data_rows: List[List[str]] = []
-    in_data = False
-    data_header: List[str] = []
 
-    for line in lines:
-        if not line:
-            continue
-        # Metadatos comentados o clave-valor en la cabecera
-        if line.startswith("#") or (not in_data and ":" in line and not line.lower().startswith("time")):
-            clean_meta = line.lstrip("#").strip()
-            if ":" in clean_meta:
-                k, v = clean_meta.split(":", 1)
-                header_meta[k.strip()] = v.strip()
-            continue
-
-        # Detección del inicio de la tabla de datos
-        parts = [p.strip() for p in next(csv.reader([line]))]
-        if not in_data:
-            lower_parts = [p.lower() for p in parts]
-            if any("time" in p or "date" in p for p in lower_parts):
-                data_header = parts
-                in_data = True
-                continue
-            else:
-                continue
-
-        # Fila de datos
-        if in_data and len(parts) >= 2:
-            data_rows.append(parts)
-
-    if not data_rows:
-        raise DataUnavailable("UPSTREAM_ERROR", "No se encontraron filas de datos en el CSV de Giovanni")
-
-    # Identificar variable y unidad
-    extracted_var = variable_id or header_meta.get("Variable") or header_meta.get("Parameter") or "GIOVANNI_VAR"
-    extracted_unit = header_meta.get("Units") or header_meta.get("Unit") or ""
-    if len(data_header) >= 2 and not extracted_unit:
-        col_title = data_header[1]
-        if "(" in col_title and ")" in col_title:
-            extracted_unit = col_title.split("(")[-1].split(")")[0].strip()
-
-    fill_val = float(header_meta.get("FillValue", -999.0)) if "FillValue" in header_meta else -999.0
-
-    # Parsear puntos fecha -> valor
-    raw_points = []
-    is_daily = False
-
-    for row in data_rows:
-        date_str = row[0].strip()
-        val_str = row[1].strip()
-        
-        # Parsear fecha: YYYY-MM o YYYY-MM-DD
-        date_clean = date_str.split("T")[0].split(" ")[0]
-        date_parts = date_clean.split("-")
-        if len(date_parts) == 3:
-            is_daily = True
-            
+def _to_iso(text: str) -> str | None:
+    text = text.strip().strip('"')
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y/%m/%d", "%Y-%m", "%Y/%m", "%Y%m%d"):
         try:
-            val_num = float(val_str)
-            if abs(val_num - fill_val) < 1e-4:
-                val = None
-            else:
-                val = round(val_num, 4)
+            dt = datetime.strptime(text[: len("2026-11-14T00:00:00")], fmt)
+            return f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
         except ValueError:
+            continue
+    return None
+
+
+def _clean(line: str) -> str:
+    return line.strip().strip(",")
+
+
+def _split_metadata(lines: list[str]) -> tuple[list[str], list[str], list[str]]:
+    """Separa (metadatos, cabecera de la tabla, filas de datos).
+
+    La cabecera de la tabla es la ultima linea no comentada **antes** de la
+    primera fila con fecha. Sin esto se tomaba la primera fila de datos como
+    cabecera y se perdia ese dato (detectado por el test del otro agente).
+    """
+    for idx, line in enumerate(lines):
+        if "," not in line or line.lstrip().startswith("#"):
+            continue
+        cells = [_clean(c) for c in next(csv.reader([line]))]
+        if any(_is_date(c) for c in cells):
+            if idx == 0:
+                raise DataUnavailable(
+                    "UPSTREAM_ERROR", "CSV de Giovanni sin cabecera de columnas antes de los datos"
+                )
+            return lines[: idx - 1], [lines[idx - 1]], lines[idx:]
+    raise DataUnavailable(
+        "UPSTREAM_ERROR",
+        "CSV de Giovanni sin fila de fechas reconocible; no se interpreta a ciegas",
+    )
+
+
+def _pick_columns(header: list[str], variable_id: str | None) -> tuple[int, int]:
+    lowered = [h.strip().lower() for h in header]
+    date_idx = next(
+        (i for i, h in enumerate(lowered) if any(h.startswith(p) for p in _DATE_HEADER_HINTS)),
+        0,
+    )
+    value_idx = None
+    if variable_id:
+        token = variable_id.lower()
+        value_idx = next((i for i, h in enumerate(lowered) if token in h), None)
+    if value_idx is None:
+        value_idx = next(
+            (i for i in range(len(header)) if i != date_idx and lowered[i] not in ("", "time", "date")),
+            None,
+        )
+    if value_idx is None or value_idx == date_idx:
+        raise DataUnavailable("UPSTREAM_ERROR", "no se identifica la columna de la variable")
+    return date_idx, value_idx
+
+
+def _fill_from_header(meta: list[str]) -> float | None:
+    for line in meta:
+        match = re.search(r"(fill|missing|nodata)[^0-9\-]*(-?\d+(?:\.\d+)?)", line, re.I)
+        if match:
+            return float(match.group(2))
+    return None
+
+
+def _unit_from_header(meta: list[str]) -> str | None:
+    for line in meta:
+        match = re.search(r"unit[s]?\s*[:=]\s*([A-Za-z0-9%°/\.\^\-\+\*\s]+)", line, re.I)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
+def parse_csv(text: str, variable_id: str | None = None) -> dict:
+    """CSV de Giovanni -> TimeSeries v2 con provenance.kind = user_upload."""
+    if not text or not text.strip():
+        raise DataUnavailable("UPSTREAM_ERROR", "CSV vacio")
+    lines = text.splitlines()
+    meta_lines, header_lines, table_lines = _split_metadata(lines)
+    reader = csv.reader(io.StringIO("\n".join(table_lines)))
+    header = next(csv.reader([header_lines[0]]))
+    date_idx, value_idx = _pick_columns(header, variable_id)
+    fill = _fill_from_header(meta_lines)
+    unit = _unit_from_header(meta_lines)
+
+    points: list[tuple[str, float | None]] = []
+    for row in reader:
+        if len(row) <= max(date_idx, value_idx):
+            continue
+        iso = _to_iso(row[date_idx])
+        if iso is None:
+            continue
+        raw = row[value_idx].strip()
+        if raw == "" or raw.lower() in ("nan", "na", "null", "none"):
+            points.append((iso, None))
+            continue
+        try:
+            val = float(raw)
+        except ValueError:
+            points.append((iso, None))
+            continue
+        if val is not None and (val == fill if fill is not None else False):
             val = None
+        elif val is not None and (val in DEFAULT_FILLS or val < -1e20):
+            # Sin cabecera de relleno, -999/-999.0/-9999 son relleno en Giovanni y
+            # en POWER. Es preferible un null a un numero inventado (contrato §3).
+            val = None
+        points.append((iso, val))
+    if not points:
+        raise DataUnavailable("UPSTREAM_ERROR", "CSV sin filas de datos utiles")
 
-        raw_points.append((date_clean, val))
-
-    clean_series = []
+    is_daily = any(len(iso) == 10 for iso, _ in points)
     if is_daily:
-        # Agregar a mensual con regla de >= 70% de cobertura
-        months_data = defaultdict(list)
-        for dt_str, val in raw_points:
-            parts = dt_str.split("-")
-            if len(parts) >= 2:
-                ym = f"{parts[0]}-{parts[1]}"
-                months_data[ym].append(val)
-
-        for ym in sorted(months_data.keys()):
-            vals = months_data[ym]
-            total_days = len(vals)
-            valid_vals = [v for v in vals if v is not None]
-            if total_days > 0 and (len(valid_vals) / total_days) >= 0.70:
-                monthly_mean = round(sum(valid_vals) / len(valid_vals), 4)
-            else:
-                monthly_mean = None
-            clean_series.append({"date": ym, "value": monthly_mean})
+        data = _to_monthly(points)
     else:
-        # Ya es mensual
-        for dt_str, val in raw_points:
-            parts = dt_str.split("-")
-            ym = f"{parts[0]}-{parts[1]}" if len(parts) >= 2 else dt_str
-            clean_series.append({"date": ym, "value": val})
-
-    sha256_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    provenance = {
-        "kind": "user_upload",
-        "source": "NASA Giovanni (GES DISC)",
-        "underlying": header_meta.get("Product", "NASA Earth Science Data"),
-        "request_url": header_meta.get("URL", "https://giovanni.gsfc.nasa.gov/giovanni/"),
-        "retrieved_at": now_iso,
-        "sha256": sha256_hash,
-        "native_resolution": header_meta.get("Resolution", "Area-Averaged"),
-        "citation": "Goddard Earth Sciences Data and Information Services Center (GES DISC) / NASA Giovanni"
-    }
-
-    region_name = header_meta.get("Region", "Uploaded Giovanni Region")
-
+        data = _to_monthly_keep(points)
+    if not data:
+        raise DataUnavailable("OUT_OF_COVERAGE", "sin meses con cobertura suficiente (>=70%)")
+    sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return {
         "schema": "timeseries/2",
-        "variable_id": extracted_var,
-        "unit": extracted_unit,
+        "variable_id": variable_id or _guess_variable(header, value_idx),
+        "unit": unit or "",
         "cadence": "monthly",
-        "region": {
-            "kind": "named",
-            "name": region_name,
-            "lat": None,
-            "lon": None,
-            "bbox": None
+        "region": {"kind": "named", "name": None, "lat": None, "lon": None, "bbox": None},
+        "aggregation": "area_mean_coslat",
+        "data": data,
+        "provenance": {
+            "kind": "user_upload",
+            "source": "Giovanni (GES DISC) CSV export",
+            "underlying": _guess_product(meta_lines),
+            "request_url": None,
+            "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sha256": sha,
+            "native_resolution": None,
+            "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+            "header_metadata": [line.strip() for line in meta_lines if line.strip()],
         },
-        "aggregation": "area_mean_coslat" if "area" in region_name.lower() else "point",
-        "data": clean_series,
-        "provenance": provenance
     }
+
+
+def _to_monthly(points: list[tuple[str, float | None]]) -> list[dict]:
+    """Agrega a mensual: media de dias validos; mes valido si >=70 % de dias."""
+    buckets: dict[str, list[float]] = {}
+    seen: dict[str, int] = {}
+    for iso, val in points:
+        month = iso[:7]
+        seen[month] = seen.get(month, 0) + 1
+        if val is not None:
+            buckets.setdefault(month, []).append(val)
+    out = []
+    for month in sorted(seen):
+        vals = buckets.get(month, [])
+        if not vals or len(vals) / seen[month] < 0.70:
+            out.append({"date": month, "value": None})
+            continue
+        out.append({"date": month, "value": round(sum(vals) / len(vals), 6)})
+    return out
+
+
+def _to_monthly_keep(points: list[tuple[str, float | None]]) -> list[dict]:
+    """Serie ya mensual: se conserva tal cual, con nulos."""
+    out = []
+    for iso, val in points:
+        month = iso[:7]
+        if out and out[-1]["date"] == month:
+            if out[-1]["value"] is None:
+                out[-1]["value"] = val
+            continue
+        out.append({"date": month, "value": val})
+    return out
+
+
+def _guess_variable(header: list[str], value_idx: int) -> str:
+    raw = header[value_idx].strip() if value_idx < len(header) else "UPLOADED"
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", raw).strip("_").upper()
+    return cleaned or "UPLOADED"
+
+
+def _guess_product(meta: list[str]) -> str | None:
+    for line in meta:
+        match = re.search(r"(product|dataset|data field)\s*[:=]\s*(.+)", line, re.I)
+        if match:
+            return match.group(2).strip().strip(",")[:200]
+    return None
