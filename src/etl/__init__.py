@@ -1,7 +1,14 @@
-# Adaptadores y parsers de datos NASA
-from .nasa_adapters import (
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
+from src.etl.registry import (
+    get_series,
+    get_grid,
     parse_giovanni_csv,
-    parse_noaa_cdo,
-    kelvin_to_celsius,
-    generate_synthetic_timeseries
+    DataUnavailable
 )
+
+__all__ = [
+    "get_series",
+    "get_grid",
+    "parse_giovanni_csv",
+    "DataUnavailable"
+]
