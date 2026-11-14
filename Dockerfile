@@ -10,7 +10,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     AI_MODE=extractive \
     ALLOW_FIXTURES=0 \
-    DATA_CACHE_DIR=/data/cache
+    DATA_CACHE_DIR=/data/cache \
+    PORT=8080
 
 WORKDIR /app
 
@@ -20,7 +21,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Código necesario para servir la API y la UI.
 COPY src/ ./src/
+
+# Datos que la app lee en tiempo de ejecución (src/api/config.py):
+#   catalog -> catálogo v2 · cases -> /api/cases · atlas -> /api/atlas
+#   knowledge -> corpus del RAG (src/detective/corpus.py)
+# Sin los tres últimos, esos endpoints responden 503 en la nube aunque en local
+# funcionen, porque solo el catálogo estaba copiado.
 COPY data/catalog/ ./data/catalog/
+COPY data/cases/ ./data/cases/
+COPY data/atlas/ ./data/atlas/
+COPY data/knowledge/ ./data/knowledge/
+
 COPY scripts/smoke_api.py ./scripts/smoke_api.py
 
 RUN useradd --create-home --uid 10001 appuser \
@@ -28,10 +39,12 @@ RUN useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app /data
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health/live', timeout=4).status==200 else 1)"
+    CMD python -c "import os,urllib.request,sys; p=os.environ.get('PORT','8080'); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{p}/api/health/live', timeout=4).status==200 else 1)"
 
 # Un solo worker: la caché de análisis y el límite de peticiones viven en memoria.
-CMD ["python", "-m", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# El puerto se toma de `PORT`: Fly, Render y Koyeb lo inyectan y un puerto fijo
+# hace que el health check falle y el despliegue se dé por caído.
+CMD ["sh", "-c", "exec python -m uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1"]

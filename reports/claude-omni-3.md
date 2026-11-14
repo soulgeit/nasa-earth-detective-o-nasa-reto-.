@@ -5,8 +5,8 @@ VERIFICADO: fusión `origin/main` en `feature/api` → avance limpio, sin confli
 VERIFICADO: smoke integrado → `smoke_api.py http://127.0.0.1:8765` → 10 passed · 0 skipped · 0 failed (analyze Lima 838 ms, trendmap 63 celdas, UI 17 307 B)
 VERIFICADO: honestidad de la procedencia y motor v2 → `pytest tests/test_system.py -q` → 7 passed in 1.62s
 ESCRITO (sin ejecutar de punta a punta): nada pendiente en mi carril
-ROTO / NO HECHO: A5 sin desplegar (falta el inicio de sesión del hosting, lo hace el humano); A6 con casos no regenerados; `/api/cases` en 503
-Siguiente paso: URL pública, luego A5; sin ella, A6 no tiene contra qué hornear
+ROTO / NO HECHO: A5 sin desplegar (falta tu login en Fly; `Dockerfile`/`fly.toml` listos y verificados por pruebas, no por `docker build`); A6 sin regenerar; `/api/cases` en 503
+Siguiente paso: `fly launch --no-deploy` + `fly deploy` (comandos en §A5), después `smoke_api.py` contra la URL
 Necesito de: humano → iniciar sesión en el hosting (Railway/GitHub Pages) y pasarme la URL; Hermes 2 → `data/cases/index.json`
 Avisos para otros carriles: las 2 pruebas rojas son de `tests/detective/test_pipeline.py` (`MODIS_NDVI`, Claude Omni 2), no de la API; `answers.where` dice «None» y `region.name` viene `null` del ETL (carril de Antigravity 1)
 <!-- ESTADO:FIN -->
@@ -355,3 +355,90 @@ UI /                             PASS       1ms  HTTP 200 bytes=6023
 - `/api/cases` en 503 hasta que Hermes 2 publique `data/cases/index.json`.
 - El catálogo sale de la semilla (`catalog.source = "seed"`) hasta que Hermes 1
   mergee `variables.json` a esta rama.
+
+---
+
+## A5 — preparación del despliegue (14-nov-2026, 18:10 hora de Perú)
+
+**Qué quedó** (A5 sigue sin URL: el login del hosting es del humano)
+
+Dos fallos del `Dockerfile` que habrían roto el despliegue en cualquier nube:
+
+1. **La imagen no llevaba los datos que la app lee en tiempo de ejecución.**
+   `src/api/config.py` usa `data/cases/` (`/api/cases`), `data/atlas/`
+   (`/api/atlas/{var}`) y `data/knowledge/` (corpus del RAG). Solo se copiaba
+   `data/catalog/`. En la nube esos tres endpoints habrían dado 503 aunque en
+   local funcionasen.
+2. **Puerto fijo en 8000.** Fly, Render y Koyeb inyectan `PORT`; con un puerto
+   fijo el health check falla y el despliegue se da por caído. Ahora el `CMD`
+   usa `${PORT:-8080}` y el `HEALTHCHECK` lee la misma variable.
+
+Además:
+
+- **`.dockerignore`**: el contexto de construcción pasa de **218 MB a 19 MB**.
+  Sin él, cada `fly deploy` subiría el `.venv` (196 MB) y el historial de git.
+- **`fly.toml`**: app `earthtrend-detective`, región `iad`, `shared-cpu-1x` con
+  512 MB, `auto_stop_machines = false` (un arranque en frío delante de un juez
+  es una página rota), health check en `/api/health/live`.
+- **Límite por IP detrás del proxy** (`src/api/main.py:_client_key`): usaba
+  `request.client.host`, que en la nube es la IP del proxy, de modo que **todos
+  los visitantes compartirían el cupo de 120 peticiones/min** y la demo se
+  bloquearía sola. Ahora lee la primera entrada de `X-Forwarded-For`.
+
+**Evidencia**
+
+```
+$ python -m pytest tests/api tests/test_system.py -q
+48 passed, 51 warnings in 5.11s
+
+$ verificación del COPY contra lo que la app lee
+COPY en la imagen: ['requirements.txt', 'src/', 'data/catalog/', 'data/cases/', 'data/atlas/', 'data/knowledge/', 'scripts/smoke_api.py']
+OK   data/catalog/      catálogo v2 (/api/catalog/variables)
+OK   data/cases/        /api/cases (index.json)
+OK   data/atlas/        /api/atlas/{var}
+OK   data/knowledge/    corpus del RAG (src/detective/corpus.py)
+
+$ IP tras el proxy
+varios usuarios -> 1.2.3.4 | 5.6.7.8      (antes: ambos 172.18.0.1)
+sin cabecera   -> 127.0.0.1
+```
+
+**Falta**
+
+- **No he construido la imagen**: esta máquina no tiene Docker ni flyctl. El
+  `Dockerfile` está verificado por lectura y por pruebas, no por `docker build`.
+  La primera compilación real será en `fly deploy` (construye en remoto).
+- URL pública: pendiente del login del humano.
+
+**Cómo desplegarlo** (para el humano)
+
+```bash
+# 1. Instalar flyctl (una vez)
+iwr https://fly.io/install.ps1 -useb | iex
+#    luego cerrar y reabrir la terminal para que tome el PATH
+
+# 2. Crear la cuenta e iniciar sesión (aquí no se puede automatizar)
+fly auth signup        # o: fly auth login
+
+# 3. Crear la app sin desplegar (usa el fly.toml de la raíz)
+cd C:\Users\USER37\work\etd
+fly launch --no-deploy --copy-config
+
+# 4. Desplegar (construye en remoto; no hace falta Docker local)
+fly deploy
+
+# 5. Comprobar
+fly status
+curl https://earthtrend-detective.fly.dev/api/health/live
+```
+
+Coste: `shared-cpu-1x` de 512 MB en `iad` son ~$3,5/mes. Fly condona las
+facturas por debajo de $5 en cuentas personales, así que en la práctica queda
+en $0 mientras no se pase de esa cifra. Si el nombre `earthtrend-detective`
+está cogido, `fly launch` pedirá otro y hay que actualizar `app` en `fly.toml`.
+
+Alternativas si no se quiere dar tarjeta en Fly:
+
+- **Koyeb** — un servicio free por organización, 512 MB / 0,1 vCPU, indefinido,
+  pero se apaga a la hora sin tráfico.
+- **Render** — 750 h/mes, se duerme a los 15 min y tarda ~1 min en despertar.
