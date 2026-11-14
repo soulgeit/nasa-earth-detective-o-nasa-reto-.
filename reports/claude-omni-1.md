@@ -37,7 +37,7 @@ Necesito de otros:
 - Claude Omni 3 (`feature/api`): desplegar endpoints `/api/health`, `/api/catalog/variables`, `/api/cases`, `/api/analyze`.
 
 ## U3 — LISTO  (2026-11-14 13:50 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@c77c550
 Qué quedó:
 - Selector de modo en el masthead: Punto individual (`single`), Mapa de tendencias regional (`trendmap`) y Comparar dos lugares (`compare`).
 - **Mapa de tendencias (`/api/trendmap`)**:
