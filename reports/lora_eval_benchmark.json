@@ -1,0 +1,26 @@
+{
+  "Reglas (Rules Baseline)": {
+    "valid_json_pct": 100.0,
+    "valid_schema_pct": 100.0,
+    "intent_accuracy_pct": 96.4,
+    "variable_exact_match_pct": 71.4,
+    "place_accuracy_pct": 100.0,
+    "hypothesis_accuracy_pct": 85.7
+  },
+  "Modelo Base (Zero-Shot)": {
+    "valid_json_pct": 78.6,
+    "valid_schema_pct": 71.4,
+    "intent_accuracy_pct": 78.6,
+    "variable_exact_match_pct": 71.4,
+    "place_accuracy_pct": 78.6,
+    "hypothesis_accuracy_pct": 75.0
+  },
+  "LoRA Fine-Tuned": {
+    "valid_json_pct": 100.0,
+    "valid_schema_pct": 100.0,
+    "intent_accuracy_pct": 100.0,
+    "variable_exact_match_pct": 100.0,
+    "place_accuracy_pct": 100.0,
+    "hypothesis_accuracy_pct": 92.9
+  }
+}

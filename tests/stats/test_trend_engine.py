@@ -255,3 +255,33 @@ def test_grid_fdr_and_compare():
     assert comp["difference_significant"] is True
     assert "opuestas" in comp["statement"]["es"]
     assert "opposing" in comp["statement"]["en"]
+
+
+def test_published_nasa_benchmarks():
+    """Valida la reproducción de valores oficiales publicados por NASA GISS y NOAA/NSIDC."""
+    from src.etl.registry import get_series
+
+    # 1. Calentamiento global GISTEMP 1970-2024
+    s_gis = get_series("GISTEMP_TANOM", start="1970-01", end="2024-12")
+    res_gis = analyze_series(s_gis)
+    sen_gis = res_gis["trend"]["sen_slope_per_decade"]
+    assert 0.17 <= sen_gis <= 0.22, f"Pendiente GISTEMP fuera de rango esperado: {sen_gis}"
+    assert res_gis["significance"]["verdict_code"] == "SIGNIFICANT_STRONG"
+
+    # 2. Deshielo Ártico mensual 1979-2024
+    s_arc = get_series("SEAICE_EXTENT_N", start="1979-01", end="2024-12")
+    res_arc = analyze_series(s_arc)
+    sen_arc = res_arc["trend"]["sen_slope_per_decade"]
+    assert -0.65 <= sen_arc <= -0.40, f"Pendiente Ártico fuera de rango esperado: {sen_arc}"
+    assert res_arc["trend"]["direction"] == "down"
+    assert res_arc["significance"]["verdict_code"] == "SIGNIFICANT_STRONG"
+
+    # 3. Hielo Antártico mensual 1979-2024 (sin tendencia monótona significativa)
+    s_ant = get_series("SEAICE_EXTENT_S", start="1979-01", end="2024-12")
+    res_ant = analyze_series(s_ant)
+    assert res_ant["significance"]["verdict_code"] == "NOT_SIGNIFICANT"
+
+    # 4. Comparación Ártico vs Antártico
+    cmp = compare(res_arc, res_ant)
+    assert cmp["difference_significant"] is True
+    assert cmp["z"] < -3.0
