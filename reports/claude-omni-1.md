@@ -86,7 +86,7 @@ Necesito de otros:
 - Claude Omni 2 (`feature/wizard`): integración con los modelos LLM/LoRA en `/api/ai/*`.
 
 ## U5 — LISTO  (2026-11-14 14:20 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@5e4d2d9
 Qué quedó:
 - **Modo Demostración Guiado (`Guided Demo`)**:
   - Banner superior interactivo con contador de casos, título, narrativa contextual de ciencias de la Tierra y barra de progreso animada de 12 segundos.
@@ -100,7 +100,7 @@ Evidencia:
 - Verificado y capturado en Playwright a 1440x900 con transición animada entre casos, actualización de coordenadas en el mapa Leaflet GIBS y escalera de veredicto.
 
 ## U6 — LISTO  (2026-11-14 14:22 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@5e4d2d9
 Qué quedó:
 - **Bilingüe completo**: todas las cadenas en `src/ui/i18n.js` para inglés y español, con selector rápido en el encabezado.
 - **Descargar informe imprimible**: botón en cabecera que activa `window.print()` con reglas CSS avanzadas `@media print` optimizadas para PDF (oculta controles y formularios, imprime las 4 tarjetas, gráfica a resolución completa, método estadístico, tabla de pruebas, referencias y procedencia sin cortes de página).
@@ -111,7 +111,7 @@ Qué quedó:
   - Cero logotipos ni insignias de la NASA; paleta editorial propia.
 
 ## U7 — LISTO  (2026-11-14 14:26 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@5e4d2d9
 Qué quedó:
 - Seis capturas de pantalla oficiales generadas a **1600×900**, en **inglés**, con **datos reales** y sin personas, guardadas en `docs/media/`:
   1. `docs/media/main_screen.png`: Pantalla principal con mapa Leaflet NASA GIBS y panel de investigación.
