@@ -1,0 +1,343 @@
+# SI-assisted: claude-omni-2 (Claude Opus 5.5)
+"""The planner (contract R3 + §10).
+
+    retrieve(6 cards) ─► [full] model PLANNER_MODEL, JSON-constrained
+                            └─ hard validation ─ retry once ─ fallback
+                       [extractive] rules over the same retrieval
+                                                ▼
+                                        InvestigationPlan
+
+Every plan says which path produced it: ``"mode": "lora" | "llm" | "rules"``.
+The model never invents a variable_id: it may only pick from the candidates we
+retrieved, and ``place`` must be a literal substring of the question.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from .config import SETTINGS
+from .gazetteer import geocode
+from .lexicon import expand, specificity_prior
+from .llm import AIUnavailable, chat
+from .places import extract_places
+from .rag import retrieve_for_plan
+from .text_norm import detect_language, fold
+
+VALID_INTENTS = ("investigate", "compare", "define", "out_of_scope", "no_match")
+VALID_HYPOTHESES = ("up", "down", "unknown")
+
+PLAN_SCHEMA_HINT = (
+    '{"intent":"investigate|compare|define|out_of_scope|no_match",'
+    '"variable_ids":["<id from CANDIDATES>"],'
+    '"place":"<substring of QUESTION or null>","place_b":null,'
+    '"start_year":null,"end_year":null,"last_n_years":null,'
+    '"hypothesis":"up|down|unknown","lang":"es|en"}'
+)
+
+# --- intent cues (linguistic, language-agnostic lists) -----------------------
+COMPARE_CUES = (
+    "comparar", "compara", "comparacion", "compare", "comparing", "versus", "vs",
+    "frente a", "diferencia entre", "difference between", "más que", "mas que",
+    "que en", "than in", "both", "ambos", "las dos", "las dos regiones",
+)
+DEFINE_CUES = (
+    "qué es", "que es", "qué significa", "que significa", "definición", "definicion",
+    "what is", "what does", "meaning of", "explica qué", "explain what", "how is it measured",
+    "cómo se mide", "como se mide", "para qué sirve", "what does it mean",
+)
+OUT_OF_SCOPE_CUES = (
+    "partido", "fútbol", "futbol", "football", "elecciones", "receta", "chiste", "joke",
+    "cancion", "canción", "song", "película", "pelicula", "movie", "historia del perú",
+)
+DOWN_CUES = ("menos", "baja", "bajando", "disminuye", "desciende", "pierde", "pérdida", "perdida",
+             "less", "decrease", "decreasing", "decline", "shrinking", "losing", "loss", "down", "fewer")
+UP_CUES = ("más", "mas", "sube", "subiendo", "aumenta", "crece", "aumento", "incremento",
+           "more", "increase", "increasing", "rise", "rising", "growing", "up", "warmer", "hotter")
+YEAR_RE = re.compile(r"\b(1[89]\d{2}|20\d{2})\b")
+
+INTENT_BY_MODE = {"lora": "lora", "llm": "llm", "rules": "rules"}
+
+
+def _lang(question: str, lang: str | None) -> str:
+    return lang if lang in ("es", "en") else detect_language(question)
+
+
+def _empty_plan(intent: str, lang: str, mode: str, *, reason: str | None = None) -> dict[str, Any]:
+    plan = {
+        "intent": intent,
+        "variable_ids": [],
+        "place": None,
+        "place_b": None,
+        "start_year": None,
+        "end_year": None,
+        "last_n_years": None,
+        "hypothesis": "unknown",
+        "lang": lang,
+        "mode": mode,
+    }
+    if reason:
+        plan["note"] = reason
+    return plan
+
+
+def _cue_pattern(cues: tuple[str, ...]) -> re.Pattern[str]:
+    """Whole-word/phrase matcher over the folded text.
+
+    Whole-word matters: "vs" as a substring would fire inside other words, while
+    "compara" must still match "comparar"/"comparando" (Spanish verb forms share
+    the stem), so each cue is matched as a prefix of a word boundary.
+    """
+    parts = []
+    for cue in cues:
+        folded = fold(cue).strip()
+        if not folded:
+            continue
+        parts.append(re.escape(folded) + r"\w*")
+    return re.compile(r"(?<!\w)(?:" + "|".join(parts) + r")(?!\w)")
+
+
+_COMPARE_RE = _cue_pattern(COMPARE_CUES)
+_DEFINE_RE = _cue_pattern(DEFINE_CUES)
+_OUT_OF_SCOPE_RE = _cue_pattern(OUT_OF_SCOPE_CUES)
+
+
+def _has(pattern: re.Pattern[str], folded: str) -> bool:
+    return bool(pattern.search(folded))
+
+
+def _hypothesis(question: str) -> str:
+    q = " " + fold(question) + " "
+    tokens = set(fold(question).split())
+    down = sum(1 for cue in DOWN_CUES if f" {fold(cue)} " in q or fold(cue) in tokens)
+    up = sum(1 for cue in UP_CUES if f" {fold(cue)} " in q or fold(cue) in tokens)
+    if down > up:
+        return "down"
+    if up > down:
+        return "up"
+    return "unknown"
+
+
+def _intent(question: str) -> str:
+    folded = fold(question)
+    if _has(_OUT_OF_SCOPE_RE, folded):
+        return "out_of_scope"
+    if _has(_COMPARE_RE, folded):
+        return "compare"
+    if _has(_DEFINE_RE, folded):
+        return "define"
+    return "investigate"
+
+
+def _years(question: str) -> tuple[int | None, int | None, int | None]:
+    years = sorted({int(y) for y in YEAR_RE.findall(question)})
+    last_n = None
+    match = re.search(r"(?:últimos|ultimos|last)\s+(\d{1,2})\s*(?:años|anos|years)", fold(question))
+    if match:
+        last_n = int(match.group(1))
+    if len(years) >= 2:
+        return years[0], years[-1], last_n
+    return None, None, last_n
+
+
+def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: str = "rules") -> dict[str, Any]:
+    """Deterministic fallback: first retrieved variable + gazetteer/grammar place."""
+    places = extract_places(question, limit=2)
+    start, end, last_n = _years(question)
+    plan = {
+        "intent": _intent(question),
+        "variable_ids": [cards[0]["variables"][0]] if cards and cards[0].get("variables") else [],
+        "place": places[0] if places else None,
+        "place_b": places[1] if len(places) > 1 else None,
+        "start_year": start,
+        "end_year": end,
+        "last_n_years": last_n,
+        "hypothesis": _hypothesis(question),
+        "lang": lang,
+        "mode": mode,
+    }
+    if cards:
+        plan["why"] = cards[0].get("title")
+    return plan
+
+
+def _system_prompt() -> str | None:
+    """The SAME system prompt the LoRA dataset uses (contract §10, Hermes 2)."""
+    for candidate in (
+        SETTINGS.data_dir / "lora" / "system_prompt.txt",
+        SETTINGS.data_dir / "lora" / "SYSTEM_PROMPT.txt",
+    ):
+        if candidate.exists():
+            return candidate.read_text(encoding="utf-8").strip()
+    return None
+
+
+def _user_message(question: str, cards: list[dict[str, Any]]) -> str:
+    """Exactly the shape Hermes 2 writes into data/lora/*.jsonl (§10)."""
+    lines = [f"QUESTION: {question}", "CANDIDATES:"]
+    for card in cards:
+        long_name = card.get("title") or ""
+        vid = (card.get("variables") or ["?"])[0]
+        lines.append(f"- {vid}: {long_name}")
+    return "\n".join(lines)
+
+
+def validate_plan(raw: Any, *, question: str, candidates: set[str], lang: str) -> tuple[dict[str, Any] | None, str | None]:
+    """Hard validation (§R3.3). Returns (plan, None) or (None, reason)."""
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except json.JSONDecodeError:
+            return None, "not JSON"
+    if not isinstance(raw, dict):
+        return None, "not an object"
+
+    intent = raw.get("intent")
+    if intent not in VALID_INTENTS:
+        return None, f"intent {intent!r} not allowed"
+    ids = raw.get("variable_ids") or []
+    if not isinstance(ids, list) or not all(isinstance(v, str) for v in ids):
+        return None, "variable_ids must be a list of strings"
+    bad = [v for v in ids if v not in candidates]
+    if bad:
+        return None, f"variable_ids not among candidates: {bad}"
+    if intent in ("investigate", "compare") and not ids:
+        return None, "investigate/compare need at least one variable"
+
+    place = raw.get("place")
+    if place is not None:
+        if not isinstance(place, str) or not place.strip():
+            return None, "place must be a non-empty string or null"
+        if fold(place.strip()) not in fold(question):
+            return None, f"place {place!r} is not a substring of the question"
+    place_b = raw.get("place_b")
+    if place_b is not None:
+        if not isinstance(place_b, str) or fold(place_b.strip()) not in fold(question):
+            return None, "place_b is not a substring of the question"
+
+    hypothesis = raw.get("hypothesis", "unknown")
+    if hypothesis not in VALID_HYPOTHESES:
+        return None, f"hypothesis {hypothesis!r} not allowed"
+
+    def _year(key: str) -> int | None:
+        value = raw.get(key)
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or not (1880 <= value <= 2100):
+            raise ValueError(key)
+        return value
+
+    try:
+        start_year, end_year = _year("start_year"), _year("end_year")
+        last_n = raw.get("last_n_years")
+        if last_n is not None and (not isinstance(last_n, int) or not (1 <= last_n <= 100)):
+            raise ValueError("last_n_years")
+    except ValueError as exc:
+        return None, f"bad year field {exc}"
+
+    plan = {
+        "intent": intent,
+        "variable_ids": list(dict.fromkeys(ids)),
+        "place": place.strip() if isinstance(place, str) else None,
+        "place_b": place_b.strip() if isinstance(place_b, str) else None,
+        "start_year": start_year,
+        "end_year": end_year,
+        "last_n_years": last_n,
+        "hypothesis": hypothesis,
+        "lang": raw.get("lang") if raw.get("lang") in ("es", "en") else lang,
+    }
+    return plan, None
+
+
+def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: str) -> dict[str, Any]:
+    """Ask PLANNER_MODEL, validate, retry once, then fall back to rules."""
+    candidates = {(c.get("variables") or [None])[0] for c in cards}
+    candidates = {c for c in candidates if c}
+    system = _system_prompt()
+    if system is None:
+        # Without Hermes 2's system prompt the training/use contract can't be met,
+        # so we do not pretend: rules answer, and the plan says why.
+        plan = _rules_plan(question, lang, cards, mode="rules")
+        plan["note"] = "lora_system_prompt_missing"
+        return plan
+
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": _user_message(question, cards)},
+        {"role": "user", "content": f"Reply with this JSON only: {PLAN_SCHEMA_HINT}"},
+    ]
+    last_reason = None
+    for attempt in range(2):
+        try:
+            raw = chat(messages, model=SETTINGS.planner_model, temperature=0.0)
+        except AIUnavailable as exc:
+            plan = _rules_plan(question, lang, cards, mode="rules")
+            plan["note"] = f"ai_unavailable: {exc}"[:160]
+            return plan
+        plan, reason = validate_plan(raw, question=question, candidates=candidates, lang=lang)
+        if plan is not None:
+            plan["mode"] = mode
+            return plan
+        last_reason = reason
+        messages = messages[:2] + [
+            {"role": "user", "content": f"Your previous answer was rejected ({reason}). Reply with valid JSON only: {PLAN_SCHEMA_HINT}"}
+        ]
+    plan = _rules_plan(question, lang, cards, mode="rules")
+    plan["note"] = f"planner_rejected: {last_reason}"[:160]
+    return plan
+
+
+def plan(question: str, *, lang: str = "es") -> dict[str, Any]:
+    """Turn a student's question into an InvestigationPlan (contract §10)."""
+    language = _lang(question, lang)
+    if not question or not question.strip():
+        return _empty_plan("no_match", language, "rules", reason="empty question")
+
+    # Off-topic questions are answered before retrieval: a football question must
+    # not come back with a climate variable because one word collided.
+    if _intent(question) == "out_of_scope":
+        return _empty_plan("out_of_scope", language, "rules")
+
+    cards = retrieve_for_plan(question, lang=language, k=6)
+    if not cards:
+        return _empty_plan("no_match", language, "rules", reason="no candidate variables retrieved")
+
+    if SETTINGS.ai_mode == "full" and SETTINGS.planner_model:
+        return _llm_plan(question, language, cards, mode="lora")
+
+    return _rules_plan(question, language, cards)
+
+
+def resolve(plan_dict: dict[str, Any]) -> list[dict[str, Any]]:
+    """Attach coordinates to a plan through the gazetteer only (never a model)."""
+    out = []
+    for key in ("place", "place_b"):
+        name = plan_dict.get(key)
+        out.append({"field": key, "name": name, "places": geocode(name) if name else []})
+    return out
+
+
+def debug_candidates(question: str, *, lang: str = "es", k: int = 6) -> list[dict[str, Any]]:
+    return retrieve_for_plan(question, lang=lang, k=k)
+
+
+def explain_choice(question: str, cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Why each candidate appeared: which of the student's words hit the lexicon."""
+    hits = expand(question)
+    prior = specificity_prior(question)
+    rows = []
+    for card in cards:
+        vid = (card.get("variables") or [None])[0]
+        rows.append(
+            {
+                "variable_id": vid,
+                "title": card.get("title"),
+                "score": card.get("score"),
+                "matched_terms": hits.get(vid, []) if vid else [],
+                "specificity": round(prior.get(vid, 0.0), 3) if vid else 0.0,
+                "url": card.get("url"),
+            }
+        )
+    return rows

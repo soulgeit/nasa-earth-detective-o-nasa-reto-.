@@ -1,0 +1,185 @@
+# SI-assisted: claude-omni-2 (Claude Opus 5.5)
+"""Colloquial-term -> variable_id bridge used only to *expand the query*.
+
+Why this file exists
+--------------------
+Hermes 1 owns ``data/catalog/variables.json`` and writes the ``keywords`` field for
+each card (prompt C1: "≥ 8 per idiom, including colloquial words"). Until that file
+lands, the corpus only has the seed (ids + POWER long names), so a student's
+"¿está lloviendo menos?" finds nothing.
+
+This module is a linguistic resource, not a catalogue: it never states a fact about
+a variable, it only says "when the student types *lluvia*, also search *rain,
+precipitation, PRECTOTCORR*". Every alias below is a plain-language paraphrase of a
+POWER parameter long name that is already in the verified seed/fixture
+(``tests/fixtures/real/power_monthly_point_lima.json``). No definition, unit,
+date or number is produced here.
+
+When Hermes 1's ``variables.json`` arrives the expansion is still valid, just
+redundant; ``retrieve`` merges everything through the same BM25 index.
+"""
+
+from __future__ import annotations
+
+from typing import Iterable
+
+from .text_norm import normalize_terms
+
+# alias (es/en, accent-free, lowercase) -> variable_id from data/catalog/variables.seed.json
+ALIASES: dict[str, tuple[str, ...]] = {
+    "T2M": (
+        "temperatura", "calor", "bochorno", "caliente", "frio", "fria", "grados", "termometro",
+        "temperature", "heat", "hot", "cold", "warm", "air temperature", "ita est",
+    ),
+    "TS": (
+        "temperatura de la superficie", "superficie", "suelo caliente", "tierra caliente",
+        "skin temperature", "surface temperature", "land temperature",
+    ),
+    "PRECTOTCORR": (
+        "lluvia", "llueve", "llover", "lloviendo", "precipitacion", "sequia", "seco", "seca",
+        "garua", "llovizna", "pluviosidad", "chubasco",
+        "rain", "raining", "precipitation", "rainfall", "drought", "dry", "wetter", "rainy season",
+    ),
+    "GWETTOP": (
+        "humedad del suelo", "suelo humedo", "tierra humeda", "agua en el suelo",
+        "secando el suelo", "suelo seco", "tierra seca", "se seca",
+        "soil moisture", "soil wetness", "wet soil", "dry soil", "drying soil",
+        "land drying", "desertification",
+    ),
+    "EVLAND": (
+        "evaporacion", "evapotranspiracion", "se evapora",
+        "evaporation", "evapotranspiration", "moisture loss",
+    ),
+    "SNODP": (
+        "nieve", "nevada", "capa de nieve", "glaciar", "deshielo", "nevando",
+        "snow", "snowfall", "snow depth", "glacier", "melting snow", "snowpack",
+    ),
+    "RH2M": (
+        "humedad", "humedad relativa", "humedo", "bochorno", "vapor",
+        "humidity", "relative humidity", "muggy", "damp",
+    ),
+    "TQV": (
+        "vapor de agua", "agua precipitable", "columna de agua", "humedad total",
+        "water vapor", "precipitable water", "atmospheric moisture",
+    ),
+    "TO3": (
+        "ozono", "capa de ozono", "agujero de ozono", "ozone", "ozone hole", "ozone column",
+    ),
+    "AOD_55": (
+        "aerosoles", "aerosol", "polvo", "smog", "contaminacion del aire", "bruma", "neblina",
+        "aerosol", "dust", "haze", "smoke", "air pollution", "particulate",
+    ),
+    "CLOUD_AMT": (
+        "nubes", "nubosidad", "cielo cubierto", "nublado", "clouds", "cloud cover", "overcast",
+        "cloudiness",
+    ),
+    "ALLSKY_SFC_SW_DWN": (
+        "radiacion solar", "sol", "energia solar", "luz del sol", "irradiancia",
+        "solar radiation", "sunlight", "sunshine", "solar energy", "irradiance",
+    ),
+    "GISTEMP_TANOM": (
+        "calentamiento global", "anomalia de temperatura", "cambio climatico", "temperatura global",
+        "global warming", "temperature anomaly", "global temperature", "climate change",
+    ),
+    "SEAICE_EXTENT_N": (
+        "hielo marino", "hielo del artico", "deshielo del artico", "mar congelado",
+        "sea ice", "arctic ice", "ice extent", "melting ice", "arctic",
+    ),
+    "SEAICE_EXTENT_S": (
+        "hielo marino", "hielo de la antartida", "antartida", "mar congelado",
+        "sea ice", "antarctic ice", "ice extent", "antarctica",
+    ),
+    "GPM_IMERG_PRECIP": (
+        "lluvia", "precipitacion", "lluvias intensas", "inundacion",
+        "rain", "precipitation", "heavy rain", "flooding",
+    ),
+    "GLDAS_SOILM_0_10": (
+        "humedad del suelo", "suelo seco", "agricultura", "cultivos",
+        "soil moisture", "soil water", "crops", "farmland",
+    ),
+    "GLDAS_EVAP": ("evaporacion", "evaporation", "evapotranspiration"),
+    "GLDAS_RUNOFF": (
+        "escorrentia", "desague", "caudal del rio", "agua de rio",
+        "runoff", "river flow", "streamflow", "drainage",
+    ),
+    "AIRS_SURF_AIR_TEMP": (
+        "temperatura del aire", "calor", "frio", "temperature", "air temperature", "heat", "cold",
+    ),
+    "OMI_NO2_TROP": (
+        "no2", "dioxido de nitrogeno", "contaminacion", "trafico", "smog",
+        "nitrogen dioxide", "air quality", "pollution", "traffic",
+    ),
+    "OMI_O3_TOTAL": ("ozono", "ozone", "ozone column", "capa de ozono"),
+    "MODIS_NDVI": (
+        "vegetacion", "deforestacion", "bosque", "selva", "plantas", "verde", "verdor",
+        "vegetation", "deforestation", "forest", "greenness", "ndvi", "vegetation index",
+    ),
+    "MODIS_LST_DAY": (
+        "temperatura del suelo", "superficie", "calor urbano", "isla de calor",
+        "land surface temperature", "surface heat", "urban heat",
+    ),
+    "MODIS_AOD": ("aerosoles", "polvo", "smog", "aerosol", "dust", "haze", "fine particles"),
+}
+
+# Reverse map built once: normalised alias -> ids
+_ALIAS_TO_IDS: dict[str, set[str]] = {}
+for _vid, _aliases in ALIASES.items():
+    for _alias in _aliases:
+        for _term in normalize_terms(_alias):
+            _ALIAS_TO_IDS.setdefault(_term, set()).add(_vid)
+
+
+def expand(query: str) -> dict[str, list[str]]:
+    """variable_id -> the student's words that pointed at it (for the 'why' text)."""
+    hits: dict[str, list[str]] = {}
+    terms = normalize_terms(query)
+    for term in terms:
+        for vid in _ALIAS_TO_IDS.get(term, ()):
+            bucket = hits.setdefault(vid, [])
+            if term not in bucket:
+                bucket.append(term)
+    return hits
+
+
+def expansion_terms(query: str, *, exclude: Iterable[str] = ()) -> str:
+    """Text to append to the BM25 query: variable ids and their seed long names."""
+    from .corpus import load_catalog_cards
+
+    wanted = {vid for vid in expand(query) if vid not in set(exclude)}
+    if not wanted:
+        return ""
+    extra: list[str] = []
+    for card, _available in load_catalog_cards():
+        if card.get("id") in wanted:
+            for key in ("power_longname", "names"):
+                value = card.get(key)
+                if isinstance(value, dict):
+                    extra.extend(str(v) for v in value.values())
+                elif value:
+                    extra.append(str(value))
+    extra.extend(sorted(wanted))
+    return " ".join(extra)
+
+
+def variables_for_terms(text: str) -> list[str]:
+    return sorted(expand(text))
+
+
+def specificity_prior(query: str) -> dict[str, float]:
+    """variable_id -> bonus in [0, 1].
+
+    A term that points at exactly one variable ("lluvia" -> PRECTOTCORR) is worth
+    more than a term that points at six ("calor"). Used only as a tie-breaker on
+    top of BM25, so the tie between two air-temperature cards is settled in favour
+    of the parameter the student most likely means.
+    """
+    prior: dict[str, float] = {}
+    for term in normalize_terms(query):
+        ids = _ALIAS_TO_IDS.get(term)
+        if not ids:
+            continue
+        weight = 1.0 / len(ids)
+        for vid in ids:
+            prior[vid] = prior.get(vid, 0.0) + weight
+    peak = max(prior.values()) if prior else 1.0
+    return {vid: value / peak for vid, value in prior.items()}
