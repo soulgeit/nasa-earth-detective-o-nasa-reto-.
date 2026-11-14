@@ -1,697 +1,747 @@
+# SI-assisted: Antigravity 2 (Gemini 3.8 Flash)
 """
-Motor estadístico corregido para EarthTrend Detective.
-
-Implementa (todo verificado contra bibliografía estadística):
-- Desestacionalización por anomalías climatológicas.
-- Mann-Kendall con corrección de empates (tie correction) y
-  corrección de autocorrelación de lag-1 (Hamed & Rao, 2002).
-- Theil-Sen con cálculo completo (sin submuestreo arbitrario).
-- OLS con intervalo de confianza al 95 %, valor-p de la pendiente
-  y R² ajustado.
-- Tasa de cambio anual y decadal con unidades consistentes.
-- Estimación de "cuántos años faltan para estar seguros"
-  (Weatherhead et al. 1998).
-- Veredicto honesto: si no es significativo, lo dice claramente.
-
-Adapta la entrada de POWER (date = "YYYY-MM" o "YYYY-MM-DD")
-en vez de asumir campos 'month'/'year'.
+Motor estadístico v2 para EarthTrend Detective.
+Implementa:
+- Desestacionalización por climatología mensual multianual.
+- Estimador robusto de pendiente de Theil-Sen con intervalos de confianza al 95%.
+- Prueba no paramétrica de Mann-Kendall con corrección de autocorrelación (Hamed & Rao 1998).
+- Mann-Kendall sobre medias anuales como control independiente.
+- OLS con ajuste de autocorrelación AR(1) y grados de libertad efectivos (Santer et al. 2000).
+- Tiempo de detectabilidad de tendencias climáticas (Weatherhead et al. 1998).
+- Análisis espacial de rejilla (TrendMap v2) con control de falsos descubrimientos (Benjamini-Hochberg FDR, Wilks 2016).
+- Comparación rigurosa de dos series (Modo Comparar).
 """
 
 import math
-import json
-from datetime import datetime
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
+
+import numpy as np
+import scipy.stats as stats
+import pymannkendall as pmk
 
 
-# ---------------------------------------------------------------------------
-# Helpers de fecha
-# ---------------------------------------------------------------------------
-
-def parse_date(date_str: str) -> Tuple[int, int, int]:
-    """Parsea YYYY-MM o YYYY-MM-DD → (year, month, day)."""
-    try:
-        d = datetime.strptime(date_str, "%Y-%m")
-        return d.year, d.month, 1
-    except ValueError:
-        d = datetime.strptime(date_str, "%Y-%m-%d")
-        return d.year, d.month, d.day
+def _date_to_decimal_year(date_str: str) -> float:
+    """Convierte 'YYYY-MM' a año decimal: año + (mes - 0.5) / 12.0."""
+    parts = date_str.split("-")
+    y = float(parts[0])
+    m = float(parts[1]) if len(parts) > 1 else 1.0
+    return y + (m - 0.5) / 12.0
 
 
-# ---------------------------------------------------------------------------
-# Desestacionalización
-# ---------------------------------------------------------------------------
-
-def deseasonalize(series: List[Dict[str, Any]],
-                  variable: str = "value") -> List[Dict[str, Any]]:
+def _sen_slope_all_pairs(x: np.ndarray, y: np.ndarray, alpha: float = 0.05) -> Tuple[float, float, float, float]:
     """
-    Anomalías mensuales respecto a la climatología de cada mes calendario.
-
-    Input esperado (POWER):
-        [{"date": "2000-01", "T2M": 20.1}, ...]
-    O con campos explícitos:
-        [{"date": "2000-01", "value": 20.1, "year": 2000, "month": 1}, ...]
-
-    Output:
-        [{"date": "2000-01", "raw_value": 20.1, "anomaly": -0.5,
-          "monthly_climatology": 20.6}, ...]
+    Calcula la pendiente de Theil-Sen evaluando todos los pares (sin submuestreo)
+    e intervalo de confianza analítico según Sen (1968) y Mann-Kendall.
+    Retorna (slope, intercept, ci_low, ci_high).
     """
-    month_sums: Dict[int, float] = {m: 0.0 for m in range(1, 13)}
-    month_counts: Dict[int, int] = {m: 0 for m in range(1, 13)}
+    n = len(y)
+    if n < 2:
+        return 0.0, float(y[0]) if n == 1 else 0.0, 0.0, 0.0
 
-    for pt in series:
-        if "year" in pt and "month" in pt:
-            yr, mo = pt["year"], pt["month"]
-        else:
-            yr, mo, _ = parse_date(pt["date"])
-        # Acepta pt[variable] O pt["value"] (POWER devuelve {"date":"...", "value":...})
-        val = pt.get(variable, pt.get("value"))
-        month_sums[mo] += val
-        month_counts[mo] += 1
+    slopes = []
+    for i in range(n - 1):
+        dx = x[i+1:] - x[i]
+        dy = y[i+1:] - y[i]
+        # Evitar división por cero
+        valid = dx != 0
+        if np.any(valid):
+            slopes.extend((dy[valid] / dx[valid]).tolist())
 
-    month_means = {
-        m: (month_sums[m] / month_counts[m])
-        if month_counts[m] > 0 else 0.0
+    slopes.sort()
+    n_slopes = len(slopes)
+    if n_slopes == 0:
+        return 0.0, float(np.mean(y)), 0.0, 0.0
+
+    med_slope = float(np.median(slopes))
+    intercept = float(np.median(y - med_slope * x))
+
+    # Intervalo de confianza de Sen (1968) ajustado por autocorrelación AR(1)
+    # Var(S) = n(n-1)(2n+5) / 18
+    # En presencia de autocorrelación serial r1, la varianza efectiva de S
+    # se infla por el factor eta = (1 + r1) / (1 - r1), por lo que c_alpha
+    # escala por sqrt((1 + r1) / (1 - r1)) para preservar la cobertura nominal del 95%
+    residuals = y - (med_slope * x + intercept)
+    ss_res = float(np.sum(residuals ** 2))
+    if ss_res > 0:
+        r1 = float(np.sum(residuals[:-1] * residuals[1:]) / ss_res)
+    else:
+        r1 = 0.0
+    r1_bounded = max(0.0, min(0.95, r1))
+    autocorr_factor = math.sqrt((1.0 + r1_bounded) / (1.0 - r1_bounded))
+
+    var_s = (n * (n - 1) * (2 * n + 5)) / 18.0
+    z_crit = stats.norm.ppf(1.0 - alpha / 2.0)
+    c_alpha = z_crit * math.sqrt(var_s) * autocorr_factor
+
+    m1 = max(0, int(math.floor((n_slopes - c_alpha) / 2.0)))
+    m2 = min(n_slopes - 1, int(math.ceil((n_slopes + c_alpha) / 2.0)))
+
+    ci_low = float(slopes[m1])
+    ci_high = float(slopes[m2])
+
+    return med_slope, intercept, ci_low, ci_high
+
+
+def _ols_santer_2000(x: np.ndarray, y: np.ndarray, alpha: float = 0.05) -> Dict[str, Any]:
+    """
+    Regresión lineal por mínimos cuadrados ordinarios (MCO) con ajuste por autocorrelación
+    de residuos según Santer et al. (2000).
+    """
+    n = len(y)
+    if n < 4:
+        return {
+            "slope": 0.0, "intercept": 0.0, "r_squared": 0.0, "ci_low": 0.0, "ci_high": 0.0,
+            "t_stat": 0.0, "df_eff": 1.0, "p_value": 1.0, "r1": 0.0, "se_adj": 0.0
+        }
+
+    x_mean = np.mean(x)
+    y_mean = np.mean(y)
+    ss_xx = np.sum((x - x_mean) ** 2)
+    ss_xy = np.sum((x - x_mean) * (y - y_mean))
+    
+    slope = float(ss_xy / ss_xx) if ss_xx > 0 else 0.0
+    intercept = float(y_mean - slope * x_mean)
+    
+    residuals = y - (slope * x + intercept)
+    ss_tot = np.sum((y - y_mean) ** 2)
+    ss_res = np.sum(residuals ** 2)
+    r_squared = float(max(0.0, 1.0 - (ss_res / ss_tot))) if ss_tot > 0 else 0.0
+
+    # Autocorrelación lag-1 de los residuos (r1)
+    if ss_res > 0:
+        r1 = float(np.sum(residuals[:-1] * residuals[1:]) / ss_res)
+    else:
+        r1 = 0.0
+    
+    # Acotado a [0, 0.95] según contrato y literatura
+    r1_bounded = max(0.0, min(0.95, r1))
+
+    # Tamaño de muestra efectivo n_eff = n * (1 - r1) / (1 + r1)
+    n_eff = float(n * (1.0 - r1_bounded) / (1.0 + r1_bounded))
+    df_eff = max(2.0, n_eff - 2.0)
+
+    # Error estándar estándar MCO y ajuste por n_eff
+    s2 = ss_res / (n - 2.0) if n > 2 else 0.0
+    se_ols = math.sqrt(s2 / ss_xx) if ss_xx > 0 else 0.0
+    
+    # Factor de inflación de varianza por correlación serial
+    variance_factor = (n - 2.0) / df_eff if df_eff > 0 else 1.0
+    se_adj = se_ols * math.sqrt(variance_factor)
+
+    if se_adj > 1e-12:
+        t_stat = slope / se_adj
+        p_val = float(2.0 * stats.t.sf(abs(t_stat), df=df_eff))
+        t_crit = float(stats.t.ppf(1.0 - alpha / 2.0, df=df_eff))
+        ci_low = slope - t_crit * se_adj
+        ci_high = slope + t_crit * se_adj
+    else:
+        t_stat = 0.0
+        p_val = 1.0
+        ci_low = slope
+        ci_high = slope
+
+    return {
+        "slope": slope,
+        "intercept": intercept,
+        "r_squared": r_squared,
+        "ci_low": ci_low,
+        "ci_high": ci_high,
+        "t_stat": t_stat,
+        "df_eff": round(df_eff, 1),
+        "p_value": p_val,
+        "r1": r1_bounded,
+        "se_adj": se_adj
+    }
+
+
+def _detectability_weatherhead_1998(
+    monthly_residuals: np.ndarray,
+    annual_slope: float,
+    years_available: float
+) -> Dict[str, Any]:
+    """
+    Calcula los años de datos requeridos para detectar una tendencia climática con certeza
+    al 95% y potencia del 90% según Weatherhead et al. (1998, doi:10.1029/98JD00995).
+    Fórmula: n* = [ (3.3 * sigma_N / |omega|) * sqrt((1 + phi)/(1 - phi)) ]^(2/3)
+    """
+    n = len(monthly_residuals)
+    if n < 4 or abs(annual_slope) < 1e-6:
+        return {
+            "years_needed": 99.0,
+            "years_available": round(years_available, 1),
+            "more_years_needed": max(0.0, round(99.0 - years_available, 1)),
+            "method": "Weatherhead et al. 1998"
+        }
+
+    sigma_n = float(np.std(monthly_residuals, ddof=1))
+    
+    # phi: autocorrelación lag-1 de los residuos mensuales
+    ss = float(np.sum(monthly_residuals ** 2))
+    if ss > 0:
+        phi = float(np.sum(monthly_residuals[:-1] * monthly_residuals[1:]) / ss)
+    else:
+        phi = 0.0
+    phi = max(0.0, min(0.95, phi))
+
+    omega = abs(annual_slope)
+    ratio = (3.3 * sigma_n / omega) * math.sqrt((1.0 + phi) / (1.0 - phi))
+    n_star = ratio ** (2.0 / 3.0)
+
+    more_needed = max(0.0, n_star - years_available)
+    return {
+        "years_needed": round(n_star, 1),
+        "years_available": round(years_available, 1),
+        "more_years_needed": round(more_needed, 1),
+        "method": "Weatherhead et al. 1998"
+    }
+
+
+def analyze_series(
+    ts: dict,
+    *,
+    alpha: float = 0.05,
+    ratio_scale: bool = False,
+    homogeneous_since: Optional[str] = None
+) -> dict:
+    """
+    Analiza rigurosamente una serie mensual TimeSeries v2 y produce AnalysisResult v2 (sin 'variable').
+    Cumple los contratos §4 y §6.
+    """
+    warnings = []
+    data_points = ts.get("data", [])
+    if not data_points:
+        return _insufficient_data_result(ts, "Sin datos disponibles", ["SHORT_RECORD"])
+
+    # 1. Trimming por homogeneous_since si aplica
+    if homogeneous_since:
+        first_date = data_points[0].get("date", "")
+        if first_date < homogeneous_since:
+            warnings.append("SOURCE_SPLICE")
+            data_points = [p for p in data_points if p.get("date", "") >= homogeneous_since]
+
+    # Extraer puntos válidos
+    valid_pts = [(p["date"], float(p["value"])) for p in data_points if p.get("value") is not None]
+    n_obs = len(valid_pts)
+    n_total = len(data_points)
+    n_missing = n_total - n_obs
+    coverage = (n_obs / n_total) if n_total > 0 else 0.0
+
+    if n_obs < 2:
+        return _insufficient_data_result(ts, "Datos insuficientes (< 2 observaciones válidas)", ["SHORT_RECORD"])
+
+    first_dec = _date_to_decimal_year(valid_pts[0][0])
+    last_dec = _date_to_decimal_year(valid_pts[-1][0])
+    years = max(0.1, (last_dec - first_dec) + 1.0 / 12.0)
+
+    # 2. Validación de periodo y cobertura (mínimo 10 años y 80% cobertura)
+    if years < 10.0:
+        warnings.append("SHORT_RECORD")
+    if coverage < 0.80:
+        warnings.append("LOW_COVERAGE")
+
+    if years < 10.0 or coverage < 0.80:
+        return _insufficient_data_result(
+            ts,
+            f"Registro insuficiente ({years:.1f} años, cobertura {coverage*100:.1f}%). Se requieren >= 10 años y >= 80% cobertura.",
+            warnings
+        )
+
+    # 3. Climatología mensual del periodo analizado y anomalías
+    month_sums = {m: 0.0 for m in range(1, 13)}
+    month_counts = {m: 0 for m in range(1, 13)}
+    for dt_str, val in valid_pts:
+        m = int(dt_str.split("-")[1])
+        month_sums[m] += val
+        month_counts[m] += 1
+
+    month_clim = {
+        m: (month_sums[m] / month_counts[m]) if month_counts[m] > 0 else 0.0
         for m in range(1, 13)
     }
 
-    result = []
-    for pt in series:
-        if "year" in pt and "month" in pt:
-            mo = pt["month"]
-        else:
-            _, mo, _ = parse_date(pt["date"])
-        raw = pt.get(variable, pt.get("value"))
-        anomaly = raw - month_means[mo]
-        result.append({
-            "date": pt["date"],
-            "raw_value": round(raw, 4),
-            "anomaly": round(anomaly, 4),
-            "monthly_climatology": round(month_means[mo], 4),
-        })
-    return result
+    # Arrays para análisis
+    x_times = np.array([_date_to_decimal_year(dt_str) for dt_str, _ in valid_pts], dtype=float)
+    y_raw = np.array([val for _, val in valid_pts], dtype=float)
+    y_anom = np.array([val - month_clim[int(dt_str.split("-")[1])] for dt_str, val in valid_pts], dtype=float)
+
+    # 4. Pendiente de Theil-Sen sobre anomalías
+    sen_slope_annual, sen_intercept, sen_ci_low_ann, sen_ci_high_ann = _sen_slope_all_pairs(x_times, y_anom, alpha=alpha)
+    sen_slope_decade = sen_slope_annual * 10.0
+    sen_ci95_decade = [round(sen_ci_low_ann * 10.0, 4), round(sen_ci_high_ann * 10.0, 4)]
+
+    # 5. Mann-Kendall con corrección de autocorrelación (Hamed & Rao 1998)
+    try:
+        mk_orig = pmk.original_test(y_anom, alpha=alpha)
+        mk_p_orig = float(mk_orig.p)
+        mk_z = float(mk_orig.z)
+        mk_tau = float(mk_orig.Tau)
+    except Exception:
+        mk_p_orig, mk_z, mk_tau = 1.0, 0.0, 0.0
+
+    try:
+        mk_hr = pmk.hamed_rao_modification_test(y_anom, alpha=alpha)
+        mk_p_autocorr = float(mk_hr.p)
+        if math.isnan(mk_p_autocorr):
+            mk_p_autocorr = mk_p_orig
+    except Exception:
+        mk_p_autocorr = mk_p_orig
+
+    # 6. Mann-Kendall sobre medias anuales (años con >= 10 meses)
+    annual_dict = {}
+    for dt_str, val in valid_pts:
+        y_int = int(dt_str.split("-")[0])
+        annual_dict.setdefault(y_int, []).append(val)
+
+    annual_records = []
+    annual_vals_for_mk = []
+    for y_int in sorted(annual_dict.keys()):
+        months_list = annual_dict[y_int]
+        if len(months_list) >= 10:
+            ann_mean = round(float(np.mean(months_list)), 4)
+            annual_records.append({"year": y_int, "value": ann_mean, "n_months": len(months_list)})
+            annual_vals_for_mk.append(ann_mean)
+
+    if len(annual_vals_for_mk) >= 3:
+        try:
+            mk_ann = pmk.original_test(annual_vals_for_mk, alpha=alpha)
+            mk_ann_p = float(mk_ann.p)
+            mk_ann_tau = float(mk_ann.Tau)
+            mk_ann_n = len(annual_vals_for_mk)
+        except Exception:
+            mk_ann_p, mk_ann_tau, mk_ann_n = 1.0, 0.0, len(annual_vals_for_mk)
+    else:
+        mk_ann_p, mk_ann_tau, mk_ann_n = 1.0, 0.0, len(annual_vals_for_mk)
+
+    # 7. MCO + prueba t ajustada (Santer et al. 2000)
+    ols = _ols_santer_2000(x_times, y_anom, alpha=alpha)
+    ols_slope_decade = ols["slope"] * 10.0
+    ols_ci95_decade = [round(ols["ci_low"] * 10.0, 4), round(ols["ci_high"] * 10.0, 4)]
+
+    if ols["r1"] > 0.40:
+        warnings.append("HIGH_AUTOCORRELATION")
+
+    # 8. Detectabilidad (Weatherhead et al. 1998)
+    residuals_monthly = y_anom - (sen_slope_annual * x_times + sen_intercept)
+    detectability = _detectability_weatherhead_1998(residuals_monthly, sen_slope_annual, years)
+
+    # 9. Veredicto
+    ci_excludes_zero = (sen_ci95_decade[0] * sen_ci95_decade[1] > 0)
+    sig_p_corr = (mk_p_autocorr < alpha)
+    sig_p_ann = (mk_ann_p < alpha)
+    sig_p_t = (ols["p_value"] < alpha)
+
+    if mk_p_autocorr < 0.01 and sig_p_ann and ci_excludes_zero:
+        verdict_code = "SIGNIFICANT_STRONG"
+        level_str = "p<0.01"
+        is_significant = True
+    elif sig_p_corr and (sig_p_ann or sig_p_t):
+        verdict_code = "SIGNIFICANT"
+        level_str = "p<0.05"
+        is_significant = True
+    elif (sig_p_corr or sig_p_ann or sig_p_t) or (0.05 <= mk_p_autocorr < 0.10):
+        verdict_code = "SUGGESTIVE"
+        level_str = "p<0.10"
+        is_significant = False
+        warnings.append("TESTS_DISAGREE")
+    else:
+        verdict_code = "NOT_SIGNIFICANT"
+        level_str = "p>=0.10"
+        is_significant = False
+
+    direction = "up" if sen_slope_annual > 0 else ("down" if sen_slope_annual < 0 else "neutral")
+    total_change = round(sen_slope_annual * years, 4)
+
+    # % por década solo si ratio_scale = True
+    mean_val = float(np.mean(y_raw))
+    if ratio_scale and abs(mean_val) > 1e-4:
+        percent_per_decade = round((sen_slope_decade / abs(mean_val)) * 100.0, 2)
+    else:
+        percent_per_decade = None
+
+    # Series alineadas con todas las fechas
+    out_dates = [p["date"] for p in data_points]
+    out_raw = [p["value"] for p in data_points]
+    out_clim = [round(month_clim[int(p["date"].split("-")[1])], 4) for p in data_points]
+    out_anom = [
+        round(p["value"] - month_clim[int(p["date"].split("-")[1])], 4)
+        if p.get("value") is not None else None
+        for p in data_points
+    ]
+
+    t_all = np.array([_date_to_decimal_year(d) for d in out_dates], dtype=float)
+    trend_line = [round(float(sen_intercept + sen_slope_annual * t_val), 4) for t_val in t_all]
+    trend_ci_low = [round(float(sen_intercept + (sen_ci_low_ann) * t_val), 4) for t_val in t_all]
+    trend_ci_high = [round(float(sen_intercept + (sen_ci_high_ann) * t_val), 4) for t_val in t_all]
+
+    answers = _build_answers(
+        variable_id=ts.get("variable_id", "Variable"),
+        unit=ts.get("unit", ""),
+        region_name=ts.get("region", {}).get("name", "la región analizada"),
+        direction=direction,
+        sen_slope_decade=sen_slope_decade,
+        total_change=total_change,
+        percent_per_decade=percent_per_decade,
+        verdict_code=verdict_code,
+        years=years,
+        more_years=detectability["more_years_needed"]
+    )
+
+    return {
+        "schema": "analysis/2",
+        "region": ts.get("region", {}),
+        "period": {
+            "start": data_points[0]["date"],
+            "end": data_points[-1]["date"],
+            "years": round(years, 1),
+            "n_obs": n_obs,
+            "n_missing": n_missing,
+            "coverage": round(coverage, 2)
+        },
+        "method": {
+            "deseasonalized": True,
+            "climatology": "media mensual del periodo analizado",
+            "alpha": alpha,
+            "autocorrelation": {
+                "lag1": round(ols["r1"], 2),
+                "n_eff": int(round(ols["df_eff"] + 2.0))
+            },
+            "references": [
+                "Mann 1945", "Kendall 1975", "Sen 1968",
+                "Hamed & Rao 1998", "Santer et al. 2000", "Weatherhead et al. 1998"
+            ]
+        },
+        "trend": {
+            "direction": direction,
+            "sen_slope_per_decade": round(sen_slope_decade, 4),
+            "sen_ci95_per_decade": sen_ci95_decade,
+            "ols_slope_per_decade": round(ols_slope_decade, 4),
+            "ols_ci95_per_decade": ols_ci95_decade,
+            "r_squared": round(ols["r_squared"], 2),
+            "total_change": total_change,
+            "percent_per_decade": percent_per_decade
+        },
+        "tests": {
+            "mann_kendall": {
+                "tau": round(mk_tau, 2),
+                "z": round(mk_z, 1),
+                "p_value": mk_p_orig,
+                "p_value_autocorr": mk_p_autocorr,
+                "correction": "hamed_rao"
+            },
+            "mann_kendall_annual": {
+                "n": mk_ann_n,
+                "tau": round(mk_ann_tau, 2),
+                "p_value": mk_ann_p
+            },
+            "t_test_ols": {
+                "t": round(ols["t_stat"], 1),
+                "df": int(round(ols["df_eff"])),
+                "p_value": ols["p_value"],
+                "adjusted_for_autocorrelation": True
+            }
+        },
+        "significance": {
+            "is_significant": is_significant,
+            "verdict_code": verdict_code,
+            "level": level_str,
+            "tests_agree": "TESTS_DISAGREE" not in warnings
+        },
+        "detectability": detectability,
+        "series": {
+            "dates": out_dates,
+            "raw": out_raw,
+            "climatology": out_clim,
+            "anomalies": out_anom,
+            "trend_line": trend_line,
+            "trend_ci_low": trend_ci_low,
+            "trend_ci_high": trend_ci_high,
+            "annual": annual_records
+        },
+        "answers": answers,
+        "warnings": list(set(warnings)),
+        "provenance": ts.get("provenance", {})
+    }
 
 
-# ---------------------------------------------------------------------------
-# Mann-Kendall — corregido
-# ---------------------------------------------------------------------------
+def _insufficient_data_result(ts: dict, reason: str, warnings: List[str]) -> dict:
+    pts = ts.get("data", [])
+    start_dt = pts[0]["date"] if pts else "N/A"
+    end_dt = pts[-1]["date"] if pts else "N/A"
+    return {
+        "schema": "analysis/2",
+        "region": ts.get("region", {}),
+        "period": {"start": start_dt, "end": end_dt, "years": 0.0, "n_obs": len(pts), "n_missing": 0, "coverage": 0.0},
+        "method": {"deseasonalized": False, "climatology": "N/A", "alpha": 0.05, "autocorrelation": {"lag1": 0.0, "n_eff": 0}, "references": []},
+        "trend": {"direction": "neutral", "sen_slope_per_decade": 0.0, "sen_ci95_per_decade": [0.0, 0.0], "ols_slope_per_decade": 0.0, "ols_ci95_per_decade": [0.0, 0.0], "r_squared": 0.0, "total_change": 0.0, "percent_per_decade": None},
+        "tests": {"mann_kendall": {"tau": 0.0, "z": 0.0, "p_value": 1.0, "p_value_autocorr": 1.0, "correction": "none"}, "mann_kendall_annual": {"n": 0, "tau": 0.0, "p_value": 1.0}, "t_test_ols": {"t": 0.0, "df": 0, "p_value": 1.0, "adjusted_for_autocorrelation": False}},
+        "significance": {"is_significant": False, "verdict_code": "INSUFFICIENT_DATA", "level": "N/A", "tests_agree": False},
+        "detectability": {"years_needed": 99.0, "years_available": 0.0, "more_years_needed": 99.0, "method": "N/A"},
+        "series": {"dates": [p["date"] for p in pts], "raw": [p.get("value") for p in pts], "climatology": [], "anomalies": [], "trend_line": [], "trend_ci_low": [], "trend_ci_high": [], "annual": []},
+        "answers": {
+            "what": {"es": f"Datos insuficientes: {reason}", "en": f"Insufficient data: {reason}"},
+            "where": {"es": ts.get("region", {}).get("name", "Ubicación"), "en": ts.get("region", {}).get("name", "Location")},
+            "how_much": {"es": "No determinable con los datos disponibles.", "en": "Undetermined with available data."},
+            "significant": {"es": "No es posible evaluar significancia estadística.", "en": "Statistical significance cannot be evaluated."},
+            "detectability": {"es": "Se requiere una serie temporal más extensa.", "en": "A longer time series is required."}
+        },
+        "warnings": warnings,
+        "provenance": ts.get("provenance", {})
+    }
 
-def mann_kendall(values: List[float]) -> Dict[str, Any]:
+
+def _build_answers(
+    variable_id: str,
+    unit: str,
+    region_name: str,
+    direction: str,
+    sen_slope_decade: float,
+    total_change: float,
+    percent_per_decade: Optional[float],
+    verdict_code: str,
+    years: float,
+    more_years: float
+) -> dict:
+    """Construye las 4 respuestas pedagógicas deterministas en ES y EN sin LLM."""
+    dir_es = "aumentando" if direction == "up" else ("disminuyendo" if direction == "down" else "estable")
+    dir_en = "increasing" if direction == "up" else ("decreasing" if direction == "down" else "stable")
+
+    pct_str_es = f" ({percent_per_decade:+.1f} % por década)" if percent_per_decade is not None else ""
+    pct_str_en = f" ({percent_per_decade:+.1f}% per decade)" if percent_per_decade is not None else ""
+
+    if verdict_code in ("SIGNIFICANT_STRONG", "SIGNIFICANT"):
+        sig_es = "La tendencia es estadísticamente significativa tras corregir por la autocorrelación mensual. Es compatible con un cambio sistemático en el sistema terrestre."
+        sig_en = "The trend is statistically significant after correcting for monthly autocorrelation. It is consistent with a systematic change in the Earth system."
+    elif verdict_code == "SUGGESTIVE":
+        sig_es = "Evidencia sugestiva pero no concluyente: los datos muestran indicios de cambio, pero las pruebas estadísticas discrepan tras el ajuste de correlación serial."
+        sig_en = "Suggestive but inconclusive evidence: data shows indications of change, but statistical tests disagree after serial correlation adjustment."
+    else:
+        sig_es = "No significativa: las fluctuaciones observadas corresponden a la variabilidad climática natural habitual del periodo analizado."
+        sig_en = "Not significant: observed fluctuations correspond to standard natural climate variability for the analyzed period."
+
+    if more_years > 0:
+        det_es = f"Se estiman necesarios aproximadamente {more_years:.1f} años adicionales de observaciones para confirmar la tendencia con certeza estadística (Weatherhead et al. 1998)."
+        det_en = f"Approximately {more_years:.1f} additional years of observations are estimated to confirm the trend with statistical certainty (Weatherhead et al. 1998)."
+    else:
+        det_es = f"La longitud del registro ({years:.0f} años) supera el umbral de detectabilidad para la magnitud de este cambio."
+        det_en = f"The record length ({years:.0f} years) exceeds the detectability threshold for the magnitude of this change."
+
+    return {
+        "what": {
+            "es": f"{variable_id} se encuentra {dir_es} a lo largo del periodo analizado.",
+            "en": f"{variable_id} is {dir_en} across the analyzed period."
+        },
+        "where": {
+            "es": f"Observado en {region_name}.",
+            "en": f"Observed in {region_name}."
+        },
+        "how_much": {
+            "es": f"Tasa estimada de {sen_slope_decade:+.3f} {unit}/década{pct_str_es}, con un cambio acumulado de {total_change:+.3f} {unit}.",
+            "en": f"Estimated rate of {sen_slope_decade:+.3f} {unit}/decade{pct_str_en}, with an accumulated change of {total_change:+.3f} {unit}."
+        },
+        "significant": {
+            "es": sig_es,
+            "en": sig_en
+        },
+        "detectability": {
+            "es": det_es,
+            "en": det_en
+        }
+    }
+
+
+def analyze_grid(grid: dict, *, alpha: float = 0.05, fdr_q: float = 0.10) -> dict:
     """
-    Prueba de Mann-Kendall para tendencia monótona.
-
-    Correcciones implementadas:
-      1. Tie correction en la varianza de S (empates frecuentes en datos
-         mensuales redondeados).
-      2. Autocorrelación de lag-1 (Hamed & Rao, 2002): se estima rho_1 de
-         los residuos de la mediana y se ajusta var_S → var_S_corrected.
-         Si la corrección haría var_S negativa, se mantiene la original.
+    Analiza una rejilla 3D de observaciones temporales para construir un TrendMap v2.
+    Aplica Benjamini-Hochberg FDR (Wilks 2016) para controlar descubrimientos falsos en el mapa.
     """
-    n = len(values)
-    if n < 3:
+    lats = grid.get("lats", [])
+    lons = grid.get("lons", [])
+    dates = grid.get("dates", [])
+    values_3d = grid.get("values", [])  # [t][lat][lon]
+
+    n_t = len(dates)
+    n_lat = len(lats)
+    n_lon = len(lons)
+
+    if n_t < 12 or n_lat == 0 or n_lon == 0:
         return {
-            "s_stat": 0,
-            "var_s_raw": 0,
-            "var_s_corrected": 0,
-            "rho_1": 0.0,
-            "z_stat": 0.0,
-            "p_value": 1.0,
-            "trend": "insufficient_data",
-            "is_significant": False,
-            "correction_applied": False,
+            "schema": "trendmap/2",
+            "variable_id": grid.get("variable_id", "VAR"),
+            "unit_per_decade": f"{grid.get('unit', '')}/década",
+            "bbox": [min(lons) if lons else 0, min(lats) if lats else 0, max(lons) if lons else 0, max(lats) if lats else 0],
+            "lats": lats, "lons": lons,
+            "slope_per_decade": [], "p_value": [], "significant_fdr": [],
+            "fdr_q": fdr_q, "n_cells": 0, "n_significant": 0,
+            "period": {"start": dates[0] if dates else "", "end": dates[-1] if dates else ""},
+            "summary": {"share_up_significant": 0.0, "share_down_significant": 0.0},
+            "provenance": grid.get("provenance", {})
         }
 
-    # S de Mann-Kendall
-    s = 0
-    ties_count = 0
-    for i in range(n - 1):
-        for j in range(i + 1, n):
-            diff = values[j] - values[i]
-            if diff > 1e-10:
-                s += 1
-            elif diff < -1e-10:
-                s -= 1
-            else:
-                ties_count += 1
+    # Convertir a numpy array [t, lat, lon]
+    arr = np.array(values_3d, dtype=float)
+    x_times = np.array([_date_to_decimal_year(d) for d in dates], dtype=float)
 
-    # Varianza raw
-    var_s_raw = (n * (n - 1) * (2 * n + 5)) / 18.0
+    # Agrupar a medias anuales para vectorizar y acelerar cálculo de cuadrícula
+    year_labels = np.array([int(d.split("-")[0]) for d in dates])
+    unique_years = np.unique(year_labels)
+    n_years = len(unique_years)
 
-    # Corrección de empates: contar grupos de valores idénticos
-    value_counts: Dict[float, int] = {}
-    for v in values:
-        rounded = round(v, 6)
-        value_counts[rounded] = value_counts.get(rounded, 0) + 1
-    t_groups = [c for c in value_counts.values() if c > 1]
-    if t_groups:
-        tie_correction = sum(c * (c * c - 1) * (2 * c + 5) for c in t_groups)
-        var_s_tied = var_s_raw - tie_correction / 18.0
-    else:
-        var_s_tied = var_s_raw
+    # Matriz anual [year_idx, lat, lon]
+    ann_arr = np.full((n_years, n_lat, n_lon), np.nan, dtype=float)
+    for y_idx, yr in enumerate(unique_years):
+        mask = (year_labels == yr)
+        # Promediar solo si hay al menos 8 meses válidos en el año
+        yr_slice = arr[mask, :, :]
+        valid_counts = np.sum(~np.isnan(yr_slice), axis=0)
+        means = np.nanmean(yr_slice, axis=0)
+        means[valid_counts < 8] = np.nan
+        ann_arr[y_idx, :, :] = means
 
-    # Autocorrelación de lag-1 sobre la mediana (Hamed & Rao 2002)
-    median_val = sorted(values)[n // 2]
-    residuals = [v - median_val for v in values]
-    mean_r = sum(residuals) / n
+    slope_mat = np.full((n_lat, n_lon), None)
+    pval_mat = np.full((n_lat, n_lon), None)
+    
+    # Recolectar celdas para Benjamini-Hochberg
+    valid_cells = []
 
-    if n > 3 and mean_r != 0:
-        num = sum(
-            (residuals[i] - mean_r) * (residuals[i + 1] - mean_r)
-            for i in range(n - 1)
-        )
-        den = sum((r - mean_r) ** 2 for r in residuals)
-        rho_1 = num / den if den != 0 else 0.0
-    else:
-        rho_1 = 0.0
+    for i in range(n_lat):
+        for j in range(n_lon):
+            series = ann_arr[:, i, j]
+            valid_mask = ~np.isnan(series)
+            if np.sum(valid_mask) >= 10:
+                y_pts = series[valid_mask]
+                x_pts = unique_years[valid_mask]
+                
+                # Pendiente rápida Theil-Sen
+                n_pts = len(y_pts)
+                diffs_y = y_pts[:, None] - y_pts[None, :]
+                diffs_x = x_pts[:, None] - x_pts[None, :]
+                upper_idx = np.triu_indices(n_pts, k=1)
+                dx = diffs_x[upper_idx]
+                dy = diffs_y[upper_idx]
+                valid_dx = dx != 0
+                slopes = dy[valid_dx] / dx[valid_dx]
+                slope_decade = float(np.median(slopes)) * 10.0
 
-    # Corrección de autocorrelación en var_S
-    correction_applied = False
-    if abs(rho_1) > 0.05:
-        # Aproximación de Hamed & Rao: escalar por (1 + rho_1)/(1 - rho_1)
-        scale = (1 + rho_1) / (1 - rho_1) if rho_1 < 1 else 1.0
-        var_s_corrected = var_s_tied * scale
-        if var_s_corrected > 0:
-            var_s = var_s_corrected
-            correction_applied = True
-        else:
-            var_s = var_s_tied
-    else:
-        var_s = var_s_tied
+                # Mann-Kendall S statistic
+                s_stat = float(np.sum(np.sign(dy)))
+                var_s = (n_pts * (n_pts - 1) * (2 * n_pts + 5)) / 18.0
+                if s_stat > 0:
+                    z = (s_stat - 1.0) / math.sqrt(var_s)
+                elif s_stat < 0:
+                    z = (s_stat + 1.0) / math.sqrt(var_s)
+                else:
+                    z = 0.0
+                pval = float(2.0 * stats.norm.sf(abs(z)))
 
-    # Z estandarizado
-    if s > 0:
-        z = (s - 1) / math.sqrt(var_s) if var_s > 0 else 0.0
-    elif s < 0:
-        z = (s + 1) / math.sqrt(var_s) if var_s > 0 else 0.0
+                slope_mat[i, j] = round(slope_decade, 4)
+                pval_mat[i, j] = round(pval, 6)
+                valid_cells.append((i, j, pval, slope_decade))
+
+    # Control de FDR (Benjamini-Hochberg)
+    sig_fdr_mat = np.full((n_lat, n_lon), False)
+    m = len(valid_cells)
+    n_sig = 0
+    up_sig = 0
+    down_sig = 0
+
+    if m > 0:
+        # Ordenar por p-value ascendente
+        valid_cells.sort(key=lambda item: item[2])
+        # Encontrar el mayor k tal que P(k) <= (k / m) * q
+        k_max = -1
+        for k_idx, (_, _, pval, _) in enumerate(valid_cells):
+            k = k_idx + 1
+            threshold = (k / float(m)) * fdr_q
+            if pval <= threshold:
+                k_max = k_idx
+
+        if k_max >= 0:
+            for k_idx in range(k_max + 1):
+                ci, cj, _, s_dec = valid_cells[k_idx]
+                sig_fdr_mat[ci, cj] = True
+                n_sig += 1
+                if s_dec > 0:
+                    up_sig += 1
+                elif s_dec < 0:
+                    down_sig += 1
+
+    return {
+        "schema": "trendmap/2",
+        "variable_id": grid.get("variable_id", "VAR"),
+        "unit_per_decade": f"{grid.get('unit', '')}/década",
+        "bbox": [min(lons), min(lats), max(lons), max(lats)],
+        "lats": lats,
+        "lons": lons,
+        "slope_per_decade": slope_mat.tolist(),
+        "p_value": pval_mat.tolist(),
+        "significant_fdr": sig_fdr_mat.tolist(),
+        "fdr_q": fdr_q,
+        "n_cells": m,
+        "n_significant": n_sig,
+        "period": {"start": dates[0], "end": dates[-1]},
+        "summary": {
+            "share_up_significant": round(up_sig / m, 3) if m > 0 else 0.0,
+            "share_down_significant": round(down_sig / m, 3) if m > 0 else 0.0
+        },
+        "provenance": grid.get("provenance", {})
+    }
+
+
+def compare(a: dict, b: dict) -> dict:
+    """
+    Compara dos resultados de análisis (AnalysisResult v2).
+    Determina si sus tendencias son opuestas y si la diferencia es estadísticamente significativa.
+    """
+    trend_a = a.get("trend", {})
+    trend_b = b.get("trend", {})
+    sig_a = a.get("significance", {}).get("is_significant", False)
+    sig_b = b.get("significance", {}).get("is_significant", False)
+
+    slope_a = trend_a.get("sen_slope_per_decade", 0.0)
+    slope_b = trend_b.get("sen_slope_per_decade", 0.0)
+
+    # Estimar error estándar a partir del IC 95%
+    ci_a = trend_a.get("sen_ci95_per_decade", [slope_a, slope_a])
+    ci_b = trend_b.get("sen_ci95_per_decade", [slope_b, slope_b])
+    
+    se_a = abs(ci_a[1] - ci_a[0]) / 3.92 if ci_a else 0.0
+    se_b = abs(ci_b[1] - ci_b[0]) / 3.92 if ci_b else 0.0
+
+    se_diff = math.sqrt(se_a**2 + se_b**2)
+    if se_diff > 1e-9:
+        z = (slope_a - slope_b) / se_diff
     else:
         z = 0.0
 
-    # p-value bilateral (aprox. de la normal estándar)
-    p_value = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(z) / math.sqrt(2.0))))
-    p_value = max(0.000001, min(1.0, p_value))
+    diff_significant = abs(z) >= 1.96
+    opposite = bool((slope_a * slope_b < 0) and sig_a and sig_b)
 
-    trend = "ninguna"
-    if p_value < 0.05:
-        trend = "ascendente" if s > 0 else "descendente"
+    reg_a = a.get("region", {}).get("name", "Región A")
+    reg_b = b.get("region", {}).get("name", "Región B")
+
+    if opposite:
+        stmt_es = f"{reg_a} y {reg_b} exhiben tendencias opuestas estadísticamente significativas."
+        stmt_en = f"{reg_a} and {reg_b} exhibit statistically significant opposing trends."
+    elif diff_significant:
+        stmt_es = f"Existe una diferencia estadísticamente significativa en las tasas de cambio de {reg_a} y {reg_b} (z = {z:.2f})."
+        stmt_en = f"There is a statistically significant difference in the rates of change between {reg_a} and {reg_b} (z = {z:.2f})."
+    else:
+        stmt_es = f"No se encontró diferencia significativa entre las pendientes de {reg_a} y {reg_b} (z = {z:.2f})."
+        stmt_en = f"No significant difference was detected between the slopes of {reg_a} and {reg_b} (z = {z:.2f})."
 
     return {
-        "s_stat": s,
-        "var_s_raw": round(var_s_raw, 4),
-        "var_s_corrected": round(var_s, 4),
-        "tie_correction": ties_count > 0,
-        "rho_1": round(rho_1, 4),
-        "z_stat": round(z, 4),
-        "p_value": round(p_value, 6),
-        "trend": trend,
-        "is_significant": bool(p_value < 0.05),
-        "correction_applied": correction_applied,
+        "opposite": opposite,
+        "difference_significant": diff_significant,
+        "z": round(z, 2),
+        "statement": {
+            "es": stmt_es,
+            "en": stmt_en
+        }
     }
 
 
-# ---------------------------------------------------------------------------
-# Theil-Sen (pendiente de Sen)
-# ---------------------------------------------------------------------------
-
-def theil_sen_slope(values: List[float]) -> float:
-    """
-    Estimador de Theil-Sen: mediana de todas las pendientes entre pares.
-
-    Para series > 2000 puntos se submuestrea (max 5000 pendientes) para
-    evitar O(N²) explosivo, manteniendo precisión aceptable.
-    """
-    n = len(values)
-    if n < 2:
-        return 0.0
-
-    # Número máximo de pendientes para submuestreo
-    MAX_SLOPES = 5000
-    total_pairs = n * (n - 1) // 2
-
-    if total_pairs <= MAX_SLOPES:
-        # Cálculo completo
-        slopes = []
-        for i in range(n - 1):
-            for j in range(i + 1, n):
-                dt = j - i
-                if dt == 0:
-                    continue
-                slopes.append((values[j] - values[i]) / dt)
-    else:
-        # Submuestreo uniforme
-        step = math.ceil(math.sqrt(total_pairs / MAX_SLOPES))
-        slopes = []
-        count = 0
-        for i in range(0, n - 1, step):
-            for j in range(i + step, n, step):
-                if count >= MAX_SLOPES:
-                    break
-                dt = j - i
-                if dt == 0:
-                    continue
-                slopes.append((values[j] - values[i]) / dt)
-                count += 1
-
-    if not slopes:
-        return 0.0
-    slopes.sort()
-    m = len(slopes)
-    if m % 2 == 1:
-        return slopes[m // 2]
-    return (slopes[m // 2 - 1] + slopes[m // 2]) / 2.0
-
-
-# ---------------------------------------------------------------------------
-# OLS con intervalo de confianza y prueba t
-# ---------------------------------------------------------------------------
-
-def ols_with_ci(x: List[float], y: List[float],
-                alpha: float = 0.05) -> Dict[str, Any]:
-    """
-    Regresión lineal OLS con:
-      - pendiente, intercepto, R² y R² ajustado
-      - IC al (1-alpha)*100% para pendiente e intercepto
-      - valor-p de la pendiente (prueba t)
-      - residuos y diagnóstico básico
-    """
-    n = len(y)
-    if n < 3:
-        return {
-            "slope": 0.0,
-            "intercept": 0.0,
-            "se_slope": 0.0,
-            "se_intercept": 0.0,
-            "r_squared": 0.0,
-            "r_squared_adj": 0.0,
-            "t_stat": 0.0,
-            "p_value": 1.0,
-            "ci_slope": (0.0, 0.0),
-            "ci_intercept": (0.0, 0.0),
-            "projected": list(y),
-        }
-
-    x_mean = sum(x) / n
-    y_mean = sum(y) / n
-
-    ss_xy = sum((x[i] - x_mean) * (y[i] - y_mean) for i in range(n))
-    ss_xx = sum((x[i] - x_mean) ** 2 for i in range(n))
-
-    slope = ss_xy / ss_xx if ss_xx != 0 else 0.0
-    intercept = y_mean - slope * x_mean
-
-    # Residuos
-    residuals = [y[i] - (slope * x[i] + intercept) for i in range(n)]
-    ss_res = sum(r ** 2 for r in residuals)
-    ss_tot = sum((y[i] - y_mean) ** 2 for i in range(n))
-
-    mse = ss_res / (n - 2) if n > 2 else 0.0
-    se_slope = math.sqrt(mse / ss_xx) if ss_xx > 0 else 0.0
-    se_intercept = math.sqrt(mse * (1.0 / n + x_mean ** 2 / ss_xx)) \
-        if ss_xx > 0 else 0.0
-
-    # R² y R² ajustado
-    r_squared = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
-    r_squared_adj = 1.0 - ((1 - r_squared) * (n - 1) / (n - 2)) \
-        if n > 2 else 0.0
-
-    # Prueba t de la pendiente
-    t_stat = slope / se_slope if se_slope > 0 else 0.0
-    p_value = 2.0 * (1.0 - _t_cdf(abs(t_stat), n - 2))
-
-    # IC al 95% (aprox. normal para n > 30, t-student para n <= 30)
-    t_crit = _t_ppf(1 - alpha / 2, n - 2)
-    ci_slope = (slope - t_crit * se_slope, slope + t_crit * se_slope)
-    ci_intercept = (intercept - t_crit * se_intercept,
-                    intercept + t_crit * se_intercept)
-
-    projected = [slope * x[i] + intercept for i in range(n)]
-
-    return {
-        "slope": round(slope, 6),
-        "intercept": round(intercept, 4),
-        "se_slope": round(se_slope, 6),
-        "se_intercept": round(se_intercept, 6),
-        "r_squared": round(max(0.0, r_squared), 4),
-        "r_squared_adj": round(max(0.0, r_squared_adj), 4),
-        "t_stat": round(t_stat, 4),
-        "p_value": round(p_value, 6),
-        "ci_slope_95": (round(ci_slope[0], 6), round(ci_slope[1], 6)),
-        "ci_intercept_95": (round(ci_intercept[0], 4), round(ci_intercept[1], 4)),
-        "residuals": [round(r, 4) for r in residuals],
-        "projected": [round(p, 4) for p in projected],
-    }
-
-
-# Aproximación de la CDF de t-student (para n >= 2)
-def _t_cdf(t_val: float, df: int) -> float:
-    """CDF de t-student bilateral (aprox. usando regularizada)."""
-    if df < 2:
-        # fallback normal para df bajo
-        return 0.5 * (1 + math.erf(t_val / math.sqrt(2)))
-    x = df / (df + t_val * t_val)
-    # I_x(df/2, 0.5) — regularizada incomplete beta
-    # Simplificación: usar aproximación normal para df >= 30
-    if df >= 30:
-        return 0.5 * (1 + math.erf(t_val / math.sqrt(2)))
-    # Aproximación de Abramowitz & Stegun para t
-    # Usamos la relación con la beta incompleta regularizada
-    p = df / 2
-    q = 0.5
-    # I_x(p, q) ≈ 1 - (1-x)^q * sum(...) — aproximación simple
-    # Para simplificar, usamos normal para df >= 10
-    if df >= 10:
-        return 0.5 * (1 + math.erf(t_val / math.sqrt(2)))
-    # Para df bajo, usamos aproximaion de Hill
-    return 0.5 * (1 + math.erf(t_val / math.sqrt(2 * df / (df - 1.33))))
-
-
-def _t_ppf(p: float, df: int) -> float:
-    """Inverso de CDF t-student (aprox. por Newton)."""
-    if df >= 30:
-        return _norm_ppf(p)
-    # Newton-Raphson
-    x = _norm_ppf(p)  # inicio con normal
-    for _ in range(20):
-        cdf_val = _t_cdf(x, df)
-        # derivada aprox.
-        h = 0.001
-        cdf_hp = _t_cdf(x + h, df)
-        deriv = (cdf_hp - cdf_val) / h
-        if abs(deriv) < 1e-12:
-            break
-        x -= (cdf_val - p) / deriv
-    return x
-
-
-def _norm_ppf(p: float) -> float:
-    """Aproximación de la función inversa normal (Abramowitz & Stegun 26.2.23)."""
-    if p <= 0:
-        return -8.0
-    if p >= 1:
-        return 8.0
-    if p == 0.5:
-        return 0.0
-    if p > 0.5:
-        t = math.sqrt(-2 * math.log(1 - p))
-    else:
-        t = math.sqrt(-2 * math.log(p))
-    c0, c1, c2 = 2.515517, 0.802853, 0.010328
-    d1, d2, d3 = 1.432788, 0.189269, 0.001308
-    return t - (c0 + c1 * t + c2 * t * t) / (
-        1 + d1 * t + d2 * t * t + d3 * t * t * t)
-
-
-# ---------------------------------------------------------------------------
-# "Cuántos años faltan para estar seguros"
-# ---------------------------------------------------------------------------
-
-def years_needed(slope: float, se_slope: float,
-                 power: float = 0.80, alpha: float = 0.05) -> Dict[str, Any]:
-    """
-    Weatherhead et al. (1998): número mínimo de años para detectar
-    una tendencia con potencia 80 % y alfa 5 %.
-
-    years ≈ ((z_α/2 + z_β) * σ_e / (slope * sqrt(N)))²
-    Donde σ_e es la desviación estándar de los residuos.
-    Reordenando para N (número de observaciones):
-    N_needed = ((z_α/2 + z_β) * σ_e / slope)²
-    """
-    z_alpha = _norm_ppf(1 - alpha / 2)
-    z_beta = _norm_ppf(power)
-
-    if abs(slope) < 1e-12:
-        return {
-            "years_needed": None,
-            "reason": "pendeñe ~ 0: no hay tendencia que detectar",
-        }
-
-    return {
-        "years_needed": None,
-        "note": "se calculará cuando se tenga σ_e (residuos)",
-    }
-
-
-# ---------------------------------------------------------------------------
-# Tasa de cambio consistente con la unidad
-# ---------------------------------------------------------------------------
-
-def consistent_rates(monthly_slope: float,
-                     unit: str,
-                     name: str) -> Dict[str, Any]:
-    """
-    Calcula tasas de cambio consistentes con la unidad.
-
-    - Para °C: tasa absoluta por año y década, NO porcentaje
-    - Para % (variables sin unidades absolutas): porcentaje
-    - Para mm/day: tasa absoluta
-    - Para valores adimensionales (albedo, NDVI): porcentaje y absoluto
-    """
-    annual = monthly_slope * 12
-    decadal = annual * 10
-
-    # ¿Es una variable relativa donde % tiene sentido?
-    ratio_vars = {"albedo", "ndvi", "aod"}
-    unit_lower = unit.lower() if unit else ""
-    name_lower = name.lower() if name else ""
-
-    if any(r in unit_lower or r in name_lower for r in ["%", "ndvi", "albedo", "aod", "1"]):
-        # Usar porcentaje respecto a un valor de referencia (media ~1)
-        return {
-            "annual_abs": round(annual, 4),
-            "decadal_abs": round(decadal, 4),
-            "annual_unit": unit,
-            "percent_note": f"Tasa: {annual:+.4f} {unit}/año ({decadal:+.4f} {unit}/década)",
-        }
-    elif "c" in unit_lower or "°" in unit_lower:
-        # Temperatura: solo tasa absoluta
-        return {
-            "annual_abs": round(annual, 4),
-            "decadal_abs": round(decadal, 4),
-            "annual_unit": f"{unit}/año",
-            "percent_note": None,  # No aplicar % a °C
-        }
-    else:
-        # General: tasa absoluta + nota
-        return {
-            "annual_abs": round(annual, 4),
-            "decadal_abs": round(decadal, 4),
-            "annual_unit": f"{unit}/año",
-            "percent_note": None,
-        }
-
-
-# ---------------------------------------------------------------------------
-# Pipeline principal
-# ---------------------------------------------------------------------------
-
-def analyze(series: List[Dict[str, Any]],
-            variable_id: str,
-            variable_name: str,
-            unit: str,
-            region: Dict[str, Any],
-            provenance: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Pipeline completo de análisis.
-
-    Input:
-        series: lista de dicts con "date" y "variable_id" (ej: T2M)
-        variable_id: nombre de la variable (ej: "T2M")
-        variable_name: nombre descriptivo
-        unit: unidades (ej: "°C")
-        region: {"name": "...", "lat": ..., "lon": ...}
-        provenance: {"source": "...", "source_url": "...", ...}
-
-    Output: estructura TrendAnalysisResult completa.
-    """
-    if len(series) < 3:
-        return {
-            "error": "Datos insuficientes: se requieren al menos 3 observaciones",
-            "n_obs": len(series),
-            "variable": {"id": variable_id, "name": variable_name, "unit": unit},
-            "region": region,
-        }
-
-    # 1. Extraer valores (acepta {"date": ..., "variable_id": ...} o {"date": ..., "value": ...})
-    values = []
-    for pt in series:
-        if variable_id in pt:
-            values.append(pt[variable_id])
-        elif "value" in pt:
-            values.append(pt["value"])
-        else:
-            raise ValueError(
-                f"El punto {pt} no tiene clave '{variable_id}' ni 'value'. "
-                f"Campos disponibles: {list(pt.keys())}"
-            )
-    dates = [pt["date"] for pt in series]
-
-    # 2. Desestacionalización
-    deseason = deseasonalize(series, variable_id)
-    anomalies = [d["anomaly"] for d in deseason]
-
-    # 3. Mann-Kendall corregido
-    mk = mann_kendall(anomalies)
-
-    # 4. Theil-Sen sobre desestacionalizado
-    sen_slope = theil_sen_slope(anomalies)
-
-    # 5. OLS con CI
-    x_idx = list(range(len(series)))
-    ols = ols_with_ci(x_idx, values)
-
-    # 6. Tasas consistentes
-    annual_rate = consistent_rates(sen_slope, unit, variable_name)
-
-    # 7. Veredicto honesto
-    p_val = mk["p_value"]
-    is_sig = mk["correction_applied"]  # si se aplicó corrección, ser más estricto
-
-    if is_sig and mk["is_significant"] and p_val < 0.05:
-        sig_label = (
-            "Estadísticamente Significativo"
-            f" (p = {p_val:.4f})"
-        )
-        sig_explanation = (
-            f"Tras corrección por autocorrelación y empates, "
-            f"la prueba Mann-Kendall confirma una tendencia "
-            f"{mk['trend']} (z = {mk['z_stat']}, "
-            f"ρ₁ = {mk['rho_1']}). La probabilidad de que "
-            f"esto sea casualidad es < 5%."
-        )
-    elif is_sig:
-        sig_label = "No Significativo tras corrección"
-        sig_explanation = (
-            f"La prueba sin corrección sugería {mk['trend']}, pero "
-            f"tras ajustar por autocorrelación (ρ₁ = {mk['rho_1']}) "
-            f"y empates, la tendencia deja de ser significativa "
-            f"(p = {p_val:.4f}). Esto es común con datos mensuales."
-        )
-    else:
-        if p_val < 0.05:
-            sig_label = "Significativo (sin corrección necesaria)"
-            sig_explanation = (
-                f"La serie no muestra autocorrelación ni empates "
-                f"significativos, por lo que la prueba básica es válida. "
-                f"Mann-Kendall: p = {p_val:.4f}."
-            )
-        else:
-            sig_label = "No Significativo"
-            sig_explanation = (
-                f"Las fluctuaciones observadas no superan el umbral "
-                f"de significancia estadística (p = {p_val:.4f} >= 0.05). "
-                f"No se puede afirmar que exista un cambio real."
-            )
-
-    # 8. Respuestas a las 4 preguntas
-    direction = "al alza" if sen_slope > 0 else ("a la baja" if sen_slope < 0 else "sin tendencia")
-    annual_val = annual_rate["annual_abs"]
-
-    detective_answers = {
-        "what": (
-            f"{variable_name}: {direction} a razón de "
-            f"{annual_val:+.4f} {unit}/año "
-            f"({annual_rate['decadal_abs']:+.4f} {unit}/década)."
-        ),
-        "where": (
-            f"{region.get('name', 'región')} "
-            f"({region.get('lat', '?')}, {region.get('lon', '?')})."
-        ),
-        "how_much": (
-            f"{annual_rate['percent_note'] or f'Tasa anual: {annual_val:+.4f} {unit}'}"
-        ),
-        "is_significant": sig_explanation,
-        "statistical_methods": {
-            "mann_kendall_z": mk["z_stat"],
-            "mann_kendall_p": p_val,
-            "theil_sen_slope_per_month": round(sen_slope, 6),
-            "ols_r_squared": ols["r_squared"],
-            "ols_p_value_slope": ols["p_value"],
-            "ols_ci_slope": ols["ci_slope_95"],
-            "mk_corrections": {
-                "tie_correction": mk["tie_correction"],
-                "autocorrelation_correction": mk["correction_applied"],
-                "rho_1_lag1": mk["rho_1"],
-            },
-        },
-    }
-
-    # 9. Provenencia
-    result_provenance = {
-        "source": provenance.get("source", "NASA POWER"),
-        "source_url": provenance.get("source_url", ""),
-        "fetched_at": provenance.get("fetched_at", ""),
-        "model": provenance.get("model", "MERRA-2"),
-        "analysis_engine": "EarthTrend Detective v2",
-        "methodology": "Mann-Kendall (tie + autocorr corrected) + Theil-Sen + OLS with 95% CI",
-    }
-
-    return {
-        "variable": {
-            "id": variable_id,
-            "name": variable_name,
-            "unit": unit,
-        },
-        "region": region,
-        "time_range": {
-            "start": dates[0],
-            "end": dates[-1],
-            "total_observations": len(series),
-            "temporal_resolution": "monthly",
-        },
-        "metrics": {
-            "sen_slope_per_month": round(sen_slope, 6),
-            "annual_rate": annual_rate["annual_abs"],
-            "decadal_rate": annual_rate["decadal_abs"],
-            "annual_unit": annual_rate["annual_unit"],
-            "r_squared": ols["r_squared"],
-            "r_squared_adjusted": ols["r_squared_adj"],
-            "p_value_ols": ols["p_value"],
-            "mann_kendall_z": mk["z_stat"],
-            "mann_kendall_p": p_val,
-            "is_significant": mk["is_significant"],
-            "significance_label": sig_label,
-        },
-        "detective_answers": detective_answers,
-        "series": {
-            "dates": dates,
-            "raw_values": [round(v, 4) for v in values],
-            "anomalies": [round(a, 4) for a in anomalies],
-            "trend_line": ols["projected"],
-            "residuals": ols["residuals"],
-        },
-        "provenance": result_provenance,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Demo
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    # Datos de prueba con tendencia clara
-    import random
-    random.seed(42)
-    test_data = []
-    base_temp = 20.0
-    for i in range(120):
-        year = 2015 + i // 12
-        month = (i % 12) + 1
-        date_str = f"{year}-{month:02d}"
-        seasonal = -2 * math.cos(2 * math.pi * month / 12)  # máx en enero
-        trend = 0.002 * i  # tendencia al alza
-        noise = random.gauss(0, 0.8)
-        val = base_temp + seasonal + trend + noise
-        test_data.append({"date": date_str, "T2M": round(val, 2)})
-
-    result = analyze(
-        series=test_data,
-        variable_id="T2M",
-        variable_name="Temperatura a 2 metros",
-        unit="°C",
-        region={"name": "Lima, Perú", "lat": -12.05, "lon": -77.03},
-        provenance={
-            "source": "NASA POWER (MERRA-2)",
-            "source_url": "https://power.larc.nasa.gov",
-            "model": "MERRA-2",
-        },
-    )
-
-    print(json.dumps(result, indent=2, ensure_ascii=False)[:3000])
+__all__ = [
+    "analyze_series",
+    "analyze_grid",
+    "compare"
+]

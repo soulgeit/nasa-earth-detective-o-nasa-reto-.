@@ -1,0 +1,15 @@
+{"question": "¿está lloviendo menos en Piura?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿cada vez hace más calor en Lima?", "lang": "es", "expected_variable_ids": ["T2M"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿el aire de Lima está más contaminado que antes?", "lang": "es", "expected_variable_ids": ["AOD_55"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿se está derritiendo el hielo del Ártico?", "lang": "es", "expected_variable_ids": ["SEAICE_EXTENT_N"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿hay menos nieve en la Cordillera Blanca?", "lang": "es", "expected_variable_ids": ["SNODP"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿la selva de Madre de Dios pierde vegetación?", "lang": "es", "expected_variable_ids": ["MODIS_NDVI"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿se está secando el suelo de Ica?", "lang": "es", "expected_variable_ids": ["GWETTOP"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿qué es la humedad relativa?", "lang": "es", "expected_variable_ids": ["RH2M"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿llega más radiación solar ahora?", "lang": "es", "expected_variable_ids": ["ALLSKY_SFC_SW_DWN"], "provisional": true, "by": "claude-omni-2"}
+{"question": "¿el ozono de la atmósfera se está recuperando?", "lang": "es", "expected_variable_ids": ["TO3", "OMI_O3_TOTAL"], "provisional": true, "by": "claude-omni-2"}
+{"question": "is it raining less in Piura?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"], "provisional": true, "by": "claude-omni-2"}
+{"question": "is Lima getting hotter?", "lang": "en", "expected_variable_ids": ["T2M"], "provisional": true, "by": "claude-omni-2"}
+{"question": "is Arctic sea ice shrinking?", "lang": "en", "expected_variable_ids": ["SEAICE_EXTENT_N"], "provisional": true, "by": "claude-omni-2"}
+{"question": "what is soil moisture?", "lang": "en", "expected_variable_ids": ["GWETTOP"], "provisional": true, "by": "claude-omni-2"}
+{"question": "is Amazon vegetation declining?", "lang": "en", "expected_variable_ids": ["MODIS_NDVI"], "provisional": true, "by": "claude-omni-2"}

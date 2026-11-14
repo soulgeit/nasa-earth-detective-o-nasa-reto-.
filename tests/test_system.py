@@ -1,149 +1,125 @@
-"""
-Pruebas unitarias para el motor estadístico v2 de EarthTrend Detective.
+# SI-assisted: claude-omni-3 (Claude Opus 5.5)
+"""Prueba de sistema de punta a punta (ETL -> motor -> contrato v2).
+
+Sustituye al `test_system.py` del primer prototipo, que importaba funciones del
+motor estadístico antiguo (`mann_kendall_test`, `theil_sen_slope`, ...) ya
+inexistentes y rompía la colección de todo `pytest`.
+
+Aquí no se simula ciencia: se comprueban dos cosas que el producto promete.
+
+1. El motor v2 responde a una serie con tendencia conocida con el veredicto y el
+   signo correctos, y se niega con `INSUFFICIENT_DATA` cuando no hay años.
+2. **El respaldo local de fixtures no se disfraza de dato en vivo.** Si NASA
+   POWER falla y `ALLOW_FIXTURES=0`, el ETL falla; con `ALLOW_FIXTURES=1` sirve
+   la muestra marcada `provenance.kind = "fixture"`, nunca `nasa_api`
+   (contrato §3).
 """
 
-import unittest
+from __future__ import annotations
+
 import math
-import sys
-import os
-import random
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+import pytest
 
-from src.stats.trend_engine import (
-    mann_kendall,
-    theil_sen_slope,
-    ols_with_ci,
-    deseasonalize,
-    analyze,
-)
+from src.etl import power as etl_power
+from src.stats.trend_engine import analyze_series
 
 
-class TestMannKendall(unittest.TestCase):
-
-    def test_strictly_increasing(self):
-        # Serie con tendencia + ruido (como datos reales)
-        random.seed(42)
-        vals = [float(i) + random.gauss(0, 0.5) for i in range(1, 51)]
-        res = mann_kendall(vals)
-        # La serie tiene tendencia positiva — S debe ser positivo
-        self.assertGreater(res['s_stat'], 0)
-
-    def test_strictly_decreasing(self):
-        random.seed(42)
-        vals = [float(50 - i) + random.gauss(0, 0.5) for i in range(50)]
-        res = mann_kendall(vals)
-        self.assertLess(res['s_stat'], 0)  # tendencia negativa
-
-    def test_pure_noise(self):
-        random.seed(42)
-        vals = [math.sin(i * 0.5) for i in range(100)]
-        res = mann_kendall(vals)
-        # Sin corrección: podria ser significativo; con corrección, no
-        self.assertIn(res['trend'], ['ascendente', 'descendente', 'ninguna'])
+def _monthly_series(years_from: int, years_to: int, slope_per_year: float = 0.0, noise: float = 0.05):
+    """Serie mensual determinista; el ruido es una onda, no aleatorio."""
+    data = []
+    for year in range(years_from, years_to + 1):
+        for month in range(1, 13):
+            t = (year - years_from) + (month - 1) / 12.0
+            value = 15.0 + slope_per_year * t + noise * math.sin(t * 2.1) + 0.02 * math.cos(t * 5.3)
+            data.append({"date": f"{year:04d}-{month:02d}", "value": round(value, 4)})
+    return {
+        "schema": "timeseries/2",
+        "variable_id": "T2M",
+        "unit": "°C",
+        "cadence": "monthly",
+        "region": {"kind": "point", "name": "Synthetic test point", "lat": 0.0, "lon": 0.0, "bbox": None},
+        "aggregation": "point",
+        "data": data,
+        "provenance": {"kind": "nasa_api", "source": "test", "sha256": "test"},
+    }
 
 
-class TestTheilSen(unittest.TestCase):
-
-    def test_robustness_to_outlier(self):
-        vals = [2.0 * i for i in range(20)]
-        vals[10] = 9999.0  # Outlier extremo
-        slope = theil_sen_slope(vals)
-        self.assertAlmostEqual(slope, 2.0, places=1)
+# --- Motor estadístico v2 -------------------------------------------------
 
 
-class TestOLS(unittest.TestCase):
-
-    def test_linear_fit(self):
-        n = 100
-        x = list(range(n))
-        y = [2.0 * i + 10.0 + random.gauss(0, 1) for i in range(n)]
-        res = ols_with_ci(x, y)
-        self.assertAlmostEqual(res['slope'], 2.0, places=1)
-        self.assertAlmostEqual(res['intercept'], 10.0, places=0)
-        self.assertGreater(res['r_squared'], 0.9)
+def test_warming_series_is_flagged_upward_and_significant():
+    result = analyze_series(_monthly_series(2000, 2019, slope_per_year=0.05))
+    assert result["schema"] == "analysis/2"
+    assert result["trend"]["direction"] == "up"
+    assert result["trend"]["sen_slope_per_decade"] > 0
+    assert result["significance"]["is_significant"] is True
+    assert result["period"]["n_obs"] == 240
 
 
-class TestDeseasonalize(unittest.TestCase):
-
-    def test_seasonal_removed(self):
-        series = []
-        for y in range(2020, 2023):
-            for m in range(1, 13):
-                seasonal = 10.0 if m == 1 else 0.0
-                series.append({
-                    'date': f'{y}-{m:02d}',
-                    'year': y, 'month': m,
-                    'value': 20.0 + seasonal,
-                })
-
-        deseason = deseasonalize(series)
-        anomalies = [d['anomaly'] for d in deseason]
-        # Tras desestacionalizar, enero y julio deben tener anomalía ~0
-        self.assertAlmostEqual(anomalies[0], 0.0, places=3)
-        self.assertAlmostEqual(anomalies[6], 0.0, places=3)
+def test_cooling_series_is_flagged_downward():
+    result = analyze_series(_monthly_series(2000, 2019, slope_per_year=-0.05))
+    assert result["trend"]["direction"] == "down"
+    assert result["trend"]["sen_slope_per_decade"] < 0
 
 
-class TestFullPipeline(unittest.TestCase):
-
-    def test_analyze_with_power_format(self):
-        """Prueba con formato POWER: {'date': ..., 'value': ...}"""
-        random.seed(42)
-        series = []
-        for i in range(60):
-            year = 2020 + i // 12
-            month = (i % 12) + 1
-            seasonal = -2 * math.cos(2 * math.pi * month / 12)
-            trend = 0.002 * i
-            noise = random.gauss(0, 0.8)
-            series.append({
-                'date': f'{year}-{month:02d}',
-                'value': round(20.0 + seasonal + trend + noise, 2),
-            })
-
-        result = analyze(
-            series=series,
-            variable_id='T2M',
-            variable_name='Temperatura a 2 metros',
-            unit='C',
-            region={'name': 'Lima', 'lat': -12.05, 'lon': -77.03},
-            provenance={'source': 'NASA POWER (MERRA-2)'},
-        )
-
-        self.assertIn('metrics', result)
-        self.assertIn('detective_answers', result)
-        self.assertIn('annual_rate', result['metrics'])
-        self.assertIn('significance_label', result['metrics'])
-        self.assertGreater(result['metrics']['annual_rate'], -1.0)
-
-    def test_analyze_with_variable_format(self):
-        """Prueba con formato {date: ..., 'T2M': ...}"""
-        random.seed(42)
-        series = []
-        for i in range(60):
-            year = 2020 + i // 12
-            month = (i % 12) + 1
-            seasonal = -2 * math.cos(2 * math.pi * month / 12)
-            trend = 0.002 * i
-            noise = random.gauss(0, 0.8)
-            series.append({
-                'date': f'{year}-{month:02d}',
-                'T2M': round(20.0 + seasonal + trend + noise, 2),
-            })
-
-        result = analyze(
-            series=series,
-            variable_id='T2M',
-            variable_name='Temperatura',
-            unit='C',
-            region={'name': 'Test', 'lat': 0, 'lon': 0},
-            provenance={'source': 'test'},
-        )
-
-        self.assertIn('metrics', result)
-        self.assertIn('mann_kendall_p', result['metrics'])
+def test_flat_series_is_not_significant():
+    result = analyze_series(_monthly_series(2000, 2019, slope_per_year=0.0, noise=0.5))
+    assert result["significance"]["verdict_code"] in {"NOT_SIGNIFICANT", "SUGGESTIVE"}
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_short_series_is_refused_not_guessed():
+    result = analyze_series(_monthly_series(2018, 2022, slope_per_year=0.05))
+    assert result["significance"]["verdict_code"] == "INSUFFICIENT_DATA"
+    assert "SHORT_RECORD" in result["warnings"]
+
+
+# --- Honestidad de la procedencia (contrato §3) ---------------------------
+
+
+def _break_upstream(monkeypatch):
+    """Simula NASA POWER caída: sin red y sin caché en disco."""
+
+    def _timeout(_url):
+        raise etl_power.DataUnavailable("UPSTREAM_TIMEOUT", "sin red en la prueba")
+
+    monkeypatch.setattr(etl_power, "_fetch_url_with_retry", _timeout)
+    monkeypatch.setattr(etl_power, "_read_from_cache", lambda *a, **k: None)
+
+
+def test_upstream_failure_serves_no_data_when_fixtures_disallowed(monkeypatch):
+    """Con ALLOW_FIXTURES apagado, un fallo de la NASA es un fallo, no un snapshot."""
+    monkeypatch.setenv("ALLOW_FIXTURES", "0")
+    _break_upstream(monkeypatch)
+
+    with pytest.raises(etl_power.DataUnavailable) as excinfo:
+        etl_power.get_power_point_series("T2M", -12.05, -77.03)
+
+    assert excinfo.value.code == "UPSTREAM_TIMEOUT"
+
+
+def test_fixture_fallback_is_labelled_fixture_never_nasa_api(monkeypatch):
+    """Con ALLOW_FIXTURES=1 el respaldo se sirve, pero se declara como respaldo."""
+    monkeypatch.setenv("ALLOW_FIXTURES", "1")
+    _break_upstream(monkeypatch)
+
+    ts = etl_power.get_power_point_series("T2M", -12.05, -77.03)
+    provenance = ts["provenance"]
+
+    assert provenance["kind"] == "fixture"
+    assert "copia local" in provenance["source"]
+    assert "no dato en vivo" in provenance["citation"]
+    # La muestra real de Lima sigue teniendo 540 meses.
+    assert len(ts["data"]) == 540
+
+
+def test_live_data_keeps_nasa_api_provenance(monkeypatch):
+    """Una respuesta real (aquí, desde la caché en disco) sigue siendo `nasa_api`."""
+    monkeypatch.setenv("ALLOW_FIXTURES", "0")
+
+    try:
+        ts = etl_power.get_power_point_series("T2M", -12.05, -77.03)
+    except etl_power.DataUnavailable as exc:
+        pytest.skip(f"Sin red ni caché en disco: {exc}")
+
+    assert ts["provenance"]["kind"] == "nasa_api"
