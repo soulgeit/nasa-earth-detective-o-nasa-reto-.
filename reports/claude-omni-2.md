@@ -133,3 +133,56 @@ Köppen (incluidos los casos límite `B` antes de `A`, `Dfd`, `Csa`, `ET`, `EF`)
 
 Fila añadida en `docs/AI_USE_LOG.md`. Todos los archivos nuevos llevan `SI-assisted: claude-omni-2 (Claude Opus 5.5)`
 como primera línea.
+
+## S0 — Verificación de las 13 fuentes aportadas por el humano — LISTO (14-nov-2026)
+
+Recibidas de un mensaje del humano el 14-nov-2026. **Ninguna se citó sin abrirla.**
+Comando: `requests.get(url, timeout=30)` con `certifi 2026.10.23` (regla 14: sin `verify=False`).
+
+| # | URL | HTTP | Qué es, comprobado en la propia página | ¿Sirve al producto? |
+|---|---|---|---|---|
+| 1 | `giovanni.gsfc.nasa.gov/giovanni/` | 200 | GES DISC Giovanni | **Sí** — vía para los CSV de GPM/GLDAS/AIRS/OMI/MODIS (ya prevista en `data/raw/giovanni/README.md`) |
+| 2 | `disc.gsfc.nasa.gov/...Hydrology Time Series` | 200 | Página de GES DISC (2 828 B de shell; herramienta **descontinuada**, como ya consta en `prompts/00_LEER_PRIMERO.md`) | No — no meter como conector |
+| 3 | `appeears.earthdatacloud.nasa.gov` | 200 | AppEEARS (extracción por punto/área, requiere Earthdata) | Complementaria, no para el MVP |
+| 4 | `ncei.noaa.gov/cdo-web/` | 200 | NOAA CDO (observaciones in situ de EE. UU.) | No prioritario: cobertura global limitada |
+| 5 | `ntrs.nasa.gov/.../20090042747.pdf` | 200, PDF 8,8 MB, 27 p | **Acker et al. (2009)**, *Time-Series Analysis of Remotely-Sensed SeaWiFS Chlorophyll in River-Influenced Coastal Regions*, EARSeL eProceedings 8(2). Verificado también por `ntrs.nasa.gov/api/citations/20090042747` (título, autores, publicación) | **Sí, como `method_note`**: es un caso NASA real de detección de tendencias en series mensuales |
+| 6 | `climexp.knmi.nl` | 200 | KNMI Climate Explorer | No para el producto; herramienta de referencia |
+| 7 | `medium.com/...statistical-test-methods...` | 200 | Blog divulgativo (OLS, Mann-Kendall, Seasonal Kendall, raíz unitaria) | Solo como lectura. **No citable**: no es fuente primaria |
+| 8 | `statsig.com/.../statistical-significance` | 200 | Blog de *experimentación de producto* (A/B testing) | **No sirve**: mide experimentos aleatorizados, no tendencias en series temporales |
+| 9 | `donnees-data.asc-csa.gc.ca/en/dataset/rcm` | **TLS falla** | `SSLCertVerificationError: unable to get local issuer certificate` — el host sirve la **cadena de certificado incompleta**. Certificado no emitido a tiempo, no es un fallo de `certifi` (probado con el paquete actualizado) | **No verificable**. No se cita; no se desactiva TLS (regla 14) |
+| 10 | `geo.ca/` | 200 | Portal GEO.ca (Gobierno de Canadá) | No prioritario |
+| 11 | `asc-csa.gc.ca/eng/satellites/swot/` | 200 | CSA: **«Launch: December 16, 2022»**, misión NASA+CNES con CSA y UKSA | **Sí**, como cita de la fecha de lanzamiento de SWOT |
+| 12 | `asc-csa.gc.ca/.../monitoring-and-protecting-our-ecosystems-from-space.asp` | 200 | CSA, observación de ecosistemas | Contexto |
+| 13 | `github.com/asc-csa/Synthetic_Aperture_Radar_Tutorial` | 200 | Tutorial de SAR de la CSA | No aplica (no usamos SAR) |
+
+### Dos cosas que salieron de aquí y que **no son mías**
+
+1. **La fecha de lanzamiento de SWOT, ahora con fuente primaria.** La página de la CSA
+   (#11) dice literalmente *"Launch: December 16, 2022"*. La auditoría del arquitecto
+   (`docs/PLAN_GANADOR.md` §1) ya señalaba que la serie «SWOT 2000–2024» es imposible;
+   ahora hay cita verificable para respaldarlo.
+   **Sigue en el repo**: `data/processed/aral_sea_SWOT_WATER_ELEV.json` y
+   `data/variables_catalog.json:67`. La v2 ordena borrarlos (`docs/CONTRATOS.md` §1) y todavía están.
+   Carril del arquitecto / Antigravity 1 — no los toco desde aquí.
+
+2. **Material para el corpus (Hermes 1).** #5 (Acker et al. 2009) y #11 son documentos
+   verificados y con URL viva que encajan en `data/knowledge/docs.jsonl` como
+   `method_note` y `nasa_article`. `data/knowledge/` y `docs/REFERENCES.md` son su carril;
+   le paso la tabla tal cual.
+
+### Lo que descarto y por qué
+
+- **#8 (Statsig)**: su marco es inferencia sobre experimentos controlados. Aplicarlo a una
+  serie temporal observacional es justo el error que el reto castiga.
+- **#7 (Medium)**: útil para que el equipo repase Seasonal Kendall, pero no es citable
+  ante un juez. Sería `type: method_note` con `"summary_by"` si Hermes 1 lo quisiera.
+- **#9**: no verificable sin desactivar TLS. Queda fuera.
+- **#2**: la herramienta de Hydrology Time Series está descontinuada (ya documentado en el
+  repo); la URL responde porque es la ficha de la herramienta, no un servicio vivo.
+
+### Impacto en mi carril
+
+Ninguno negativo: `src/detective/` no usa SWOT ni ninguno de estos conectores directamente.
+La #5 refuerza el enfoque del guardián (cifras solo desde el motor estadístico) y confirma
+que la detección de tendencias en series **mensuales** con pocos años es un problema real
+que incluso un equipo de la NASA trata con cuidado.
