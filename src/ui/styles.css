@@ -804,3 +804,136 @@ details.method[open] summary::before { content: "–"; }
 .explain-sources li a {
   color: var(--teal);
 }
+
+/* ---------- header actions & demo banner (U5) ---------- */
+.header-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.demo-banner {
+  background: var(--plate);
+  border-bottom: 2px solid var(--teal);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(22, 39, 43, 0.08);
+  animation: slide-down 200ms ease-out;
+}
+@keyframes slide-down {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.demo-banner-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.demo-text-area {
+  flex: 1 1 500px;
+  display: grid;
+  gap: 0.25rem;
+}
+.demo-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.demo-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  background: var(--teal);
+  color: var(--paper);
+  border-radius: var(--radius);
+}
+.demo-step-counter {
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+}
+.demo-text-area h3 {
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.demo-text-area p {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.demo-controls {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.demo-progress-track {
+  height: 4px;
+  background: var(--rule-soft);
+  position: relative;
+}
+.demo-progress-fill {
+  height: 100%;
+  background: var(--teal);
+  width: 0%;
+  transition: width 12s linear;
+}
+
+/* ---------- print styles (U6) ---------- */
+@media print {
+  .masthead .mode-switch,
+  .masthead .header-actions,
+  .masthead .lang-switch,
+  .rail,
+  .demo-banner,
+  .chart-head .seg,
+  .error-state,
+  #empty-state,
+  .app-footer,
+  #glossary-pop {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+  .workbench {
+    display: block !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .plate {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+    margin-bottom: 1.5rem;
+  }
+  .verdict h2 {
+    font-size: 18pt !important;
+  }
+  .chart-wrap {
+    height: 280px !important;
+  }
+  .findings {
+    page-break-inside: avoid;
+  }
+  .method {
+    display: block !important;
+  }
+  .method details[open] summary, .method summary {
+    display: none !important;
+  }
+  .method-body {
+    display: block !important;
+  }
+  .provenance {
+    page-break-inside: avoid;
+    border-top: 1px solid #000;
+  }
+}

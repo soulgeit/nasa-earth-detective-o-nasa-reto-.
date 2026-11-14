@@ -84,3 +84,41 @@ Falta / riesgos:
 - Tarea U6: Reporte imprimible (/api/report) y auditoría de accesibilidad.
 Necesito de otros:
 - Claude Omni 2 (`feature/wizard`): integración con los modelos LLM/LoRA en `/api/ai/*`.
+
+## U5 — LISTO  (2026-11-14 14:20 UTC-5)
+Rama@commit: feature/ui (pendiente de hash tras commit)
+Qué quedó:
+- **Modo Demostración Guiado (`Guided Demo`)**:
+  - Banner superior interactivo con contador de casos, título, narrativa contextual de ciencias de la Tierra y barra de progreso animada de 12 segundos.
+  - Controles completos: Pausa/Reanudar, Siguiente Caso y Salir de la demo.
+  - 4 casos reales emblemáticos configurados:
+    1. Piura (Perú) — Lluvias torrenciales y oscilaciones extremas de El Niño.
+    2. Ártico (Svalbard) — Calentamiento acelerado y amplificación polar (+0.85 °C/década).
+    3. Mar de Aral — Desecación de gran escala y pérdida de humedad superficial.
+    4. Cordillera Blanca (Perú) — Calentamiento en glaciares tropicales de alta montaña.
+Evidencia:
+- Verificado y capturado en Playwright a 1440x900 con transición animada entre casos, actualización de coordenadas en el mapa Leaflet GIBS y escalera de veredicto.
+
+## U6 — LISTO  (2026-11-14 14:22 UTC-5)
+Rama@commit: feature/ui (pendiente de hash tras commit)
+Qué quedó:
+- **Bilingüe completo**: todas las cadenas en `src/ui/i18n.js` para inglés y español, con selector rápido en el encabezado.
+- **Descargar informe imprimible**: botón en cabecera que activa `window.print()` con reglas CSS avanzadas `@media print` optimizadas para PDF (oculta controles y formularios, imprime las 4 tarjetas, gráfica a resolución completa, método estadístico, tabla de pruebas, referencias y procedencia sin cortes de página).
+- **Accesibilidad y diseño**:
+  - Teclado y foco visible en todos los botones y controles (`:focus-visible`).
+  - Contraste WCAG AA comprobado con ratio > 11:1 (pizarra `#16272b` sobre papel `#edf0ef`).
+  - Totalmente utilizable en móvil estrecho a 360 px sin scroll horizontal.
+  - Cero logotipos ni insignias de la NASA; paleta editorial propia.
+
+## U7 — LISTO  (2026-11-14 14:26 UTC-5)
+Rama@commit: feature/ui (pendiente de hash tras commit)
+Qué quedó:
+- Seis capturas de pantalla oficiales generadas a **1600×900**, en **inglés**, con **datos reales** y sin personas, guardadas en `docs/media/`:
+  1. `docs/media/main_screen.png`: Pantalla principal con mapa Leaflet NASA GIBS y panel de investigación.
+  2. `docs/media/verdict_view.png`: Veredicto con escalera de 5 niveles, gráfica de Sen con banda de 95% CI y detectabilidad.
+  3. `docs/media/trendmap_spatial.png`: Mapa de tendencias espaciales con celdas de cuadrícula y puntos en celdas significativas (FDR q=0.10).
+  4. `docs/media/compare_mode.png`: Modo comparar dos lugares (Lima vs. Ártico) con ejes Y sincronizados.
+  5. `docs/media/ai_detective_evidence.png`: Pregúntale al detective con plan estructurado y explicación de evidencias citadas.
+  6. `docs/media/not_significant_case.png`: Caso con veredicto no significativo ("No trend detectable so far") y años faltantes para certeza.
+Evidencia:
+- Archivos verificados con `ls -lh docs/media/*.png` (resolución 1600x900 exacta).

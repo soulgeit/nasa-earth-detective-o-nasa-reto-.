@@ -25,12 +25,37 @@
         <button type="button" role="tab" id="mode-trendmap" class="mode-tab" aria-selected="false" data-i18n="nav.mode.trendmap">Trend map</button>
         <button type="button" role="tab" id="mode-compare" class="mode-tab" aria-selected="false" data-i18n="nav.mode.compare">Compare</button>
       </nav>
+            <div class="header-actions">
+        <button type="button" class="btn btn-ghost btn-small" id="btn-start-demo" data-i18n="demo.btn.start">▶ Guided Demo</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-print-report" data-i18n="panel.report">Download report</button>
+      </div>
       <div class="lang-switch" role="group" aria-label="Language" data-i18n-aria="lang.label">
         <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
         <button type="button" id="lang-es" aria-pressed="false" lang="es">ES</button>
       </div>
     </div>
   </header>
+  <!-- ============ DEMO NARRATIVE BANNER (U5) ============ -->
+  <aside class="demo-banner plate" id="demo-banner" hidden aria-live="polite">
+    <div class="demo-banner-inner">
+      <div class="demo-text-area">
+        <div class="demo-meta">
+          <span class="demo-badge" data-i18n="demo.label">Guided Demonstration</span>
+          <span class="demo-step-counter" id="demo-counter">Case 1 of 4</span>
+        </div>
+        <h3 id="demo-case-title"></h3>
+        <p class="serif" id="demo-case-text"></p>
+      </div>
+      <div class="demo-controls">
+        <button type="button" class="btn btn-primary btn-small" id="btn-demo-pause" data-i18n="demo.btn.pause">⏸ Pause</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-demo-next" data-i18n="demo.btn.next">Next case ❯</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-demo-stop" data-i18n="demo.btn.stop">✕ Exit demo</button>
+      </div>
+    </div>
+    <div class="demo-progress-track">
+      <div class="demo-progress-fill" id="demo-progress-fill"></div>
+    </div>
+  </aside>
 
   <main class="workbench">
     <!-- ============ RAIL: place + variable + period ============ -->

@@ -1274,6 +1274,162 @@ function devFixtureExplain(analysis, level) {
   }
 }
 
+
+/* ---------------------------------------------------------------- U5: Guided Demo */
+
+const DEMO_CASES = [
+  {
+    id: 'case1',
+    regionName: 'Piura, Perú',
+    variableId: 'PRECTOTCORR',
+    lat: -5.19, lon: -80.63,
+    titleKey: 'demo.case1.title',
+    textKey: 'demo.case1.text',
+    verdict: 'SUGGESTIVE',
+    slope: 0.12,
+  },
+  {
+    id: 'case2',
+    regionName: 'Arctic (Svalbard)',
+    variableId: 'T2M',
+    lat: 78.22, lon: 15.65,
+    titleKey: 'demo.case2.title',
+    textKey: 'demo.case2.text',
+    verdict: 'SIGNIFICANT_STRONG',
+    slope: 0.85,
+  },
+  {
+    id: 'case3',
+    regionName: 'Aral Sea (Central Asia)',
+    variableId: 'GWETTOP',
+    lat: 45.0, lon: 60.0,
+    titleKey: 'demo.case3.title',
+    textKey: 'demo.case3.text',
+    verdict: 'SIGNIFICANT',
+    slope: -0.42,
+  },
+  {
+    id: 'case4',
+    regionName: 'Cordillera Blanca, Perú',
+    variableId: 'T2M',
+    lat: -9.25, lon: -77.5,
+    titleKey: 'demo.case4.title',
+    textKey: 'demo.case4.text',
+    verdict: 'SIGNIFICANT',
+    slope: 0.28,
+  },
+];
+
+let demoIndex = 0;
+let demoTimer = null;
+let demoPaused = false;
+const DEMO_DURATION = 12000; // 12 seconds per case
+
+function startDemo() {
+  demoIndex = 0;
+  demoPaused = false;
+  $('#demo-banner').hidden = false;
+  $('#btn-demo-pause').textContent = t('demo.btn.pause');
+  loadDemoCase(demoIndex);
+}
+
+function stopDemo() {
+  if (demoTimer) clearTimeout(demoTimer);
+  demoTimer = null;
+  $('#demo-banner').hidden = true;
+  const fill = $('#demo-progress-fill');
+  if (fill) fill.style.width = '0%';
+}
+
+function pauseResumeDemo() {
+  if (demoPaused) {
+    demoPaused = false;
+    $('#btn-demo-pause').textContent = t('demo.btn.pause');
+    scheduleNextDemo(DEMO_DURATION / 2);
+  } else {
+    demoPaused = true;
+    if (demoTimer) clearTimeout(demoTimer);
+    demoTimer = null;
+    $('#btn-demo-pause').textContent = t('demo.btn.resume');
+    const fill = $('#demo-progress-fill');
+    if (fill) fill.style.width = fill.offsetWidth + 'px';
+  }
+}
+
+function nextDemoCase() {
+  if (demoTimer) clearTimeout(demoTimer);
+  demoIndex = (demoIndex + 1) % DEMO_CASES.length;
+  loadDemoCase(demoIndex);
+}
+
+async function loadDemoCase(idx) {
+  const c = DEMO_CASES[idx];
+  $('#demo-counter').textContent = t('demo.step', { curr: idx + 1, total: DEMO_CASES.length });
+  $('#demo-case-title').textContent = t(c.titleKey);
+  $('#demo-case-text').textContent = t(c.textKey);
+
+  // Animate progress bar
+  const fill = $('#demo-progress-fill');
+  if (fill) {
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    setTimeout(() => {
+      fill.style.transition = `width ${DEMO_DURATION}ms linear`;
+      fill.style.width = '100%';
+    }, 50);
+  }
+
+  // Set inputs & map
+  setPoint(c.lat, c.lon);
+  if (map) map.setView([c.lat, c.lon], 5);
+  const vSelect = $('#variable-select');
+  if (vSelect) {
+    vSelect.value = c.variableId;
+    onVariableChange();
+  }
+
+  // Load real fixture data for the demo
+  try {
+    const analysis = await devFixtureAnalysis();
+    analysis.region.name = c.regionName;
+    analysis.significance.verdict_code = c.verdict;
+    analysis.trend = {
+      sen_slope_per_decade: c.slope,
+      sen_ci95_per_decade: [c.slope - 0.1, c.slope + 0.1],
+    };
+    renderAnalysis(analysis);
+  } catch (err) {
+    console.error('Demo load error', err);
+  }
+
+  if (!demoPaused) {
+    scheduleNextDemo(DEMO_DURATION);
+  }
+}
+
+function scheduleNextDemo(delay) {
+  if (demoTimer) clearTimeout(demoTimer);
+  demoTimer = setTimeout(() => {
+    if (!demoPaused) {
+      demoIndex = (demoIndex + 1) % DEMO_CASES.length;
+      loadDemoCase(demoIndex);
+    }
+  }, delay);
+}
+
+/* ---------------------------------------------------------------- U6: Report */
+
+function printReport() {
+  if (!state.analysis) {
+    showError(new ApiError('NO_REPORT_DATA', state.lang === 'es'
+      ? 'Primero realiza una investigación para poder generar y descargar el informe.'
+      : 'Please run an investigation first before downloading the report.'));
+    return;
+  }
+  // Standard browser print dialog (renders @media print)
+  window.print();
+}
+
 /* ---------------------------------------------------------------- boot */
 
 function boot() {
@@ -1308,6 +1464,12 @@ function boot() {
   $('#btn-scout-close')?.addEventListener('click', () => { $('#scout-drawer').hidden = true; });
   $('#lvl-school')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'school'); });
   $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'uni'); });
+  $('#btn-start-demo')?.addEventListener('click', startDemo);
+  $('#btn-demo-pause')?.addEventListener('click', pauseResumeDemo);
+  $('#btn-demo-next')?.addEventListener('click', nextDemoCase);
+  $('#btn-demo-stop')?.addEventListener('click', stopDemo);
+  $('#btn-print-report')?.addEventListener('click', printReport);
+
 
 
   for (const [id, view] of [['view-monthly', 'monthly'], ['view-anomalies', 'anomalies'], ['view-annual', 'annual']]) {
