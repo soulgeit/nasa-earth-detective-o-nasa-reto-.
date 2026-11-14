@@ -63,7 +63,9 @@ def deseasonalize(series: List[Dict[str, Any]],
             yr, mo = pt["year"], pt["month"]
         else:
             yr, mo, _ = parse_date(pt["date"])
-        month_sums[mo] += pt[variable]
+        # Acepta pt[variable] O pt["value"] (POWER devuelve {"date":"...", "value":...})
+        val = pt.get(variable, pt.get("value"))
+        month_sums[mo] += val
         month_counts[mo] += 1
 
     month_means = {
@@ -78,7 +80,7 @@ def deseasonalize(series: List[Dict[str, Any]],
             mo = pt["month"]
         else:
             _, mo, _ = parse_date(pt["date"])
-        raw = pt[variable]
+        raw = pt.get(variable, pt.get("value"))
         anomaly = raw - month_means[mo]
         result.append({
             "date": pt["date"],
@@ -507,8 +509,18 @@ def analyze(series: List[Dict[str, Any]],
             "region": region,
         }
 
-    # 1. Extraer valores
-    values = [pt[variable_id] for pt in series]
+    # 1. Extraer valores (acepta {"date": ..., "variable_id": ...} o {"date": ..., "value": ...})
+    values = []
+    for pt in series:
+        if variable_id in pt:
+            values.append(pt[variable_id])
+        elif "value" in pt:
+            values.append(pt["value"])
+        else:
+            raise ValueError(
+                f"El punto {pt} no tiene clave '{variable_id}' ni 'value'. "
+                f"Campos disponibles: {list(pt.keys())}"
+            )
     dates = [pt["date"] for pt in series]
 
     # 2. Desestacionalización

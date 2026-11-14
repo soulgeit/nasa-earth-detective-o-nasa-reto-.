@@ -31,7 +31,7 @@ if sys_path not in sys.path:
     sys.path.insert(0, sys_path)
 
 from src.stats.trend_engine import analyze as analyze_trend
-from src.etl.power import PowerClient, POWER_PARAMETERS
+from src.etl.power import get_power_point_series, get_power_regional_series
 
 
 # ---------------------------------------------------------------------------
@@ -56,16 +56,6 @@ app.add_middleware(
 )
 
 # Caché del cliente POWER (reutiliza sesión)
-_power_client = None
-
-
-def get_power_client() -> PowerClient:
-    global _power_client
-    if _power_client is None:
-        _power_client = PowerClient()
-    return _power_client
-
-
 # ---------------------------------------------------------------------------
 # Datos estáticos
 # ---------------------------------------------------------------------------
@@ -182,18 +172,16 @@ def analyze_real(
     2. Ejecuta el motor estadístico v2 (MK corregido + Theil-Sen + OLS con IC).
     3. Devuelve veredicto con las 4 preguntas.
     """
-    client = get_power_client()
-
-    # 1. Obtener datos reales
+    # 1. Obtener datos reales de NASA POWER (función del módulo power.py)
     try:
-        power_data = client.get_point(
-            variables=[variable_id],
+        # POWER usa start/end como años (YYYY) o YYYYMM
+        power_data = get_power_point_series(
+            param=variable_id,
             lat=lat,
             lon=lon,
-            start=start,
-            end=end,
-            temporal=temporal,
-            community=community,
+            start_year=start,
+            end_year=end,
+            name=region_name or f"Lat {lat}, Lon {lon}",
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"POWER API error: {e}")
@@ -206,10 +194,10 @@ def analyze_real(
         )
 
     # 2. Metadata de variable
-    var_meta = power_data["variables"].get(variable_id, {
-        "name": variable_id,
-        "unit": "?",
-    })
+    var_meta = {
+        "name": power_data.get("variable_id", variable_id),
+        "unit": power_data.get("unit", "?"),
+    }
 
     # 3. Metadata de región
     region_meta = {
@@ -222,10 +210,10 @@ def analyze_real(
 
     # 4. Proveniencia
     provenance = {
-        "source": power_data.get("source", "NASA POWER"),
-        "source_url": power_data.get("source_url", "https://power.larc.nasa.gov"),
-        "fetched_at": power_data.get("provenance", {}).get("fetched_at", ""),
-        "model": power_data.get("provenance", {}).get("model", "MERRA-2"),
+        "source": power_data.get("provenance", {}).get("source", "NASA POWER"),
+        "source_url": "https://power.larc.nasa.gov",
+        "fetched_at": power_data.get("provenance", {}).get("retrieved_at", ""),
+        "model": power_data.get("provenance", {}).get("underlying", "MERRA-2"),
     }
 
     # 5. Análisis estadístico
@@ -270,22 +258,23 @@ def analyze_legacy(
     lat = region.get("lat", 0.0)
     lon = region.get("lon", 0.0)
 
-    client = get_power_client()
     try:
-        power_data = client.get_point(
-            variables=[variable_id],
+        power_data = get_power_point_series(
+            param=variable_id,
             lat=lat,
             lon=lon,
-            start=2000,
-            end=2024,
-            temporal="monthly",
-            community="RE",
+            start_year=2000,
+            end_year=2024,
+            name=region.get("name", region_id),
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"POWER API error: {e}")
 
     series = power_data["data"]
-    var_meta = power_data["variables"].get(variable_id, {"name": variable_id, "unit": "?"})
+    var_meta = {
+        "name": power_data.get("variable_id", variable_id),
+        "unit": power_data.get("unit", "?"),
+    }
     region_meta = {
         "id": region_id,
         "name": region.get("name", region_id),
