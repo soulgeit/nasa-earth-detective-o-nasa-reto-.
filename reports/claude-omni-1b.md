@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-1b — 2026-11-14 17:55 hora de Perú
-Rama@commit: feature/catalog@PENDIENTE · empujado: no
+Rama@commit: feature/catalog@cd0386d · empujado: sí
 VERIFICADO: 8 fallos del validador cerrados → `python -X utf8 -I scripts/validate_knowledge.py --max-url-checks 100` → «All checks passed» (168 docs, 0 fallos).
 VERIFICADO: 2 fuentes nuevas → Acker et al. 2009 (NTRS 20090042747, abstract real) y SWOT de la CSA (`Launch: December 16, 2022`), ambas con URL 200 y sha256.
 VERIFICADO: `docs/REFERENCES.md` en inglés con las fuentes de la ronda 2 y MODIS corregido a `modis-land.gsfc.nasa.gov`.
