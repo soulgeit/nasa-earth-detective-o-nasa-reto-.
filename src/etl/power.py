@@ -117,11 +117,24 @@ def _fetch_url_with_retry(url: str) -> Tuple[str, str, str]:
     raise DataUnavailable("UPSTREAM_ERROR", "Fallo tras reintentos")
 
 
+def _allow_fixtures() -> bool:
+    """Leído en cada uso. Apagado por defecto: el respaldo local no es dato en vivo."""
+    return os.environ.get("ALLOW_FIXTURES", "0").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _try_load_fixture_fallback(url: str, lat: Optional[float] = None, lon: Optional[float] = None, bbox: Optional[List[float]] = None) -> Optional[Tuple[str, str, str]]:
-    """Carga muestras reales de fixtures si estamos offline o en entorno de tests."""
+    """Carga muestras reales de fixtures si estamos offline o en entorno de tests.
+
+    Solo se usa con `ALLOW_FIXTURES=1`. Quien la llame debe marcar la procedencia
+    como `fixture`: presentarla como `nasa_api` sería sustitución silenciosa
+    (contrato §3).
+    """
+    if not _allow_fixtures():
+        return None
+
     root_dir = Path(__file__).resolve().parent.parent.parent
     fixtures_dir = root_dir / "tests" / "fixtures" / "real"
-    
+
     # 1. Punto Lima
     if lat is not None and lon is not None:
         if abs(lat - (-12.05)) < 0.1 and abs(lon - (-77.03)) < 0.1:
@@ -145,10 +158,15 @@ def _try_load_fixture_fallback(url: str, lat: Optional[float] = None, lon: Optio
     return None
 
 
-def fetch_power_point(param: str, lat: float, lon: float, start: int = 1981, end: int = 2025) -> Tuple[dict, str, str, str]:
-    """Obtiene y parsea datos mensuales de NASA POWER para un punto geográfico."""
+def fetch_power_point(param: str, lat: float, lon: float, start: int = 1981, end: int = 2025) -> Tuple[dict, str, str, str, str]:
+    """Obtiene y parsea datos mensuales de NASA POWER para un punto geográfico.
+
+    Devuelve `(data, url, retrieved_at, sha256, origin)` con `origin` en
+    `{"nasa_api", "fixture"}`. El respaldo local nunca se etiqueta como en vivo.
+    """
     url = f"{POWER_BASE_URL}/point?parameters={param}&community=AG&longitude={lon:.4f}&latitude={lat:.4f}&start={start}&end={end}&format=JSON"
-    
+
+    origin = "nasa_api"
     cached = _read_from_cache(url)
     if cached:
         raw_text, retrieved_at_iso, sha256_hash = cached
@@ -160,6 +178,7 @@ def fetch_power_point(param: str, lat: float, lon: float, start: int = 1981, end
             fallback = _try_load_fixture_fallback(url, lat=lat, lon=lon)
             if fallback:
                 raw_text, retrieved_at_iso, sha256_hash = fallback
+                origin = "fixture"
             else:
                 raise
 
@@ -168,16 +187,20 @@ def fetch_power_point(param: str, lat: float, lon: float, start: int = 1981, end
     except json.JSONDecodeError:
         raise DataUnavailable("UPSTREAM_ERROR", "Respuesta no es JSON válido")
         
-    return data, url, retrieved_at_iso, sha256_hash
+    return data, url, retrieved_at_iso, sha256_hash, origin
 
 
-def fetch_power_regional(param: str, bbox: List[float], start: int = 1981, end: int = 2025) -> Tuple[dict, str, str, str]:
+def fetch_power_regional(param: str, bbox: List[float], start: int = 1981, end: int = 2025) -> Tuple[dict, str, str, str, str]:
     """
     Obtiene y parsea datos mensuales de NASA POWER para una caja regional.
     bbox: [lon_min, lat_min, lon_max, lat_max]
+
+    Devuelve `(data, url, retrieved_at, sha256, origin)`; `origin` distingue
+    respuesta en vivo de respaldo local (`fixture`).
     """
     lon_min, lat_min, lon_max, lat_max = bbox
-    
+    origin = "nasa_api"
+
     # Validar tamaño de la caja
     if (lat_max - lat_min > 10.0) or (lon_max - lon_min > 10.0):
         raise DataUnavailable("BBOX_TOO_LARGE", f"Caja regional {bbox} excede el máximo permitido de 10°x10°")
@@ -200,6 +223,7 @@ def fetch_power_regional(param: str, bbox: List[float], start: int = 1981, end: 
             fallback = _try_load_fixture_fallback(url, bbox=bbox)
             if fallback:
                 raw_text, retrieved_at_iso, sha256_hash = fallback
+                origin = "fixture"
             else:
                 raise
 
@@ -208,15 +232,28 @@ def fetch_power_regional(param: str, bbox: List[float], start: int = 1981, end: 
     except json.JSONDecodeError:
         raise DataUnavailable("UPSTREAM_ERROR", "Respuesta no es JSON válido")
 
-    return data, url, retrieved_at_iso, sha256_hash
+    return data, url, retrieved_at_iso, sha256_hash, origin
 
 
-def _build_provenance(header: dict, request_url: str, retrieved_at_iso: str, sha256_hash: str) -> dict:
+def _build_provenance(header: dict, request_url: str, retrieved_at_iso: str, sha256_hash: str, origin: str = "nasa_api") -> dict:
     api_info = header.get("api", {})
     api_ver = api_info.get("version", "v2.10.0")
     source_name = f"NASA POWER {api_ver}"
     sources = header.get("sources", ["MERRA2"])
     underlying = ", ".join(sources) if isinstance(sources, list) else str(sources)
+
+    if origin == "fixture":
+        # Respaldo local: se declara como tal. Nunca se presenta como dato en vivo.
+        return {
+            "kind": "fixture",
+            "source": f"{source_name} (copia local en tests/fixtures/real/)",
+            "underlying": underlying,
+            "request_url": request_url,
+            "retrieved_at": retrieved_at_iso,
+            "sha256": sha256_hash,
+            "native_resolution": "0.5° x 0.625°",
+            "citation": "Data: NASA POWER (copia de muestra para desarrollo, no dato en vivo).",
+        }
 
     return {
         "kind": "nasa_api",
@@ -239,7 +276,7 @@ def get_power_point_series(
     name: Optional[str] = None
 ) -> dict:
     """Extrae TimeSeries v2 para un punto geográfico."""
-    parsed, request_url, retrieved_at_iso, sha256_hash = fetch_power_point(param, lat, lon, start_year, end_year)
+    parsed, request_url, retrieved_at_iso, sha256_hash, origin = fetch_power_point(param, lat, lon, start_year, end_year)
     header = parsed.get("header", {})
     fill_value = header.get("fill_value", -999.0)
 
@@ -276,7 +313,7 @@ def get_power_point_series(
             "value": val
         })
 
-    provenance = _build_provenance(header, request_url, retrieved_at_iso, sha256_hash)
+    provenance = _build_provenance(header, request_url, retrieved_at_iso, sha256_hash, origin)
 
     return {
         "schema": "timeseries/2",
@@ -315,7 +352,7 @@ def get_power_regional_series(
         res["region"]["bbox"] = bbox
         return res
 
-    parsed, request_url, retrieved_at_iso, sha256_hash = fetch_power_regional(param, bbox, start_year, end_year)
+    parsed, request_url, retrieved_at_iso, sha256_hash, origin = fetch_power_regional(param, bbox, start_year, end_year)
     header = parsed.get("header", {})
     fill_value = header.get("fill_value", -999.0)
 
@@ -367,7 +404,7 @@ def get_power_regional_series(
             "value": val
         })
 
-    provenance = _build_provenance(header, request_url, retrieved_at_iso, sha256_hash)
+    provenance = _build_provenance(header, request_url, retrieved_at_iso, sha256_hash, origin)
 
     return {
         "schema": "timeseries/2",
@@ -394,7 +431,7 @@ def get_power_grid(
     end_year: int = 2025
 ) -> dict:
     """Extrae estructura Grid v2 para TrendMap."""
-    parsed, request_url, retrieved_at_iso, sha256_hash = fetch_power_regional(param, bbox, start_year, end_year)
+    parsed, request_url, retrieved_at_iso, sha256_hash, origin = fetch_power_regional(param, bbox, start_year, end_year)
     header = parsed.get("header", {})
     fill_value = header.get("fill_value", -999.0)
 
@@ -451,7 +488,7 @@ def get_power_grid(
             t_matrix.append(row)
         values_3d.append(t_matrix)
 
-    provenance = _build_provenance(header, request_url, retrieved_at_iso, sha256_hash)
+    provenance = _build_provenance(header, request_url, retrieved_at_iso, sha256_hash, origin)
 
     return {
         "variable_id": param,

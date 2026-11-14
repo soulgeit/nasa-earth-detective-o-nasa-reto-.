@@ -270,3 +270,75 @@ $ .venv/Scripts/python.exe -m pytest tests/api -q
 **Riesgo abierto**: los assets son los de `main` (UI v1) hasta que el arquitecto
 fusione `feature/ui`. La UI nueva usa `i18n.js`, que no está en esta rama; el
 servidor lo devuelve 404 en JSON (fallo explícito) en vez de servir HTML.
+
+---
+
+## A2 (cierre) — G1 verde con ETL y motor reales (14-nov-2026, 15:05)
+
+Rama@commit: feature/api · fusionadas `feature/data-pipeline`, `feature/stats`,
+`feature/wizard` y `feature/catalog`. Falta solo `feature/ui`.
+
+**Qué quedó**
+
+- **G1 pasa con datos reales de NASA POWER**, sin dobles: 540 meses de Lima
+  (1981-01 → 2025-12), `analysis/2`, `SIGNIFICANT_STRONG`, Theil-Sen
+  +0.1585 °C/década, MK corregido Hamed-Rao p = 3.9e-05.
+- `pymannkendall>=1.4.3` declarado en `requirements.txt` (lo usa el contraste
+  numérico de E2).
+- `tests/test_system.py` reescrito: el anterior importaba funciones del prototipo
+  (`mann_kendall_test`, `theil_sen_slope`, ...) que ya no existen y **rompía la
+  colección de todo `pytest`**. Ahora prueba el motor v2 con series
+  deterministas y la honestidad de la procedencia.
+- Las 3 pruebas de contrato que esperaban el mundo anterior a la fusión
+  (`/api/series` → 503) se actualizan al contrato real: datos de POWER con
+  `kind = nasa_api`, y salto explícito si no hay red.
+
+**Fallo de integridad corregido (antecedente: Antigravity 1 / D1)**
+
+`src/etl/power.py` cargaba `tests/fixtures/real/` cuando NASA POWER fallaba y
+`_build_provenance` la marcaba como `kind: "nasa_api"` con la URL y la fecha
+reales. Eso es exactamente la sustitución silenciosa que `CONTRATOS.md` §3
+prohíbe: con la red caída, el jurado habría visto un snapshot local presentado
+como dato en vivo de la NASA.
+
+Corrección:
+
+- El respaldo local solo se activa con `ALLOW_FIXTURES=1` y se marca
+  `kind = "fixture"`, `source = "... (copia local ...)"`,
+  `citation = "... no dato en vivo"`.
+- Sin red y con `ALLOW_FIXTURES=0`, el ETL **falla** (`UPSTREAM_TIMEOUT`) en vez
+  de degradar en silencio.
+- `fetch_power_point`/`fetch_power_regional` devuelven un quinto campo `origin`
+  y la procedencia se construye a partir de él.
+
+**Evidencia**
+
+```
+$ .venv/Scripts/python.exe -m pytest -q
+158 passed, 54 warnings in 24.38s
+```
+
+```
+$ python scripts/smoke_api.py http://127.0.0.1:8765
+CHECK                            STATUS  TIME    DETAIL
+-------------------------------  ------  ------  --------------------------------------------------
+health                           PASS      12ms  HTTP 200 ai_mode=extractive
+catalog/variables                PASS       1ms  HTTP 200 variables=25
+analyze unknown variable -> 404  PASS      22ms  HTTP 404 code=VARIABLE_UNKNOWN
+analyze no coords -> 400         PASS      15ms  HTTP 400
+analyze Lima (G1)                PASS      99ms  HTTP 200 schema=analysis/2 provenance=nasa_api n_obs=540
+analyze Lima (cache < 300ms)     PASS      26ms  HTTP 200
+trendmap                         PASS      63ms  HTTP 200 cells=63
+cases                            PASS      12ms  HTTP 503
+report                           PASS      16ms  HTTP 200 bytes=4323
+UI /                             PASS       1ms  HTTP 200 bytes=6023
+
+10 passed · 0 skipped · 0 failed
+```
+
+**Falta / riesgos**
+
+- `feature/ui` sin fusionar: los assets siguen siendo la UI v1.
+- `/api/cases` en 503 hasta que Hermes 2 publique `data/cases/index.json`.
+- El catálogo sale de la semilla (`catalog.source = "seed"`) hasta que Hermes 1
+  mergee `variables.json` a esta rama.

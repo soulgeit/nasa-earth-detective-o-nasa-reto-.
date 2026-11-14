@@ -25,10 +25,15 @@ def client(monkeypatch) -> TestClient:
 
 @pytest.fixture()
 def fixture_client(monkeypatch) -> TestClient:
-    """Cliente con los dobles de prueba leyendo `tests/fixtures/real/`."""
+    """Cliente con los dobles de prueba leyendo `tests/fixtures/real/`.
+
+    Fuerza el ETL ausente: si el módulo real está fusionado gana siempre, y
+    estas pruebas existen justo para cubrir el camino de respaldo.
+    """
     from src.api import cache, modules
 
     monkeypatch.setenv("ALLOW_FIXTURES", "1")
+    monkeypatch.setattr(modules, "_try_import", lambda name: (None, f"disabled for fixture test: {name}"))
     modules.clear_cache()
     cache.analysis_cache.clear()
     import src.api.main as main_mod
@@ -79,12 +84,25 @@ def test_missing_coordinates_is_400(client: TestClient) -> None:
     assert r.json()["error"]["code"] == "INVALID_REQUEST"
 
 
-def test_without_etl_module_returns_503_never_fixture_data(client: TestClient) -> None:
-    """Con ALLOW_FIXTURES apagado y sin ETL real no se sirve ningún dato."""
+def test_series_endpoint_serves_real_power_data(client: TestClient) -> None:
+    """Con el ETL fusionado, `/api/series` devuelve datos de POWER con su procedencia.
+
+    Sin red este servicio responde 503/504: el contrato prohíbe servir un
+    fixture disfrazado de `nasa_api` para «que pase la prueba».
+    """
     r = client.get("/api/series", params={"variable_id": "T2M", "lat": -12.05, "lon": -77.03})
-    assert r.status_code == 503
-    _assert_error_shape(r.json())
-    assert r.json()["error"]["code"] == "DATA_UNAVAILABLE"
+
+    if r.status_code in {503, 504}:
+        _assert_error_shape(r.json())
+        assert r.json()["error"]["code"] in {"DATA_UNAVAILABLE", "UPSTREAM_TIMEOUT", "UPSTREAM_ERROR"}
+        pytest.skip("NASA POWER inaccesible en este entorno (sin red y sin caché).")
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["schema"] == "timeseries/2"
+    assert body["provenance"]["kind"] == "nasa_api"
+    assert len(body["data"]) == 540
+    assert body["data"][0] == {"date": "1981-01", "value": 18.41}
 
 
 def test_fixture_mode_series_is_explicitly_fixture(fixture_client: TestClient) -> None:
@@ -98,9 +116,11 @@ def test_fixture_mode_series_is_explicitly_fixture(fixture_client: TestClient) -
 
 
 def test_fixture_mode_rejects_other_variables(fixture_client: TestClient) -> None:
-    r = fixture_client.get("/api/series", params={"variable_id": "SEAICE_EXTENT_N", "lat": 80, "lon": 0})
+    """Un id real del catálogo que la muestra local no cubre no se inventa."""
+    r = fixture_client.get("/api/series", params={"variable_id": "GISTEMP_TANOM", "lat": 80, "lon": 0})
     assert r.status_code == 503
     _assert_error_shape(r.json())
+    assert r.json()["error"]["code"] == "DATA_UNAVAILABLE"
 
 
 @pytest.mark.parametrize(
