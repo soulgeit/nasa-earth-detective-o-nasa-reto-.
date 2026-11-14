@@ -241,3 +241,50 @@ esto queda disponible si el arquitecto lo pide.
 
 - Python 3.11.15 en `.venv` (el README dice 3.12.10 en PC1; esta máquina tiene 3.11.15 y funciona).
 - `requirements.txt` **no** se tocó: `requests`, `numpy`, `scipy`, `pytest` ya estaban o son de test.
+
+---
+
+## A1 (apoyo a Hermes 2) — LISTO (2026-11-14 20:05 UTC)
+Rama@commit: feature/data-pipeline@8dbc107
+Qué quedó: `src/etl/sweep.py`, recorrido global reanudable. Cajas contiguas de 2°×2°
+(16.200 cubren el planeta: 90×180), peticiones **en serie** con pausa configurable, un JSON por
+caja que se escribe una sola vez. Relanzar = reanudar. `--deadline` corta limpio antes del límite.
+
+Evidencia — dos tandas seguidas (la segunda no repite nada):
+
+```
+$ python -m src.etl.sweep --variable T2M --out data/cache/sweep_test --max-tiles 4 --pause 0.2
+T2M: 0/16200 cajas ya hechas, 16200 pendientes
+{... "tiles_done": 4, "tiles_remaining": 16196, "stopped_by": "max_tiles", "elapsed_seconds": 4.8 ...}
+
+$ python -m src.etl.sweep --variable T2M --out data/cache/sweep_test --max-tiles 3 --pause 0.2
+T2M: 4/16200 cajas ya hechas, 16196 pendientes
+{... "tiles_done": 7, "tiles_remaining": 16193, "processed_this_run": 3, "elapsed_seconds": 3.4 ...}
+```
+
+Evidencia — parada por deadline real:
+
+```
+$ python -m src.etl.sweep --variable T2M --out data/cache/sweep_deadline --deadline 6 --pause 0.2
+  10 cajas en 5.2s
+{... "processed_this_run": 10, "stopped_by": "deadline", "elapsed_seconds": 5.4 ...}
+exit=3     (0 = recorrido completo, 2 = variable no válida, 3 = queda trabajo)
+```
+
+Fichero de caja comprobado (no es un esquema imaginado):
+
+```
+$ python - <<'PY'
+import json; d=json.load(open(".../tile_s-090.0_n-088.0_w-0174.0_e-0172.0.json"))
+print(d["status"], d["bbox"], len(d["lats"]), "x", len(d["lons"]), "x", len(d["dates"]))
+PY
+ok [-174.0, -90.0, -172.0, -88.0] 5 x 3 x 540
+```
+
+Falta / riesgos:
+- **Coste**: ~0,55 s por caja (incluida la pausa de 0,2 s) ⇒ las 16.200 cajas son ~2,5 h y
+  ~180 MB de JSON. Si el atlas se quiere para una variable, conviene lanzarlo hoy con
+  `--deadline` y dejarlo correr por tandas; cada llamada deja lo hecho en disco.
+- Ojo con el polo: las cajas de 2° en lat ±90 no tienen problema en POWER (probado en la primera
+  caja), pero muchas serán `empty` para variables terrestres. Se anotan y no se reintentan.
+- La agregación por cos(lat) del atlas es de Antigravity 2 (`analyze_grid`); yo solo entrego celdas.
