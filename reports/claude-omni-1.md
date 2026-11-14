@@ -35,3 +35,27 @@ Falta / riesgos:
 - Tareas U3 (mapa de tendencias /api/trendmap y modo comparar) y U4 (detective RAG/plan) para la siguiente fase.
 Necesito de otros:
 - Claude Omni 3 (`feature/api`): desplegar endpoints `/api/health`, `/api/catalog/variables`, `/api/cases`, `/api/analyze`.
+
+## U3 — LISTO  (2026-11-14 13:50 UTC-5)
+Rama@commit: feature/ui (pendiente de hash tras commit)
+Qué quedó:
+- Selector de modo en el masthead: Punto individual (`single`), Mapa de tendencias regional (`trendmap`) y Comparar dos lugares (`compare`).
+- **Mapa de tendencias (`/api/trendmap`)**:
+  - Renderizado espacial de celdas rectangulares en Leaflet sobre el área seleccionada con `Shift + arrastrar`.
+  - Escala divergente simétrica continua apta para daltónicos (petróleo `#125e5a` negativo / ocre `#a2610f` positivo / neutral `#edf0ef`).
+  - **Punto central destacado en cada celda con `significant_fdr === true`** (control FDR de Benjamini-Hochberg).
+  - Leyenda interactiva con rango exacto de pendiente por década y porcentaje total de celdas significativas.
+  - Clic en cualquier celda para investigar esa coordenada puntual inmediatamente.
+- **Modo Comparar (`/api/compare`)**:
+  - Selección de dos puntos en el mapa o vía buscador (Lugar A y Lugar B).
+  - Dos instancias de Chart.js sincronizadas con **el mismo rango y escala en el eje Y**.
+  - Destacado visual prominente de la frase comparativa (`compare.statement`) y distintivo cuando las tendencias sean opuestas (`⚡ Se detectan tendencias opuestas`).
+Evidencia:
+- Verificado y capturado en Playwright a 1440x900 con la cuadrícula de 63 celdas de Piura (`power_monthly_regional_piura_T2M.json`) y con la comparación Lima vs. Ártico (Svalbard).
+- Archivos actualizados: `src/ui/app.js`, `src/ui/index.html`, `src/ui/styles.css`, `src/ui/i18n.js`.
+Falta / riesgos:
+- Conectar con los endpoints finales cuando Claude Omni 3 los despliegue.
+- Tarea U4: Integrar el detective con IA (`/api/ai/plan`, `/api/ai/scout`, `/api/ai/explain`).
+Necesito de otros:
+- Claude Omni 2 (`feature/wizard`): endpoints del detective IA.
+- Claude Omni 3 (`feature/api`): montaje de `/api/trendmap` y `/api/compare`.

@@ -112,6 +112,24 @@ const STRINGS = {
     'footer.disclaimer': 'Not affiliated with or endorsed by NASA.',
 
     'unit.perDecade': 'per decade',
+    'nav.mode.single': 'Single point',
+    'nav.mode.trendmap': 'Trend map (regional)',
+    'nav.mode.compare': 'Compare two places',
+    'trendmap.title': 'Spatial Trend Map',
+    'trendmap.legend.sig': 'Significant cell (FDR q=0.10)',
+    'trendmap.legend.share': '{pct}% of cells show significant trends',
+    'trendmap.cells': 'Grid cells',
+    'trendmap.btn': 'Show trend map for box',
+    'trendmap.hint': 'Drag with Shift on map to select a regional box, then load trend map.',
+    'compare.title': 'Compare Two Places',
+    'compare.placeA': 'Place A',
+    'compare.placeB': 'Place B',
+    'compare.btn': 'Compare places',
+    'compare.opposite': 'Opposite trends',
+    'compare.opposite.yes': '⚡ Opposite trends detected between both locations',
+    'compare.opposite.no': 'Similar trend direction in both locations',
+    'compare.diffSig': 'The difference between both trends is statistically significant (z = {z}).',
+
   },
 
   es: {
@@ -221,6 +239,24 @@ const STRINGS = {
     'footer.disclaimer': 'No está afiliado ni respaldado por la NASA.',
 
     'unit.perDecade': 'por década',
+    'nav.mode.single': 'Punto individual',
+    'nav.mode.trendmap': 'Mapa de tendencias (regional)',
+    'nav.mode.compare': 'Comparar dos lugares',
+    'trendmap.title': 'Mapa de Tendencias Espaciales',
+    'trendmap.legend.sig': 'Celda significativa (FDR q=0.10)',
+    'trendmap.legend.share': '{pct} % de celdas muestran tendencia significativa',
+    'trendmap.cells': 'Celdas analizadas',
+    'trendmap.btn': 'Ver mapa de tendencias de la caja',
+    'trendmap.hint': 'Mantén Mayús y arrastra en el mapa para elegir una caja regional, luego pulsa ver mapa.',
+    'compare.title': 'Comparar Dos Lugares',
+    'compare.placeA': 'Lugar A',
+    'compare.placeB': 'Lugar B',
+    'compare.btn': 'Comparar lugares',
+    'compare.opposite': 'Tendencias opuestas',
+    'compare.opposite.yes': '⚡ Se detectan tendencias opuestas entre ambas regiones',
+    'compare.opposite.no': 'Dirección de tendencia similar en ambas regiones',
+    'compare.diffSig': 'La diferencia entre ambas tendencias es estadísticamente significativa (z = {z}).',
+
   },
 };
 

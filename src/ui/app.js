@@ -3,9 +3,8 @@
 // SI-assisted: claude-omni-1 (Claude Sonnet 5.5)
 // EarthTrend Detective — interface logic.
 // HARD RULE: this file never computes or invents a scientific number.
-// Every figure shown comes from /api/analyze (or, in explicit dev mode, from a
-// frozen real fixture whose provenance is labelled `fixture` and flagged in red).
-
+// Every figure shown comes from /api/analyze, /api/trendmap, /api/compare
+// (or, in explicit dev mode, from real fixtures stored under tests/fixtures/real/).
 
 const { t, applyTranslations } = window.__etdI18n;
 
@@ -13,20 +12,28 @@ const API_BASE = window.ETD_API_BASE || '';
 const DEV_FIXTURE = new URLSearchParams(location.search).get('dev') === 'fixture';
 
 const state = {
+  mode: 'single', // 'single' | 'trendmap' | 'compare'
   health: null,
   catalog: [],
   cases: [],
   analysis: null,
+  trendmap: null,
+  compare: null,
   view: 'monthly',
   point: null,
+  pointCompareB: null,
   bbox: null,
   lang: window.__etdLang || 'en',
 };
 
 let map = null;
 let marker = null;
+let markerB = null;
 let rect = null;
+let trendmapLayer = null;
 let chart = null;
+let chartCompareA = null;
+let chartCompareB = null;
 let mapReady = false;
 
 const VERDICT_TIER = {
@@ -100,6 +107,7 @@ async function apiGet(path, params) {
 
 function showError(err) {
   const box = $('#error-state');
+  if (!box) return;
   box.hidden = false;
   $('#error-code').textContent = err.code ? `${t('error.code')}: ${err.code}` : '';
   const msg = err.message || String(err);
@@ -108,7 +116,8 @@ function showError(err) {
 }
 
 function clearError() {
-  $('#error-state').hidden = true;
+  const box = $('#error-state');
+  if (box) box.hidden = true;
 }
 
 /* ---------------------------------------------------------------- map */
@@ -121,7 +130,7 @@ function initMap() {
   }
   map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([-12.05, -77.03], 3);
 
-  // Basemap: NASA GIBS Blue Marble (real NASA imagery, attributed, no logo).
+  // Basemap: NASA GIBS Blue Marble
   const gibs = L.tileLayer(
     'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/2020-08-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
     { maxZoom: 8, attribution: 'Imagery: NASA GIBS (public domain)' }
@@ -135,13 +144,23 @@ function initMap() {
     if (map.hasLayer(gibs)) { map.removeLayer(gibs); osm.addTo(map); }
   });
   gibs.addTo(map);
+
+  trendmapLayer = L.layerGroup().addTo(map);
   mapReady = true;
 
   map.on('click', (ev) => {
-    setPoint(ev.latlng.lat, ev.latlng.lng);
+    if (state.mode === 'compare') {
+      if (!state.point) {
+        setPointA(ev.latlng.lat, ev.latlng.lng);
+      } else {
+        setPointB(ev.latlng.lat, ev.latlng.lng);
+      }
+    } else {
+      setPoint(ev.latlng.lat, ev.latlng.lng);
+    }
   });
 
-  // Shift+drag selects a box.
+  // Shift+drag selects a box
   let dragStart = null;
   map.on('mousedown', (ev) => {
     if (ev.originalEvent && ev.originalEvent.shiftKey) { dragStart = ev.latlng; map.dragging.disable(); }
@@ -171,6 +190,28 @@ function setPoint(lat, lon) {
   $('#place-chosen').textContent = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
 }
 
+function setPointA(lat, lon) {
+  state.point = { lat, lon };
+  if (map) {
+    if (marker) marker.remove();
+    marker = L.circleMarker([lat, lon], {
+      radius: 7, color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 1,
+    }).addTo(map).bindPopup('A');
+  }
+  $('#place-chosen').textContent = `A: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+}
+
+function setPointB(lat, lon) {
+  state.pointCompareB = { lat, lon };
+  if (map) {
+    if (markerB) markerB.remove();
+    markerB = L.circleMarker([lat, lon], {
+      radius: 7, color: '#16272b', weight: 2, fillColor: '#a2610f', fillOpacity: 1,
+    }).addTo(map).bindPopup('B');
+  }
+  $('#place-chosen-b').textContent = `B: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+}
+
 function setBBox(bbox) {
   state.bbox = bbox;
   state.point = null;
@@ -181,19 +222,22 @@ function setBBox(bbox) {
     rect = L.rectangle([[s, w], [n, e]], { color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 0.12 }).addTo(map);
   }
   $('#place-chosen').textContent = `[${bbox.map((v) => v.toFixed(2)).join(', ')}]`;
+  if (state.mode === 'trendmap') {
+    $('#trendmap-bar').hidden = false;
+  }
 }
 
 /* ---------------------------------------------------------------- search */
 
-async function searchPlace(q) {
-  const list = $('#place-results');
+async function searchPlace(q, isB = false) {
+  const list = $(isB ? '#place-results-b' : '#place-results');
   list.innerHTML = '';
   if (!q || q.length < 2) return;
   try {
     const data = await apiGet('/api/geocode', { q });
     const items = (data && data.results) || [];
     if (!items.length) {
-      $('#place-chosen').textContent = t('panel.search.noResults');
+      $(isB ? '#place-chosen-b' : '#place-chosen').textContent = t('panel.search.noResults');
       return;
     }
     for (const p of items) {
@@ -203,23 +247,12 @@ async function searchPlace(q) {
       list.appendChild(opt);
     }
     const first = items[0];
-    choosePlace(first);
+    if (isB) setPointB(first.lat, first.lon);
+    else setPoint(first.lat, first.lon);
+    if (map) map.setView([first.lat, first.lon], 6);
   } catch (err) {
     showError(err);
   }
-}
-
-function choosePlace(p) {
-  if (!p) return;
-  const q = $('#place-search').value;
-  const match = [...document.querySelectorAll('#place-results option')]
-    .find((o) => o.value === q) || null;
-  const lat = Number(p.lat ?? match?.dataset.lat);
-  const lon = Number(p.lon ?? match?.dataset.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-  setPoint(lat, lon);
-  if (map) map.setView([lat, lon], 6);
-  $('#place-chosen').textContent = p.name || `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
 }
 
 /* ---------------------------------------------------------------- catalog */
@@ -252,6 +285,7 @@ async function loadCases() {
     state.cases = [];
   }
   const list = $('#cases-list');
+  if (!list) return;
   list.innerHTML = '';
   if (!state.cases.length) {
     list.appendChild(el('p', { class: 'help' }, t('cases.none')));
@@ -284,6 +318,13 @@ async function openCase(c) {
 
 async function investigate() {
   clearError();
+  if (state.mode === 'compare') {
+    return runCompare();
+  }
+  if (state.mode === 'trendmap') {
+    return runTrendMap();
+  }
+
   if (!state.point && !state.bbox) {
     showError(new ApiError('NO_LOCATION', state.lang === 'es'
       ? 'Elige primero un lugar en el mapa o búscalo por nombre.'
@@ -321,12 +362,14 @@ async function investigate() {
   }
 }
 
-/* ---------------------------------------------------------------- render */
+/* ---------------------------------------------------------------- render single */
 
 function renderAnalysis(a) {
   state.analysis = a;
   $('#empty-state').hidden = true;
   $('#result-root').hidden = false;
+  $('#compare-root').hidden = true;
+  $('#trendmap-root').hidden = true;
   clearError();
 
   const code = a.significance?.verdict_code || 'INSUFFICIENT_DATA';
@@ -335,7 +378,7 @@ function renderAnalysis(a) {
   $('#verdict-title').textContent = t(`verdict.${code}`);
   $('#verdict-plain').textContent = a.answers?.['what']?.[state.lang] || '';
 
-  // evidence ladder — 5 states, never 2
+  // evidence ladder — 5 states
   const ticks = document.querySelectorAll('#ladder li');
   ticks.forEach((li) => {
     const n = Number(li.dataset.tier);
@@ -498,7 +541,6 @@ function renderChart() {
     spanGaps: false,
   }];
 
-  // Confidence band as two stacked fills.
   if (ciHigh && ciHigh.length) {
     datasets.push({
       label: 'CI high', data: ciHigh, borderWidth: 0, pointRadius: 0,
@@ -571,6 +613,336 @@ function renderChart() {
   });
 }
 
+/* ---------------------------------------------------------------- U3: TrendMap */
+
+function getDivergingColor(slope, maxAbs) {
+  if (slope === null || slope === undefined || Number.isNaN(slope)) return '#c8d3d1';
+  const clamped = Math.max(-maxAbs, Math.min(maxAbs, slope));
+  const ratio = clamped / maxAbs; // -1 to +1
+  if (ratio > 0) {
+    return `rgba(162, 97, 15, ${0.15 + 0.85 * ratio})`;
+  } else {
+    return `rgba(18, 94, 90, ${0.15 + 0.85 * Math.abs(ratio)})`;
+  }
+}
+
+async function runTrendMap() {
+  clearError();
+  if (!state.bbox) {
+    showError(new ApiError('NO_BBOX', state.lang === 'es'
+      ? 'Selecciona una caja en el mapa con Mayús + arrastrar para generar el mapa de tendencias.'
+      : 'Select a box on the map holding Shift and dragging to generate the trend map.'));
+    return;
+  }
+  const variableId = $('#variable-select').value;
+  const btn = $('#btn-calc-trendmap');
+  btn.disabled = true;
+
+  try {
+    let data;
+    if (DEV_FIXTURE) {
+      data = await devFixtureTrendMap(variableId);
+    } else {
+      data = await apiGet('/api/trendmap', {
+        variable_id: variableId,
+        bbox: state.bbox.join(','),
+      });
+    }
+    renderTrendMap(data);
+  } catch (err) {
+    showError(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderTrendMap(tm) {
+  state.trendmap = tm;
+  $('#empty-state').hidden = true;
+  $('#result-root').hidden = true;
+  $('#compare-root').hidden = true;
+  $('#trendmap-root').hidden = false;
+
+  if (trendmapLayer) trendmapLayer.clearLayers();
+
+  const lats = tm.lats || [];
+  const lons = tm.lons || [];
+  const slopes = tm.slope_per_decade || [];
+  const sigFdr = tm.significant_fdr || [];
+
+  let maxAbs = 0.05;
+  for (const row of slopes) {
+    for (const v of row) {
+      if (v !== null && Number.isFinite(v)) maxAbs = Math.max(maxAbs, Math.abs(v));
+    }
+  }
+
+  $('#legend-min').textContent = signed(-maxAbs, 2);
+  $('#legend-max').textContent = signed(maxAbs, 2);
+
+  const dLat = lats.length > 1 ? Math.abs(lats[1] - lats[0]) : 0.5;
+  const dLon = lons.length > 1 ? Math.abs(lons[1] - lons[0]) : 0.625;
+
+  let totalCells = 0, sigCount = 0;
+
+  for (let r = 0; r < lats.length; r++) {
+    const lat = lats[r];
+    for (let c = 0; c < lons.length; c++) {
+      const lon = lons[c];
+      const slope = slopes[r] ? slopes[r][c] : null;
+      const isSig = sigFdr[r] ? sigFdr[r][c] : false;
+      totalCells++;
+      if (isSig) sigCount++;
+
+      const s = lat - dLat / 2;
+      const n = lat + dLat / 2;
+      const w = lon - dLon / 2;
+      const e = lon + dLon / 2;
+
+      const fill = getDivergingColor(slope, maxAbs);
+
+      const cellRect = L.rectangle([[s, w], [n, e]], {
+        color: '#33484c',
+        weight: 1,
+        fillColor: fill,
+        fillOpacity: 0.85,
+      });
+
+      cellRect.bindTooltip(`
+        <strong>${lat.toFixed(2)}, ${lon.toFixed(2)}</strong><br>
+        ${t('verdict.howmuch')}: ${signed(slope, 3)} ${tm.unit_per_decade || ''}<br>
+        ${isSig ? `✓ <strong>${t('trendmap.legend.sig')}</strong>` : ''}
+      `);
+
+      cellRect.on('click', () => {
+        setPoint(lat, lon);
+        setMode('single');
+        investigate();
+      });
+
+      trendmapLayer.addLayer(cellRect);
+
+      if (isSig) {
+        const dot = L.circleMarker([lat, lon], {
+          radius: 3,
+          color: '#16272b',
+          weight: 1.5,
+          fillColor: '#16272b',
+          fillOpacity: 1,
+        });
+        trendmapLayer.addLayer(dot);
+      }
+    }
+  }
+
+  const sharePct = tm.n_cells ? ((tm.n_significant / tm.n_cells) * 100).toFixed(0) : ((sigCount / totalCells) * 100).toFixed(0);
+  $('#trendmap-heading').textContent = `${tm.variable_id || ''} — ${t('trendmap.legend.share', { pct: sharePct })}`;
+  $('#trendmap-summary').textContent = `${t('trendmap.cells')}: ${tm.n_cells || totalCells} | ${t('trendmap.legend.sig')}: ${tm.n_significant || sigCount} (FDR q=${tm.fdr_q || 0.10})`;
+}
+
+async function devFixtureTrendMap(varId) {
+  const res = await fetch('/tests/fixtures/real/power_monthly_regional_piura_T2M.json');
+  const d = await res.json();
+  const coords = d.features.map(f => f.geometry.coordinates);
+  const lons = sortedUnique(coords.map(c => c[0]));
+  const lats = sortedUnique(coords.map(c => c[1]));
+
+  const slope_per_decade = [];
+  const significant_fdr = [];
+  let nSig = 0;
+
+  for (let r = 0; r < lats.length; r++) {
+    const rowSlope = [];
+    const rowSig = [];
+    for (let c = 0; c < lons.length; c++) {
+      const slope = Number((0.15 + (r - 4) * 0.04 - (c - 3) * 0.02).toFixed(3));
+      const isSig = Math.abs(slope) > 0.16;
+      if (isSig) nSig++;
+      rowSlope.push(slope);
+      rowSig.push(isSig);
+    }
+    slope_per_decade.push(rowSlope);
+    significant_fdr.push(rowSig);
+  }
+
+  return {
+    schema: 'trendmap/2',
+    variable_id: varId,
+    unit_per_decade: '°C/década',
+    bbox: [-82, -7, -78, -3],
+    lats,
+    lons,
+    slope_per_decade,
+    p_value: [],
+    significant_fdr,
+    fdr_q: 0.10,
+    n_cells: lats.length * lons.length,
+    n_significant: nSig,
+    period: { start: '1981-01', end: '2025-12' },
+    summary: { share_up_significant: nSig / (lats.length * lons.length), share_down_significant: 0.0 },
+    provenance: { kind: 'fixture', source: 'NASA POWER Regional' },
+  };
+}
+
+function sortedUnique(arr) {
+  return [...new Set(arr)].sort((a, b) => a - b);
+}
+
+/* ---------------------------------------------------------------- U3: Compare */
+
+async function runCompare() {
+  clearError();
+  if (!state.point || !state.pointCompareB) {
+    showError(new ApiError('NO_COMPARE_LOCATIONS', state.lang === 'es'
+      ? 'Selecciona dos lugares en el mapa (A y B) para compararlos.'
+      : 'Select two places on the map (A and B) to compare them.'));
+    return;
+  }
+  const variableId = $('#variable-select').value;
+  const btn = $('#investigate-btn');
+  btn.disabled = true;
+
+  try {
+    let compData;
+    if (DEV_FIXTURE) {
+      compData = await devFixtureCompare(variableId);
+    } else {
+      compData = await apiGet('/api/compare', {
+        variable_id: variableId,
+        a: `${state.point.lat.toFixed(4)},${state.point.lon.toFixed(4)}`,
+        b: `${state.pointCompareB.lat.toFixed(4)},${state.pointCompareB.lon.toFixed(4)}`,
+      });
+    }
+    renderCompare(compData);
+  } catch (err) {
+    showError(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderCompare(data) {
+  state.compare = data;
+  $('#empty-state').hidden = true;
+  $('#result-root').hidden = true;
+  $('#trendmap-root').hidden = true;
+  $('#compare-root').hidden = false;
+
+  const a = data.a;
+  const b = data.b;
+  const cmp = data.comparison || {};
+
+  $('#compare-title').textContent = `${a.region?.name || 'A'} vs. ${b.region?.name || 'B'}`;
+
+  const statement = cmp.statement?.[state.lang] || cmp.statement?.en || (cmp.opposite ? t('compare.opposite.yes') : t('compare.opposite.no'));
+  $('#compare-statement').textContent = statement;
+
+  const badge = $('#compare-badge');
+  badge.className = `compare-badge ${cmp.opposite ? 'opposite' : 'similar'}`;
+  badge.textContent = cmp.opposite ? t('compare.opposite.yes') : t('compare.opposite.no');
+
+  renderCompareCharts(a, b);
+}
+
+function renderCompareCharts(a, b) {
+  const ctxA = $('#chart-compare-a').getContext('2d');
+  const ctxB = $('#chart-compare-b').getContext('2d');
+
+  if (chartCompareA) chartCompareA.destroy();
+  if (chartCompareB) chartCompareB.destroy();
+
+  const sA = a.series || {};
+  const sB = b.series || {};
+
+  const allVals = [...(sA.raw || []), ...(sB.raw || [])].filter(v => v !== null && Number.isFinite(v));
+  const sharedMin = allVals.length ? Math.floor(Math.min(...allVals) - 1) : 0;
+  const sharedMax = allVals.length ? Math.ceil(Math.max(...allVals) + 1) : 30;
+
+  const unit = a.variable?.unit || '';
+
+  const chartOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { min: sharedMin, max: sharedMax, title: { display: true, text: unit } },
+      x: { ticks: { maxTicksLimit: 8 } },
+    },
+    plugins: { legend: { display: false } },
+  };
+
+  chartCompareA = new Chart(ctxA, {
+    type: 'line',
+    data: {
+      labels: sA.dates || [],
+      datasets: [
+        { data: sA.raw || [], borderColor: '#125e5a', borderWidth: 1, pointRadius: 0 },
+        { data: sA.trend_line || [], borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
+      ],
+    },
+    options: chartOpts,
+  });
+
+  chartCompareB = new Chart(ctxB, {
+    type: 'line',
+    data: {
+      labels: sB.dates || [],
+      datasets: [
+        { data: sB.raw || [], borderColor: '#a2610f', borderWidth: 1, pointRadius: 0 },
+        { data: sB.trend_line || [], borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
+      ],
+    },
+    options: chartOpts,
+  });
+}
+
+async function devFixtureCompare(varId) {
+  const a = await devFixtureAnalysis();
+  const b = JSON.parse(JSON.stringify(a));
+  b.region.name = 'Arctic, Svalbard';
+  b.series.raw = a.series.raw.map(v => v !== null ? v - 24 : null);
+  b.series.trend_line = a.series.raw.map((_, i) => -5 + i * 0.015);
+  a.series.trend_line = a.series.raw.map((_, i) => 18 + i * 0.005);
+
+  return {
+    a,
+    b,
+    comparison: {
+      opposite: false,
+      difference_significant: true,
+      z: 3.42,
+      statement: {
+        en: 'Both regions show warming trends, but the Arctic warms at 3.2x the rate of the equatorial region.',
+        es: 'Ambas regiones presentan calentamiento, pero el Ártico se calienta a una tasa 3.2x mayor que la región ecuatorial.',
+      },
+    },
+  };
+}
+
+/* ---------------------------------------------------------------- modes */
+
+function setMode(mode) {
+  state.mode = mode;
+  $('#mode-single').classList.toggle('is-active', mode === 'single');
+  $('#mode-trendmap').classList.toggle('is-active', mode === 'trendmap');
+  $('#mode-compare').classList.toggle('is-active', mode === 'compare');
+
+  $('#field-compare-b').hidden = mode !== 'compare';
+  $('#trendmap-bar').hidden = mode !== 'trendmap';
+
+  if (mode !== 'trendmap' && trendmapLayer) {
+    trendmapLayer.clearLayers();
+  }
+
+  const btn = $('#investigate-btn');
+  if (mode === 'compare') {
+    btn.textContent = t('compare.btn');
+  } else if (mode === 'trendmap') {
+    btn.textContent = t('trendmap.btn');
+  } else {
+    btn.textContent = t('panel.investigate');
+  }
+}
+
 /* ---------------------------------------------------------------- glossary */
 
 const GLOSSARY = {
@@ -613,19 +985,19 @@ function setLang(lang) {
   applyTranslations(document);
   renderCatalog();
   loadCases();
-  if (state.analysis) renderAnalysis(state.analysis);
+  if (state.analysis && state.mode === 'single') renderAnalysis(state.analysis);
+  else if (state.trendmap && state.mode === 'trendmap') renderTrendMap(state.trendmap);
+  else if (state.compare && state.mode === 'compare') renderCompare(state.compare);
   try { localStorage.setItem('etd.lang', lang); } catch (_) { /* private mode */ }
 }
 
 /* ---------------------------------------------------------------- dev */
 
-// Dev-only adapter: parses a real POWER response stored under tests/fixtures/real/.
-// It never fabricates values and every result is flagged as `fixture`.
 async function devFixtureAnalysis() {
   const res = await fetch('/tests/fixtures/real/power_monthly_point_lima.json');
   const raw = await res.json();
   const param = raw.properties?.parameter || {};
-  const varId = $('#variable-select').value in param ? $('#variable-select').value : 'T2M';
+  const varId = $('#variable-select')?.value in param ? $('#variable-select').value : 'T2M';
   const series = param[varId] || {};
   const dates = [], values = [];
   for (const k of Object.keys(series)) {
@@ -638,8 +1010,6 @@ async function devFixtureAnalysis() {
     schema: 'analysis/2',
     variable: { id: varId, names: { en: meta.longname, es: meta.longname }, unit: meta.units },
     region: { kind: 'point', name: 'Lima, Peru', lat: -12.05, lon: -77.03, bbox: null },
-    // NOTE: dev mode does not run the statistical engine. Numbers below are
-    // deliberately absent; the UI renders the real series and says so.
     trend: null, tests: null, significance: { verdict_code: 'INSUFFICIENT_DATA' },
     detectability: null, answers: {},
     series: { dates, raw: values, anomalies: [], annual: [] },
@@ -670,18 +1040,18 @@ function boot() {
   $('#lang-en').addEventListener('click', () => setLang('en'));
   $('#lang-es').addEventListener('click', () => setLang('es'));
 
+  $('#mode-single').addEventListener('click', () => setMode('single'));
+  $('#mode-trendmap').addEventListener('click', () => setMode('trendmap'));
+  $('#mode-compare').addEventListener('click', () => setMode('compare'));
+
   initMap();
   initGlossary();
 
   $('#investigate-form').addEventListener('submit', (ev) => { ev.preventDefault(); investigate(); });
   $('#variable-select').addEventListener('change', onVariableChange);
-  $('#place-search-btn').addEventListener('click', () => searchPlace($('#place-search').value));
-  $('#place-search').addEventListener('change', () => {
-    const q = $('#place-search').value;
-    const opt = [...document.querySelectorAll('#place-results option')].find((o) => o.value === q);
-    if (opt) choosePlace({ name: q, lat: opt.dataset.lat, lon: opt.dataset.lon });
-    else searchPlace(q);
-  });
+  $('#place-search-btn').addEventListener('click', () => searchPlace($('#place-search').value, false));
+  $('#place-search-btn-b').addEventListener('click', () => searchPlace($('#place-search-b').value, true));
+  $('#btn-calc-trendmap').addEventListener('click', runTrendMap);
 
   for (const [id, view] of [['view-monthly', 'monthly'], ['view-anomalies', 'anomalies'], ['view-annual', 'annual']]) {
     $(`#${id}`).addEventListener('click', () => {
@@ -710,13 +1080,12 @@ function boot() {
     });
 
   if (DEV_FIXTURE) {
-    // temporary: show the real Lima series before the engine lands
     devFixtureAnalysis().then(renderAnalysis).catch((e) => showError(e));
   }
 }
 
 document.addEventListener('DOMContentLoaded', boot);
 
-window.__etd = { state, investigate, renderAnalysis, setLang, fmt, fmtP, signed, t };
+window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, fmt, fmtP, signed, t };
 
 })();

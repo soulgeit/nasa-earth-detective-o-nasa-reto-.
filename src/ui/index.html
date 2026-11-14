@@ -20,6 +20,11 @@
         <h1 data-i18n="app.title">EarthTrend Detective</h1>
         <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
       </div>
+            <nav class="mode-switch" role="tablist" aria-label="Investigation mode">
+        <button type="button" role="tab" id="mode-single" class="mode-tab is-active" aria-selected="true" data-i18n="nav.mode.single">Single point</button>
+        <button type="button" role="tab" id="mode-trendmap" class="mode-tab" aria-selected="false" data-i18n="nav.mode.trendmap">Trend map</button>
+        <button type="button" role="tab" id="mode-compare" class="mode-tab" aria-selected="false" data-i18n="nav.mode.compare">Compare</button>
+      </nav>
       <div class="lang-switch" role="group" aria-label="Language" data-i18n-aria="lang.label">
         <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
         <button type="button" id="lang-es" aria-pressed="false" lang="es">ES</button>
@@ -41,9 +46,25 @@
         <p class="help" id="place-chosen" aria-live="polite"></p>
       </section>
 
+            <!-- Compare fields (visible only in compare mode) -->
+      <section class="field compare-field" id="field-compare-b" hidden>
+        <label for="place-search-b" data-i18n="compare.placeB">Place B</label>
+        <div class="search-row">
+          <input type="text" id="place-search-b" list="place-results-b" autocomplete="off"
+                 data-i18n-placeholder="panel.search.placeholder" placeholder="e.g. Arctic, Svalbard">
+          <button type="button" class="btn btn-ghost" id="place-search-btn-b" data-i18n="panel.search.button">Find</button>
+        </div>
+        <datalist id="place-results-b"></datalist>
+        <p class="help" id="place-chosen-b" aria-live="polite"></p>
+      </section>
+
       <section class="map-frame">
         <div id="map" role="application" aria-label="Map" data-i18n-aria="panel.location"></div>
         <p class="map-hint" data-i18n="panel.map.hint">Click the map to pick a point. Hold Shift and drag to pick a box.</p>
+              <div class="trendmap-bar" id="trendmap-bar" hidden>
+          <button type="button" class="btn btn-primary btn-small" id="btn-calc-trendmap" data-i18n="trendmap.btn">Show trend map for box</button>
+          <span class="help" data-i18n="trendmap.hint"></span>
+        </div>
       </section>
 
       <section class="field">
@@ -196,6 +217,57 @@
           <p><strong data-i18n="provenance.query">Exact query</strong>: <a id="prov-url" target="_blank" rel="noopener noreferrer"></a></p>
           <p><strong data-i18n="provenance.citation">Citation</strong>: <span id="prov-citation"></span></p>
         </section>
+      </div>
+
+      <!-- ============ COMPARE RESULTS ============ -->
+      <div id="compare-root" hidden>
+        <article class="plate verdict" id="compare-verdict-plate">
+          <p class="verdict-eyebrow" data-i18n="compare.title">Compare Two Places</p>
+          <h2 id="compare-title"></h2>
+          <p class="plain serif" id="compare-statement"></p>
+          <div class="compare-badge" id="compare-badge"></div>
+        </article>
+
+        <div class="compare-charts-grid">
+          <section class="plate chart-plate" aria-labelledby="chart-heading-a">
+            <div class="chart-head">
+              <h3 id="chart-heading-a">Place A</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chart-compare-a" role="img"></canvas>
+            </div>
+          </section>
+
+          <section class="plate chart-plate" aria-labelledby="chart-heading-b">
+            <div class="chart-head">
+              <h3 id="chart-heading-b">Place B</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chart-compare-b" role="img"></canvas>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ============ TRENDMAP RESULTS ============ -->
+      <div id="trendmap-root" hidden>
+        <article class="plate verdict" id="trendmap-verdict-plate">
+          <p class="verdict-eyebrow" data-i18n="trendmap.title">Spatial Trend Map</p>
+          <h2 id="trendmap-heading"></h2>
+          <p class="plain serif" id="trendmap-summary"></p>
+
+          <div class="trendmap-legend-box" id="trendmap-legend">
+            <div class="legend-scale">
+              <span class="scale-label" id="legend-min">-0.5</span>
+              <div class="scale-gradient"></div>
+              <span class="scale-label" id="legend-max">+0.5</span>
+            </div>
+            <p class="legend-detail">
+              <span class="sig-dot-sample">●</span>
+              <span data-i18n="trendmap.legend.sig">Significant cell (FDR q=0.10)</span>
+            </p>
+          </div>
+        </article>
       </div>
     </section>
   </main>
