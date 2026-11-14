@@ -70,7 +70,8 @@ def _load() -> tuple[Place, ...]:
     if not path.exists():
         return ()
     raw = json.loads(path.read_text(encoding="utf-8"))
-    rows = raw.get("places") if isinstance(raw, dict) else raw
+    # Hermes 1 publica la lista bajo "cities" (gazetteer/2); se acepta también "places".
+    rows = (raw.get("places") or raw.get("cities")) if isinstance(raw, dict) else raw
     places: list[Place] = []
     for row in rows or []:
         try:

@@ -236,7 +236,8 @@ async function searchPlace(q, isB = false) {
   if (!q || q.length < 2) return;
   try {
     const data = await apiGet('/api/geocode', { q });
-    const items = (data && data.results) || [];
+    // La API responde {"places": [...]} (docs/CONTRATOS.md §7); "results" se acepta por compatibilidad.
+    const items = (data && (data.places || data.results)) || [];
     if (!items.length) {
       $(isB ? '#place-chosen-b' : '#place-chosen').textContent = t('panel.search.noResults');
       return;

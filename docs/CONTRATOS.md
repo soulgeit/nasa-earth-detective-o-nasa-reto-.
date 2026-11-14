@@ -146,7 +146,7 @@ def geocode(q: str) -> list[dict]                                          # [{"
 | `GET /health` | — | `{status, version, ai_mode, sources_up}` |
 | `GET /catalog/variables?lang=` | — | tarjetas |
 | `GET /catalog/regions` · `GET /cases` | — | regiones y casos congelados |
-| `GET /geocode?q=` | texto | lugares |
+| `GET /geocode?q=` | texto | `{"places": [{"name","country","lat","lon","bbox","population","match_score"}]}` |
 | `GET /series` | `variable_id` + (`lat`,`lon`) o `bbox` + `start`,`end` | TimeSeries v2 |
 | `GET /analyze` | igual | AnalysisResult v2 |
 | `POST /analyze/upload` | CSV de Giovanni (multipart) | AnalysisResult v2 |

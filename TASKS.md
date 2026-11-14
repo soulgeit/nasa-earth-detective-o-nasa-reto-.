@@ -7,7 +7,7 @@ Plan: `docs/PLAN_GANADOR.md` · Contratos: `docs/CONTRATOS.md` · Entrega: `docs
 Desde ahora una casilla solo se marca con evidencia en `reports/` y verificada por el arquitecto.
 
 > **RONDA 2 (sáb 14-nov, 17:00) — lee `docs/RONDA_2.md`: manda sobre este tablero.**
-> Avance real ~55 %: las piezas existen pero están repartidas en ramas que chocan. Reglas nuevas, cómo empujar, nota de estado obligatoria
+> Avance real ~60 %: las seis ramas ya están integradas en `main` (17:45); faltan los defectos del §6, el LoRA real, el despliegue y la entrega. Reglas nuevas, cómo empujar, nota de estado obligatoria
 > y pendientes por agente están allí. Las tablas de «✅ LISTO» de más abajo las escribieron los propios agentes y **no están verificadas**.
 
 ## Hermes 1 — C1-C7 Status Update (2026-11-14T23:55)

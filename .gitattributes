@@ -1,2 +1,4 @@
 # El registro de uso de IA lo escriben todos al final: unir ambas versiones en vez de dar conflicto.
 docs/AI_USE_LOG.md merge=union
+# Los scripts de shell deben conservar LF tambien en Windows.
+*.sh text eol=lf

@@ -1,3 +1,6 @@
+> **Nota del arquitecto (14-nov, 17:45):** las cifras de evaluación del LoRA de la «FASE 2» de este reporte salieron de una simulación
+> (`eval_lora.py` no ejecutaba ningún modelo) y quedan **retiradas**. No existe adaptador entrenado. Ver `docs/RONDA_2.md` §1, hallazgo 2.
+
 # Reporte de Antigravity 2 — Motor Estadístico v2 (feature/stats)
 
 ## E1, E2, E3, E4 — LISTO (14-nov-2026 13:56)

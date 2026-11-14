@@ -83,8 +83,8 @@ def _break_upstream(monkeypatch):
     def _timeout(_url):
         raise etl_power.DataUnavailable("UPSTREAM_TIMEOUT", "sin red en la prueba")
 
-    monkeypatch.setattr(etl_power, "_fetch_url_with_retry", _timeout)
-    monkeypatch.setattr(etl_power, "_read_from_cache", lambda *a, **k: None)
+    # El conector vigente concentra caché y red en `_fetch`: romperlo deja al ETL sin ninguna de las dos.
+    monkeypatch.setattr(etl_power, "_fetch", _timeout)
 
 
 def test_upstream_failure_serves_no_data_when_fixtures_disallowed(monkeypatch):
@@ -98,19 +98,19 @@ def test_upstream_failure_serves_no_data_when_fixtures_disallowed(monkeypatch):
     assert excinfo.value.code == "UPSTREAM_TIMEOUT"
 
 
-def test_fixture_fallback_is_labelled_fixture_never_nasa_api(monkeypatch):
-    """Con ALLOW_FIXTURES=1 el respaldo se sirve, pero se declara como respaldo."""
+def test_etl_never_substitutes_a_local_sample_even_if_fixtures_allowed(monkeypatch):
+    """El conector vigente no tiene respaldo local: con la NASA caída falla también con ALLOW_FIXTURES=1.
+
+    El modo de muestras vive solo en la API y se declara `fixture`
+    (ver tests/api/test_contract.py::test_fixture_mode_series_is_explicitly_fixture).
+    """
     monkeypatch.setenv("ALLOW_FIXTURES", "1")
     _break_upstream(monkeypatch)
 
-    ts = etl_power.get_power_point_series("T2M", -12.05, -77.03)
-    provenance = ts["provenance"]
+    with pytest.raises(etl_power.DataUnavailable) as excinfo:
+        etl_power.get_power_point_series("T2M", -12.05, -77.03)
 
-    assert provenance["kind"] == "fixture"
-    assert "copia local" in provenance["source"]
-    assert "no dato en vivo" in provenance["citation"]
-    # La muestra real de Lima sigue teniendo 540 meses.
-    assert len(ts["data"]) == 540
+    assert excinfo.value.code == "UPSTREAM_TIMEOUT"
 
 
 def test_live_data_keeps_nasa_api_provenance(monkeypatch):
