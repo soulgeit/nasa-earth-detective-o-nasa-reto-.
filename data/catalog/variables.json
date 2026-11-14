@@ -1,0 +1,2003 @@
+{
+  "_about": "Catálogo v2 de variables para EarthTrend Detective. Convierte variables.seed.json en tarjetas completas.",
+  "_verified_by": "hermes-1",
+  "_generated_at": "2026-11-14T23:00:00Z",
+  "variables": [
+    {
+      "id": "T2M",
+      "connector": "power",
+      "connector_param": "T2M",
+      "names": {
+        "es": "Temperatura del aire a 2 metros",
+        "en": "Air temperature at 2 meters"
+      },
+      "simple_definition": {
+        "es": "La temperatura del aire que sentimos a la altura de nuestra cabeza (1.5-2 m sobre el suelo).",
+        "en": "The air temperature felt at head height (~1.5-2 m above ground level)."
+      },
+      "unit": "°C",
+      "ratio_scale": false,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Modelo de Reanálisis)",
+        "instrument": "Modelo numérico GMAO (no es satélite directo)",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar olas de calor más intensas, deshielo acelerado o cambios en patrones climáticos regionales.",
+        "en": "May indicate more intense heat waves, accelerated ice melt, or shifts in regional climate patterns."
+      },
+      "what_down_means": {
+        "es": "Puede indicar enfriamiento relativo, cambios en corrientes de aire o fenómenos como La Niña.",
+        "en": "May indicate relative cooling, shifts in air currents, or phenomena such as La Niña."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación solar",
+          "Corrientes oceánicas (El Niño/La Niña)",
+          "Cobertura nubosa",
+          "Cambios en el uso del suelo"
+        ],
+        "en": [
+          "Solar radiation",
+          "Ocean currents (El Niño/La Niña)",
+          "Cloud cover",
+          "Land use changes"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es una reanálisis modelado, no medición directa de un termómetro real.",
+          "Puede verse afectada por cambios en el sistema de observación del modelo."
+        ],
+        "en": [
+          "It is a modeled reanalysis product, not a direct thermometer measurement.",
+          "May be affected by changes in the model's observation system."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "temperatura",
+          "calor",
+          "frío",
+          "onda de calor",
+          "clima",
+          "atmósfera",
+          "bochorno",
+          "helada",
+          "MERRA",
+          "reanálisis"
+        ],
+        "en": [
+          "temperature",
+          "heat",
+          "cold",
+          "heat wave",
+          "climate",
+          "atmosphere",
+          "hot",
+          "frost",
+          "warming",
+          "cooling"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "TS",
+      "connector": "power",
+      "connector_param": "TS",
+      "names": {
+        "es": "Temperatura de la superficie terrestre (tierra)",
+        "en": "Earth skin temperature"
+      },
+      "simple_definition": {
+        "es": "La temperatura real de la superficie (suelo, techo, copa de árboles) que siente el sol directamente.",
+        "en": "The actual surface temperature (soil, rooftops, tree canopy) as felt by direct sunlight."
+      },
+      "unit": "°C",
+      "ratio_scale": false,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "MERRA-2 (Hydrology Land Surface Model)",
+        "instrument": "Modelo numérico GMAO",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar islas de calor urbano, desecación del suelo o cambio en la cobertura terrestre.",
+        "en": "May indicate urban heat islands, soil drying, or land cover changes."
+      },
+      "what_down_means": {
+        "es": "Puede indicar mayor nubosidad, cambios en la humedad del suelo o enfriamiento por aerosoles.",
+        "en": "May indicate increased cloud cover, soil moisture changes, or aerosol cooling."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación solar incidente",
+          "Humedad del suelo",
+          "Cobertura vegetal y tipo de superficie",
+          "Aerosoles atmosféricos"
+        ],
+        "en": [
+          "Incident solar radiation",
+          "Soil moisture",
+          "Vegetation cover and surface type",
+          "Atmospheric aerosols"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Difiere de la temperatura del aire; la diferencia puede ser >10°C en zonas áridas.",
+          "Es una reanálisis, no un termómetro real de superficie."
+        ],
+        "en": [
+          "Differs from air temperature; the gap can exceed 10°C in arid zones.",
+          "It is a reanalysis product, not a real surface thermometer."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "superficie",
+          "temperatura del suelo",
+          "calor superficial",
+          "tierra",
+          "suelo",
+          "MERRA",
+          "aerotermia"
+        ],
+        "en": [
+          "surface",
+          "ground temperature",
+          "skin temperature",
+          "land",
+          "soil heat",
+          "terrain",
+          "earth"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "PRECTOTCORR",
+      "connector": "power",
+      "connector_param": "PRECTOTCORR",
+      "names": {
+        "es": "Precipitación corregida (lluvia + nieve)",
+        "en": "Corrected precipitation"
+      },
+      "simple_definition": {
+        "es": "La cantidad total de lluvia y nieve que cae al día, corregida con observaciones satelitales reales.",
+        "en": "The total amount of rain and snow falling per day, corrected with real satellite observations."
+      },
+      "unit": "mm/day",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 + GPCP (Global Precipitation Climatology Project)",
+        "instrument": "Corrección vía satélites TRMM y GPM de precipitación",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor intensidad de lluvias, cambios en los monzones o impacto del calentamiento global.",
+        "en": "May indicate more intense rainfall, monsoon shifts, or global warming impacts."
+      },
+      "what_down_means": {
+        "es": "Puede indicar sequía creciente, desplazamiento de patrones de lluvia o deforestación regional.",
+        "en": "May indicate growing drought, rainfall pattern shifts, or regional deforestation."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del océano (El Niño/La Niña)",
+          "Deforestación y cambio de uso del suelo",
+          "Aerosoles atmosféricos",
+          "Ciclos naturales de la atmósfera"
+        ],
+        "en": [
+          "Ocean temperature (El Niño/La Niña)",
+          "Deforestation and land use change",
+          "Atmospheric aerosols",
+          "Natural atmospheric cycles"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "La corrección combina múltiples fuentes satelitales; los datos son más confiables después de 2000.",
+          "Puede subestimar precipitación en zonas montañosas complejas."
+        ],
+        "en": [
+          "The correction combines multiple satellite sources; data is more reliable after 2000.",
+          "May underestimate precipitation in complex mountainous regions."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "lluvia",
+          "precipitación",
+          "seca",
+          "inundación",
+          "monzón",
+          "agua",
+          "sequía",
+          "tormenta",
+          "MERRA",
+          "GPCP"
+        ],
+        "en": [
+          "rain",
+          "precipitation",
+          "drought",
+          "flood",
+          "monsoon",
+          "water",
+          "dry",
+          "storm",
+          "wet",
+          "raining"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "GWETTOP",
+      "connector": "power",
+      "connector_param": "GWETTOP",
+      "names": {
+        "es": "Humedad superficial del suelo (0-1)",
+        "en": "Surface soil wetness"
+      },
+      "simple_definition": {
+        "es": "Qué tan húmedo está el primer centímetro de tierra, en una escala de 0 (completamente seco) a 1 (saturado).",
+        "en": "How moist the top few centimeters of soil are, on a scale from 0 (dry) to 1 (saturated)."
+      },
+      "unit": "fraction (0-1)",
+      "ratio_scale": true,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "MERRA-2 (Hydrology Land Surface Model - LSM)",
+        "instrument": "Modelo hidrológico integrado en MERRA-2",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Suelos más húmedos, mayor riesgo de inundaciones locales o recarga de acuíferos.",
+        "en": "Increased soil moisture, higher local flood risk, or aquifer recharge."
+      },
+      "what_down_means": {
+        "es": "Sequía agrícola, desertificación o estrés hídrico creciente para cultivos y vegetación natural.",
+        "en": "Agricultural drought, desertification, or increasing water stress for crops and natural vegetation."
+      },
+      "typical_drivers": {
+        "es": [
+          "Precipitación y evaporación neta",
+          "Temperatura del aire",
+          "Cobertura vegetal y profundidad de raíces",
+          "Tipo de suelo (arcilloso vs arenoso)"
+        ],
+        "en": [
+          "Net precipitation and evaporation",
+          "Air temperature",
+          "Vegetation cover and root depth",
+          "Soil type (clay vs sandy)"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Solo mide la capa más superficial; no refleja humedad profunda en raíces de cultivos.",
+          "Es una simulación del modelo, no mediciones in situ directas."
+        ],
+        "en": [
+          "Only measures the top layer; does not reflect deep root-zone moisture.",
+          "It is a model simulation, not direct in-situ measurements."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "humedad",
+          "suelo",
+          "sequía agrícola",
+          "riego",
+          "cultivo",
+          "agua subterránea",
+          "seco",
+          "mojado",
+          "agricultura"
+        ],
+        "en": [
+          "moisture",
+          "soil",
+          "agricultural drought",
+          "irrigation",
+          "crop",
+          "groundwater",
+          "dry",
+          "wet",
+          "farming"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "EVLAND",
+      "connector": "power",
+      "connector_param": "EVLAND",
+      "names": {
+        "es": "Evaporación terrestre (evapotranspiración)",
+        "en": "Land evaporation"
+      },
+      "simple_definition": {
+        "es": "Cuánta agua se evapora de la superficie terrestre y las plantas hacia la atmósfera cada día.",
+        "en": "How much water evaporates from the land surface and plants into the atmosphere each day."
+      },
+      "unit": "mm/day",
+      "ratio_scale": true,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "MERRA-2 (Hydrology Land Surface Model)",
+        "instrument": "Modelo hidrológico integrado en MERRA-2",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor evaporación por calentamiento, reducción de humedad del suelo o cambios en la vegetación.",
+        "en": "May indicate increased evaporation from warming, reduced soil moisture, or vegetation changes."
+      },
+      "what_down_means": {
+        "es": "Puede indicar menor radiación solar, mayor nubosidad persistente, o aumento de humedad del suelo disponible.",
+        "en": "May indicate reduced solar radiation, persistent cloud cover, or increased available soil moisture."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación solar",
+          "Temperatura y humedad del aire",
+          "Velocidad del viento",
+          "Humedad del suelo disponible"
+        ],
+        "en": [
+          "Solar radiation",
+          "Air temperature and humidity",
+          "Wind speed",
+          "Available soil moisture"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es una estimación del modelo, no se mide directamente.",
+          "Depende críticamente de la humedad del suelo simulada por el modelo."
+        ],
+        "en": [
+          "It is a model estimate, not directly measured.",
+          "Critically depends on the moisture simulated by the model."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "evaporación",
+          "evapotranspiración",
+          "ciclo del agua",
+          "sequía",
+          "humedad",
+          "calor",
+          "transpiración"
+        ],
+        "en": [
+          "evaporation",
+          "evapotranspiration",
+          "water cycle",
+          "drought",
+          "moisture",
+          "heat",
+          "transpiration"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "SNODP",
+      "connector": "power",
+      "connector_param": "SNODP",
+      "names": {
+        "es": "Profundidad de nieve en el suelo",
+        "en": "Snow depth"
+      },
+      "simple_definition": {
+        "es": "Cuántos centímetros de nieve acumulada hay sobre la superficie del suelo.",
+        "en": "How many centimeters of accumulated snow are on the ground surface."
+      },
+      "unit": "cm",
+      "ratio_scale": true,
+      "sphere": "cryosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Hydrology Land Surface Model)",
+        "instrument": "Modelo hidrológico integrado en MERRA-2",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor precipitación en forma de nieve o inviernos más largos y fríos.",
+        "en": "May indicate more snowfall or longer, colder winters."
+      },
+      "what_down_means": {
+        "es": "Reducción de capa de nieve por calentamiento; impacta gravemente recursos hídricos de ríos dependientes del deshielo.",
+        "en": "Snowpack reduction from warming; severely impacts water resources of snowmelt-dependent rivers."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del aire (por encima/abajo de 0°C)",
+          "Precipitación total",
+          "Radiación solar",
+          "Patrones de viento"
+        ],
+        "en": [
+          "Air temperature (above/below 0°C)",
+          "Total precipitation",
+          "Solar radiation",
+          "Wind patterns"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Solo es confiable en zonas con nieve permanente (>1000 m en regiones tropicales).",
+          "La resolución de MERRA-2 puede subestimar la profundidad de nieve en terreno montañoso complejo."
+        ],
+        "en": [
+          "Only reliable in permanently snow-covered areas (>1000 m altitude in tropics).",
+          "MERRA-2 resolution may underestimate snow depth in complex mountainous terrain."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "nieve",
+          "cubierta de nieve",
+          "deshielo",
+          "glaciar",
+          "invierno",
+          "helo",
+          "reserva de agua"
+        ],
+        "en": [
+          "snow",
+          "snow cover",
+          "melting",
+          "glacier",
+          "winter",
+          "frost",
+          "water reserve"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "RH2M",
+      "connector": "power",
+      "connector_param": "RH2M",
+      "names": {
+        "es": "Humedad relativa a 2 metros",
+        "en": "Relative humidity at 2 meters"
+      },
+      "simple_definition": {
+        "es": "Qué porcentaje de agua tiene el aire comparado con lo máximo que puede contener a esa temperatura.",
+        "en": "How much water vapor the air holds as a percentage of the maximum it can hold at that temperature."
+      },
+      "unit": "%",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Reanalysis)",
+        "instrument": "Modelo numérico GMAO (no es estación meteorológica directa)",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor humedad ambiental, riesgo de lluvias o sensación térmica más pesada.",
+        "en": "May indicate higher humidity, rain risk, or heavier heat sensation."
+      },
+      "what_down_means": {
+        "es": "Puede indicar aire más seco, condiciones propicias para incendios forestales o inicio de temporada seca.",
+        "en": "May indicate drier air, conditions conducive to wildfires, or the start of dry season."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del aire (el aire caliente sostiene más vapor)",
+          "Proximidad al agua (océano, lagos)",
+          "Cobertura vegetal y evapotranspiración",
+          "Patrones de viento y presión"
+        ],
+        "en": [
+          "Air temperature (warm air holds more vapor)",
+          "Proximity to water (ocean, lakes)",
+          "Vegetation cover and evapotranspiration",
+          "Wind and pressure patterns"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "La humedad relativa no mide agua absoluta; depende fuertemente de la temperatura.",
+          "Es un producto de reanálisis, no datos de una estación meteorológica."
+        ],
+        "en": [
+          "Relative humidity does not measure absolute water content; it strongly depends on temperature.",
+          "It is a reanalysis product, not from a weather station."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "humedad",
+          "mojo",
+          "seco",
+          "bochorno",
+          "moho",
+          "niebla",
+          "atmósfera",
+          "MERRA"
+        ],
+        "en": [
+          "humidity",
+          "damp",
+          "dry",
+          "muggy",
+          "mold",
+          "fog",
+          "atmosphere",
+          "MERRA"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "TQV",
+      "connector": "power",
+      "connector_param": "TQV",
+      "names": {
+        "es": "Agua precipitable total de la columna",
+        "en": "Total column precipitable water"
+      },
+      "simple_definition": {
+        "es": "La cantidad total de agua (en forma de vapor) en toda la columna atmosférica de arriba a abajo, si toda se condensara.",
+        "en": "The total amount of water vapor in the entire atmospheric column from top to bottom, if all condensed."
+      },
+      "unit": "kg/m²",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Reanalysis)",
+        "instrument": "Modelo numérico GMAO (validado con satélites de microondas)",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor disponibilidad de agua en la atmósfera, riesgo de lluvias intensas o tormentas.",
+        "en": "May indicate more atmospheric moisture, heavy rain risk, or storm potential."
+      },
+      "what_down_means": {
+        "es": "Aire más seco en general; puede preceder a sequías o condiciones estables sin lluvia.",
+        "en": "Generally drier air; may precede droughts or stable dry conditions."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del océano y superficie",
+          "Evaporación superficial",
+          "Circulación atmosférica global (monzones)",
+          "Cambios en el uso del suelo"
+        ],
+        "en": [
+          "Ocean and surface temperature",
+          "Surface evaporation",
+          "Global atmospheric circulation (monsoons)",
+          "Land use changes"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es una integral de toda la columna, no mide vapor cerca del suelo.",
+          "Más confiable en regiones tropicales y oceánicas."
+        ],
+        "en": [
+          "It is a column integral, not surface-level vapor measurement.",
+          "More reliable in tropical and oceanic regions."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "vapor de agua",
+          "humedad atmosférica",
+          "precipitable",
+          "tormenta",
+          "lluvia potencial",
+          "atmósfera"
+        ],
+        "en": [
+          "water vapor",
+          "atmospheric moisture",
+          "precipitable",
+          "storm",
+          "rain potential",
+          "atmosphere"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "TO3",
+      "connector": "power",
+      "connector_param": "TO3",
+      "names": {
+        "es": "Ozono total de la columna (Columna Total de Ozono)",
+        "en": "Total column ozone"
+      },
+      "simple_definition": {
+        "es": "La cantidad total de gas ozono en una columna vertical de la atmósfera, medida en Unidades Dobson.",
+        "en": "The total amount of ozone gas in a vertical column of the atmosphere, measured in Dobson Units."
+      },
+      "unit": "DU (Dobson Units)",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Reanalysis — ozono modelado)",
+        "instrument": "Modelo de química atmosférica del GMAO (validado con TOMS/OMI)",
+        "via": "NASA POWER",
+        "challenge_named_source": "MERRA-2",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1981-01",
+        "homogeneous_since": null,
+        "doi": "10.1175/JCLI-D-16-0758.1",
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Mayor protección contra radiación UV; puede indicar patrones de circulación estratosférica favorables.",
+        "en": "Greater UV protection; may indicate favorable stratospheric circulation patterns."
+      },
+      "what_down_means": {
+        "es": "Menor protección UV, potencial riesgo para salud y ecosistemas.",
+        "en": "Less UV protection, potential health and ecosystem risk."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación UV solar (produce ozono)",
+          "Circulación estratosférica global",
+          "Química atmosférica y aerosoles",
+          "Ciclos naturales como QBO"
+        ],
+        "en": [
+          "Solar UV radiation (produces ozone)",
+          "Global stratospheric circulation",
+          "Atmospheric chemistry and aerosols",
+          "Natural cycles like QBO"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "En POWER, TO3 es modelado por MERRA-2, no medido directamente.",
+          "No confundir con la capa de ozono estratosférica; esta incluye toda la columna."
+        ],
+        "en": [
+          "In POWER, TO3 is modeled by MERRA-2, not directly measured.",
+          "Do not confuse with the stratospheric ozone layer; this includes the full column."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "ozono",
+          "protección UV",
+          "capa de ozono",
+          "radiación ultravioleta",
+          "estratosfera",
+          "aire"
+        ],
+        "en": [
+          "ozone",
+          "UV protection",
+          "ozone layer",
+          "ultraviolet radiation",
+          "stratosphere",
+          "air"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "AOD_55",
+      "connector": "power",
+      "connector_param": "AOD_55",
+      "names": {
+        "es": "Profundidad óptica de aerosoles a 550 nm",
+        "en": "Aerosol optical depth at 550 nm"
+      },
+      "simple_definition": {
+        "es": "Qué tan opaco es el aire a la luz solar por partículas (humo, polvo, contaminación) — más alto = aire más sucio.",
+        "en": "How opaque the air is to sunlight due to particles (smoke, dust, pollution) — higher = dirtier air."
+      },
+      "unit": "dimensionless",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Reanalysis)",
+        "instrument": "Datos de satélites MODIS/TERRA y OMI/AURA; empalmados con reanálisis AEROCOM a partir de 2001",
+        "via": "NASA POWER",
+        "challenge_named_source": "other",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "2001-01",
+        "homogeneous_since": "2001-01",
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Puede indicar incendios forestales, tormentas de polvo, contaminación urbana o erupciones volcánicas.",
+        "en": "May indicate wildfires, dust storms, urban pollution, or volcanic eruptions."
+      },
+      "what_down_means": {
+        "es": "Aire más limpio; puede indicar menor actividad de incendios, lluvias que limpian la atmósfera o cambios en fuentes de polvo.",
+        "en": "Cleaner air; may indicate less wildfire activity, rain cleaning the atmosphere, or dust source changes."
+      },
+      "typical_drivers": {
+        "es": [
+          "Incendios forestales y agrícolas",
+          "Tormentas de polvo del Sahara/Asia Central",
+          "Emisiones industriales y vehículos",
+          "Erupciones volcánicas"
+        ],
+        "en": [
+          "Wildfires and agricultural burning",
+          "Dust storms from Sahara/Central Asia",
+          "Industrial emissions and vehicles",
+          "Volcanic eruptions"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Los datos antes de 2001 están rellenados con un valor fijo — NO usarlos.",
+          "Solo confiable donde hay cobertura satelitel; sobre océanos y desiertos es más preciso."
+        ],
+        "en": [
+          "Pre-2001 data is filled with a fixed value — DO NOT use it.",
+          "Only reliable where satellite coverage exists; most accurate over oceans and deserts."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "contaminación",
+          "humo",
+          "polvo",
+          "partículas",
+          "calidad del aire",
+          "aerosol",
+          "smog",
+          "incendios"
+        ],
+        "en": [
+          "pollution",
+          "smoke",
+          "dust",
+          "particles",
+          "air quality",
+          "aerosol",
+          "smog",
+          "wildfire"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "CLOUD_AMT",
+      "connector": "power",
+      "connector_param": "CLOUD_AMT",
+      "names": {
+        "es": "Porcentaje de cobertura nubosa (cantidad de nubes)",
+        "en": "Cloud amount"
+      },
+      "simple_definition": {
+        "es": "El porcentaje del cielo cubierto por nubes en cada momento — 0% = despejado, 100% = completamente nublado.",
+        "en": "The percentage of the sky covered by clouds at each moment — 0% = clear, 100% = fully overcast."
+      },
+      "unit": "%",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 (Reanalysis)",
+        "instrument": "Datos de satélites geostacionarios y orbitales; empalmados con productos AORC desde 2001",
+        "via": "NASA POWER",
+        "challenge_named_source": "other",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1984-01",
+        "homogeneous_since": "2001-01",
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Más nubes pueden indicar mayor precipitación, enfriamiento superficial por sombreado o cambio en patrones climáticos.",
+        "en": "More clouds may indicate increased precipitation, surface cooling from shading, or climate pattern shifts."
+      },
+      "what_down_means": {
+        "es": "Menos nubes puede indicar condiciones más secas, aumento de radiación solar superficial o cambio en circulación atmosférica.",
+        "en": "Fewer clouds may indicate drier conditions, increased surface solar radiation, or circulation changes."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del océano",
+          "Humedad y convección atmosférica",
+          "Patrones de viento a gran escala",
+          "Topografía"
+        ],
+        "en": [
+          "Ocean temperature",
+          "Moisture and atmospheric convection",
+          "Large-scale wind patterns",
+          "Topography"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Los datos antes de 2001 tienen diferente origen y pueden NO ser comparables con los posteriores.",
+          "Es un promedio en la celda, no medición local de una estación."
+        ],
+        "en": [
+          "Pre-2001 data has different sources and may NOT be comparable to post-2001 data.",
+          "It is a grid-cell average, not a local station measurement."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "nubes",
+          "cobertura nubosa",
+          "soleado",
+          "cubiertado",
+          "bruma",
+          "radiación solar"
+        ],
+        "en": [
+          "clouds",
+          "cloud cover",
+          "sunny",
+          "overcast",
+          "haze",
+          "solar radiation"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "ALLSKY_SFC_SW_DWN",
+      "connector": "power",
+      "connector_param": "ALLSKY_SFC_SW_DWN",
+      "names": {
+        "es": "Radiación solar descendente (todas las nubes)",
+        "en": "All-sky surface shortwave downward irradiance"
+      },
+      "simple_definition": {
+        "es": "Cuánta energía del Sol llega al suelo cada día, considerando tanto días despejados como nublados.",
+        "en": "How much solar energy reaches the ground each day, accounting for both clear and cloudy days."
+      },
+      "unit": "MJ/m²/day",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MERRA-2 + SRB/CERES (empalme de fuentes)",
+        "instrument": "Satélites geostacionarios y orbitales + modelo radiativo",
+        "via": "NASA POWER",
+        "challenge_named_source": "other",
+        "native_resolution": "0.5° × 0.625°",
+        "start": "1984-01",
+        "homogeneous_since": "2001-01",
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/docs/api-definition/"
+      },
+      "what_up_means": {
+        "es": "Más energía solar puede indicar menor nubosidad, cambios en la inclinación terrestre o reducción de aerosoles.",
+        "en": "More solar energy may indicate less cloud cover, Earth tilt changes, or aerosol reduction."
+      },
+      "what_down_means": {
+        "es": "Menos radiación puede indicar aumento de nubosidad, más aerosoles atmosféricos o cambios climáticos a largo plazo.",
+        "en": "Less radiation may indicate more cloud cover, more atmospheric aerosols, or long-term climate changes."
+      },
+      "typical_drivers": {
+        "es": [
+          "Cobertura nubosa (efecto más grande)",
+          "Aerosoles y polvo",
+          "Latitud y estación del año",
+          "Altitud"
+        ],
+        "en": [
+          "Cloud cover (largest effect)",
+          "Aerosols and dust",
+          "Latitude and season",
+          "Altitude"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Antes de 2001, usa SRB; después de 2001, CERES SYN1deg — NO comparar directamente.",
+          "El empalme en ~2001 puede crear discontinuidades artificiales en tendencias."
+        ],
+        "en": [
+          "Pre-2001 uses SRB; post-2001 uses CERES SYN1deg — DO NOT compare directly.",
+          "The splice around 2001 can create artificial discontinuities in trends."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "radiación solar",
+          "energía del sol",
+          "solar",
+          "panel solar",
+          "nubes",
+          "brillo"
+        ],
+        "en": [
+          "solar radiation",
+          "sun energy",
+          "solar",
+          "solar panel",
+          "clouds",
+          "brightness"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://power.larc.nasa.gov/docs/api-definition/"
+      }
+    },
+    {
+      "id": "GISTEMP_TANOM",
+      "connector": "gistemp",
+      "connector_param": "tempanomaly",
+      "names": {
+        "es": "Anomalía de temperatura global (GISS)",
+        "en": "Global temperature anomaly (GISS)"
+      },
+      "simple_definition": {
+        "es": "Cuánto más cálida o fría está la Tierra comparada con el promedio de 1951-1980 — base para la cifra del calentamiento global.",
+        "en": "How much warmer or cooler the Earth is compared to the 1951-1980 average — the basis for global warming figures."
+      },
+      "unit": "°C (anomalía vs base 1951-1980)",
+      "ratio_scale": false,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "GISS Surface Temperature Analysis v4 (GISTEMP)",
+        "instrument": "Estaciones terrestres + Boyes oceánicos (no satélite directo)",
+        "via": "NASA GISS Goddard Institute for Space Studies",
+        "challenge_named_source": "other",
+        "native_resolution": "1.0° × 1.25°",
+        "start": "1880-01",
+        "homogeneous_since": null,
+        "doi": "10.1029/2018JD029522",
+        "url": "https://data.giss.nasa.gov/gistemp/"
+      },
+      "what_up_means": {
+        "es": "Calentamiento global acelerado, consistente con el aumento de gases de efecto invernadero.",
+        "en": "Accelerated global warming, consistent with increasing greenhouse gas concentrations."
+      },
+      "what_down_means": {
+        "es": "Enfriamiento temporal asociado a fenómenos como El Niño intenso o erupciones volcánicas.",
+        "en": "Temporary cooling associated with phenomena like strong El Niño or volcanic eruptions."
+      },
+      "typical_drivers": {
+        "es": [
+          "Gases de efecto invernadero (CO₂, metano)",
+          "Radiación solar",
+          "Erupciones volcánicas grandes",
+          "Ciclos oceanográficos internos"
+        ],
+        "en": [
+          "Greenhouse gases (CO₂, methane)",
+          "Solar radiation",
+          "Major volcanic eruptions",
+          "Internal oceanographic cycles"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es una anomalía global media, NO es la temperatura local de un lugar específico.",
+          "No usa datos satelitales directos; se basa en estaciones terrestres y boyes oceánicos."
+        ],
+        "en": [
+          "It is a global mean anomaly, NOT the local temperature of any specific place.",
+          "Does not use direct satellite data; based on land stations and ocean buoys."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "calentamiento global",
+          "anomalía",
+          "GISS",
+          "clima",
+          "temperatura global",
+          "NASA"
+        ],
+        "en": [
+          "global warming",
+          "anomaly",
+          "GISS",
+          "climate",
+          "global temperature",
+          "NASA"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://data.giss.nasa.gov/gistemp/"
+      }
+    },
+    {
+      "id": "SEAICE_EXTENT_N",
+      "connector": "nsidc_seaice",
+      "connector_param": "north",
+      "names": {
+        "es": "Extensión del hielo marino ártico",
+        "en": "Arctic sea ice extent"
+      },
+      "simple_definition": {
+        "es": "El área total del océano Ártico cubierto por al menos algo de hielo (≥15% concentración), en millones de km².",
+        "en": "The total area of the Arctic Ocean covered by at least some ice (≥15% concentration), in million km²."
+      },
+      "unit": "million km²",
+      "ratio_scale": true,
+      "sphere": "cryosphere",
+      "source": {
+        "model_or_mission": "NSIDC Sea Ice Index v4 (Satélite SMMR, SSM/I, SSMIS, AMSR-E/2)",
+        "instrument": "Microwave radiometers (no visible/nube — mide a través de nubes)",
+        "via": "NASA NSIDC (National Snow and Ice Data Center)",
+        "challenge_named_source": "other",
+        "native_resolution": "25 km × 25 km (grid Polar Stereographic)",
+        "start": "1978-11",
+        "homogeneous_since": null,
+        "doi": "10.7265/N4D81J9M",
+        "url": "https://nsidc.org/data/seaice_index"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor extensión de hielo, recuperación parcial o cambios en circulación oceánica.",
+        "en": "May indicate increased ice extent, partial recovery, or ocean circulation changes."
+      },
+      "what_down_means": {
+        "es": "Reducción alarmante del hielo marino ártico — una tendencia fuerte y consistente que es un indicador clave del cambio climático.",
+        "en": "Alarming reduction of Arctic sea ice — a strong, consistent trend that is a key climate change indicator."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del aire ártico",
+          "Circulación oceánica (corrientes cálidas)",
+          "Oscilación Ártica (AO)",
+          "Hielo viejo vs. hielo de un año"
+        ],
+        "en": [
+          "Arctic air temperature",
+          "Ocean circulation (warm currents)",
+          "Arctic Oscillation (AO)",
+          "Multi-year ice vs. first-year ice"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "La extensión no mide grosor ni volumen del hielo — un mar puede tener menos pero más grueso hielo.",
+          "Los diferentes satélites y algoritmos pueden dar valores ligeramente distintos; la tendencia a largo plazo es robusta."
+        ],
+        "en": [
+          "Extent does not measure ice thickness or volume — a sea may have less but thicker ice.",
+          "Different satellites and algorithms can give slightly different values; the long-term trend is robust."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "hielo marino",
+          "ártico",
+          "polo norte",
+          "derretimiento",
+          "glaciar",
+          "cambio climático"
+        ],
+        "en": [
+          "sea ice",
+          "arctic",
+          "north pole",
+          "melting",
+          "glacier",
+          "climate change"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://nsidc.org/data/seaice_index"
+      }
+    },
+    {
+      "id": "SEAICE_EXTENT_S",
+      "connector": "nsidc_seaice",
+      "connector_param": "south",
+      "names": {
+        "es": "Extensión del hielo marino antártico",
+        "en": "Antarctic sea ice extent"
+      },
+      "simple_definition": {
+        "es": "El área total del océano Antártico cubierto por al menos algo de hielo (≥15% concentración), en millones de km².",
+        "en": "The total area of the Southern Ocean covered by at least some ice (≥15% concentration), in million km²."
+      },
+      "unit": "million km²",
+      "ratio_scale": true,
+      "sphere": "cryosphere",
+      "source": {
+        "model_or_mission": "NSIDC Sea Ice Index v4 (Satélite SMMR, SSM/I, SSMIS, AMSR-E/2)",
+        "instrument": "Microwave radiometers (no visible/nube — mide a través de nubes)",
+        "via": "NASA NSIDC (National Snow and Ice Data Center)",
+        "challenge_named_source": "other",
+        "native_resolution": "25 km × 25 km (grid Polar Stereographic)",
+        "start": "1978-11",
+        "homogeneous_since": null,
+        "doi": "10.7265/N4D81J9M",
+        "url": "https://nsidc.org/data/seaice_index"
+      },
+      "what_up_means": {
+        "es": "Puede indicar mayor extensión de hielo, enfriamiento regional o cambios en patrones de viento antárticos (Dipolo Antártico).",
+        "en": "May indicate increased ice extent, regional cooling, or changes in Antarctic wind patterns (Antarctic Dipole)."
+      },
+      "what_down_means": {
+        "es": "Reducción del hielo marino antártico — tendencia más variable que el Ártico pero con signos preocupantes recientes.",
+        "en": "Antarctic sea ice reduction — more variable than Arctic but showing concerning recent trends."
+      },
+      "typical_drivers": {
+        "es": [
+          "Vientos antárticos circumpolares",
+          "Temperatura del océano Southern",
+          "Oscilación Antártica (AAO)",
+          "Agua profunda más cálida"
+        ],
+        "en": [
+          "Antarctic circumpolar winds",
+          "Southern Ocean temperature",
+          "Antarctic Oscillation (AAO)",
+          "Warmer deep water"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "La tendencia antártica es MUY variable e incluso opuesta a veces a la del Ártico.",
+          "Los primeros años de datos son menos confiables por menor cobertura satelital."
+        ],
+        "en": [
+          "Antarctic trends are VERY variable and sometimes opposite to Arctic ones.",
+          "Early years of data are less reliable due to limited satellite coverage."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "hielo marino",
+          "antártico",
+          "polo sur",
+          "derretimiento",
+          "glaciar",
+          "cambio climático"
+        ],
+        "en": [
+          "sea ice",
+          "antarctic",
+          "south pole",
+          "melting",
+          "glacier",
+          "climate change"
+        ]
+      },
+      "verified": {
+        "by": "hermes-1",
+        "at": "2026-11-14T23:00:00Z",
+        "evidence_url": "https://nsidc.org/data/seaice_index"
+      }
+    },
+    {
+      "id": "GPM_IMERG_PRECIP",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Precipitación GPM IMERG",
+        "en": "GPM IMERG precipitation"
+      },
+      "simple_definition": {
+        "es": "Estimación global de lluvia y nieve cada 30 min con satélites GPM/TRMM.",
+        "en": "Global rain and snow estimate every 30 min from GPM/TRMM satellites."
+      },
+      "unit": "mm/hour",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "GPM IMERG (Integrated Multi-satellite Retrievals)",
+        "instrument": "GPM Core Observatory + Constelación de satélites",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "GPM",
+        "native_resolution": "0.1° × 0.1° (30 min)",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": null
+      },
+      "what_up_means": {
+        "es": "Lluvias más intensas o frecuentes.",
+        "en": "More intense or frequent rainfall."
+      },
+      "what_down_means": {
+        "es": "Menos precipitación; posible inicio de sequía.",
+        "en": "Less precipitation; possible drought onset."
+      },
+      "typical_drivers": {
+        "es": [
+          "Temperatura del océano",
+          "Convección atmosférica",
+          "Monzones"
+        ],
+        "en": [
+          "Ocean temperature",
+          "Atmospheric convection",
+          "Monsoons"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Requiere CSV exportado de Giovanni.",
+          "Calibración depende de estaciones terrestres."
+        ],
+        "en": [
+          "Requires Giovanni CSV export.",
+          "Calibration depends on ground stations."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "lluvia",
+          "precipitación",
+          "GPM",
+          "TRMM",
+          "estrella"
+        ],
+        "en": [
+          "rain",
+          "precipitation",
+          "GPM",
+          "TRMM",
+          "star"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "GLDAS_SOILM_0_10",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Humedad del suelo GLDAS (0-10 cm)",
+        "en": "GLDAS soil moisture (0-10 cm)"
+      },
+      "simple_definition": {
+        "es": "Contenido de agua en los primeros 10 cm del suelo, simulado por el modelo GLDAS.",
+        "en": "Water content in the top 10 cm of soil, simulated by GLDAS model."
+      },
+      "unit": "m³/m³",
+      "ratio_scale": true,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "GLDAS (Global Land Data Assimilation System) Noah LSM",
+        "instrument": "Modelo hidrológico terrestre",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "GLDAS",
+        "native_resolution": "0.25° × 0.25°",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": "10.1175/BAMS-85-3-381",
+        "url": "https://ldas.gsfc.nasa.gov/gldas"
+      },
+      "what_up_means": {
+        "es": "Suelos más húmedos, recarga de acuíferos.",
+        "en": "Wetter soils, aquifer recharge."
+      },
+      "what_down_means": {
+        "es": "Sequía agrícola, estrés hídrico.",
+        "en": "Agricultural drought, water stress."
+      },
+      "typical_drivers": {
+        "es": [
+          "Precipitación",
+          "Evaporación",
+          "Cobertura vegetal"
+        ],
+        "en": [
+          "Precipitation",
+          "Evaporation",
+          "Vegetation cover"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es un modelo, no mediciones in situ.",
+          "Solo capa superficial."
+        ],
+        "en": [
+          "It is a model, not in-situ measurements.",
+          "Surface layer only."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "humedad",
+          "suelo",
+          "GLDAS",
+          "agricultura"
+        ],
+        "en": [
+          "moisture",
+          "soil",
+          "GLDAS",
+          "agriculture"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "GLDAS_EVAP",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Evapotranspiración real GLDAS",
+        "en": "GLDAS actual evapotranspiration"
+      },
+      "simple_definition": {
+        "es": "Agua evaporado + transpirado de la superficie terrestre simulada por GLDAS.",
+        "en": "Water evaporated + transpired from the land surface simulated by GLDAS."
+      },
+      "unit": "mm/day",
+      "ratio_scale": true,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "GLDAS Noah LSM",
+        "instrument": "Modelo hidrológico terrestre",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "GLDAS",
+        "native_resolution": "0.25° × 0.25°",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": "10.1175/BAMS-85-3-381",
+        "url": "https://ldas.gsfc.nasa.gov/gldas"
+      },
+      "what_up_means": {
+        "es": "Mayor evaporación por calentamiento o más vegetación activa.",
+        "en": "More evaporation from warming or more active vegetation."
+      },
+      "what_down_means": {
+        "es": "Menos evaporación; suelos más secos o menor radiación.",
+        "en": "Less evaporation; drier soils or less radiation."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación solar",
+          "Temperatura",
+          "Humedad del suelo"
+        ],
+        "en": [
+          "Solar radiation",
+          "Temperature",
+          "Soil moisture"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es un modelo.",
+          "No mide transpiración real de plantas."
+        ],
+        "en": [
+          "It is a model.",
+          "Does not measure actual plant transpiration."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "evapotranspiración",
+          "GLDAS",
+          "agua",
+          "sequía"
+        ],
+        "en": [
+          "evapotranspiration",
+          "GLDAS",
+          "water",
+          "drought"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "GLDAS_RUNOFF",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Escorrentía GLDAS (agua que fluye)",
+        "en": "GLDAS runoff"
+      },
+      "simple_definition": {
+        "es": "Agua de lluvia que no se infiltra y corre sobre la superficie hacia ríos.",
+        "en": "Rain water that doesn't soak in and runs over the surface toward rivers."
+      },
+      "unit": "mm/day",
+      "ratio_scale": true,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "GLDAS Noah LSM",
+        "instrument": "Modelo hidrológico terrestre",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "GLDAS",
+        "native_resolution": "0.25° × 0.25°",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": "10.1175/BAMS-85-3-381",
+        "url": "https://ldas.gsfc.nasa.gov/gldas"
+      },
+      "what_up_means": {
+        "es": "Mayor riesgo de inundaciones o recarga de ríos.",
+        "en": "Higher flood risk or river recharge."
+      },
+      "what_down_means": {
+        "es": "Menos agua disponible para ríos; posible estrés hídrico.",
+        "en": "Less water available for rivers; possible water stress."
+      },
+      "typical_drivers": {
+        "es": [
+          "Precipitación intensa",
+          "Tipo de suelo y cubierta",
+          "Topografía"
+        ],
+        "en": [
+          "Heavy precipitation",
+          "Soil type and cover",
+          "Topography"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es un modelo.",
+          "Depende críticamente de la precipitación de entrada."
+        ],
+        "en": [
+          "It is a model.",
+          "Critically depends on input precipitation."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "escorrentía",
+          "inundación",
+          "GLDAS",
+          "agua"
+        ],
+        "en": [
+          "runoff",
+          "flood",
+          "GLDAS",
+          "water"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "AIRS_SURF_AIR_TEMP",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Temperatura del aire/superficie AIRS",
+        "en": "AIRS surface/air temperature"
+      },
+      "simple_definition": {
+        "es": "Temperatura medida por el instrumento AIRS en el satélite Aqua de NASA.",
+        "en": "Temperature measured by the AIRS instrument on NASA's Aqua satellite."
+      },
+      "unit": "°C",
+      "ratio_scale": false,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "AIRS (Atmospheric Infrared Sounder) - Aqua",
+        "instrument": "Spectrómetro infrarrojo en órbita polar",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "AIRS",
+        "native_resolution": "82 km (granel), 0.5° (producto Giovanni)",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://airs.jpl.nasa.gov/"
+      },
+      "what_up_means": {
+        "es": "Calentamiento atmosférico en la región.",
+        "en": "Atmospheric warming in the region."
+      },
+      "what_down_means": {
+        "es": "Enfriamiento atmosférico o cambios en circulación.",
+        "en": "Atmospheric cooling or circulation changes."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación infrarroja",
+          "Gases de efecto invernadero",
+          "Cobertura nubosa"
+        ],
+        "en": [
+          "Infrared radiation",
+          "Greenhouse gases",
+          "Cloud cover"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Requiere cuenta Earthdata para acceso.",
+          "Solo datos con cobertura satelital."
+        ],
+        "en": [
+          "Requires Earthdata login for access.",
+          "Satellite coverage only."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "temperatura",
+          "AIRS",
+          "satélite",
+          "aqua",
+          "NASA"
+        ],
+        "en": [
+          "temperature",
+          "AIRS",
+          "satellite",
+          "aqua",
+          "NASA"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "OMI_NO2_TROP",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Dióxido de nitrógeno troposférico (columna total) OMI",
+        "en": "Tropospheric NO₂ column OMI"
+      },
+      "simple_definition": {
+        "es": "Cantidad total de contaminante NO₂ en la tropósfera — indicador de contaminación del aire.",
+        "en": "Total amount of NO₂ pollutant in the troposphere — an air pollution indicator."
+      },
+      "unit": "10¹⁵ molecules/cm²",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "OMI (Ozone Monitoring Instrument) - Aura",
+        "instrument": "Espectrómetro UV-visible en órbita polar",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "OMI",
+        "native_resolution": "13 km × 24 km",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://aura.gsfc.nasa.gov/omi.html"
+      },
+      "what_up_means": {
+        "es": "Puede indicar más tráfico vehicular, industria o incendios forestales.",
+        "en": "May indicate more vehicle traffic, industry, or wildfires."
+      },
+      "what_down_means": {
+        "es": "Menos contaminación; puede deberse a cambios en emisión o condiciones meteorológicas favorables.",
+        "en": "Less pollution; may be due to emission changes or favorable weather conditions."
+      },
+      "typical_drivers": {
+        "es": [
+          "Emisiones industriales y vehiculares",
+          "Incendios forestales",
+          "Condiciones meteorológicas"
+        ],
+        "en": [
+          "Industrial and vehicle emissions",
+          "Wildfires",
+          "Weather conditions"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Es una columna total, no concentración a nivel del suelo.",
+          "Requiere cuenta Earthdata para acceso."
+        ],
+        "en": [
+          "It is a column total, not ground-level concentration.",
+          "Requires Earthdata login."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "NO₂",
+          "contaminación",
+          "aire",
+          "OMI",
+          "industria",
+          "tráfico"
+        ],
+        "en": [
+          "NO₂",
+          "pollution",
+          "air",
+          "OMI",
+          "industry",
+          "traffic"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "OMI_O3_TOTAL",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Ozono total OMI (columna)",
+        "en": "Total ozone OMI (column)"
+      },
+      "simple_definition": {
+        "es": "Cantidad de ozono en toda la columna atmosférica medida por el satélite Aura/OMI.",
+        "en": "Amount of ozone in the full atmospheric column measured by Aura/OMI satellite."
+      },
+      "unit": "DU (Dobson Units)",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "OMI - Ozone Monitoring Instrument / Aura",
+        "instrument": "Espectrómetro UV en órbita polar",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "OMI",
+        "native_resolution": "13 km × 24 km",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://aura.gsfc.nasa.gov/omi.html"
+      },
+      "what_up_means": {
+        "es": "Mayor protección UV; puede indicar patrones de circulación estratosférica.",
+        "en": "Greater UV protection; may indicate stratospheric circulation patterns."
+      },
+      "what_down_means": {
+        "es": "Menor protección UV; posible adelgazamiento de la capa de ozono local.",
+        "en": "Less UV protection; possible local ozone layer thinning."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación UV solar",
+          "Circulación estratosférica",
+          "Cloro y bromo atmosféricos"
+        ],
+        "en": [
+          "Solar UV radiation",
+          "Stratospheric circulation",
+          "Atmospheric chlorine and bromine"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "No confundir con TO3 de POWER (modelado). Este es medido directamente.",
+          "Requiere cuenta Earthdata."
+        ],
+        "en": [
+          "Do not confuse with POWER TO3 (modeled). This is directly measured.",
+          "Requires Earthdata login."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "ozono",
+          "OMI",
+          "protección UV",
+          "satélite",
+          "Aura"
+        ],
+        "en": [
+          "ozone",
+          "OMI",
+          "UV protection",
+          "satellite",
+          "Aura"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "MODIS_NDVI",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Índice de vegetación NDVI MODIS",
+        "en": "MODIS NDVI vegetation index"
+      },
+      "simple_definition": {
+        "es": "Mide qué tan verde y saludable está la vegetación — refleja la actividad fotosintética.",
+        "en": "Measures how green and healthy vegetation is — reflects photosynthetic activity."
+      },
+      "unit": "Índice (0 a 1)",
+      "ratio_scale": true,
+      "sphere": "biosphere",
+      "source": {
+        "model_or_mission": "MODIS (Moderate Resolution Imaging Spectroradiometer) - Terra/Aqua",
+        "instrument": "Satélites TERRA (AM) y AQUA (PM)",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "MODIS",
+        "native_resolution": "250 m-1 km",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://modis.gsfc.nasa.gov/"
+      },
+      "what_up_means": {
+        "es": "Mayor verdeo, recuperación de vegetación, estaciones más húmedas.",
+        "en": "More green-up, vegetation recovery, wetter seasons."
+      },
+      "what_down_means": {
+        "es": "Deforestación, sequía, incendios o degradación del ecosistema.",
+        "en": "Deforestation, drought, wildfires, or ecosystem degradation."
+      },
+      "typical_drivers": {
+        "es": [
+          "Precipitación",
+          "Temperatura",
+          "Uso del suelo",
+          "Incendios"
+        ],
+        "en": [
+          "Precipitation",
+          "Temperature",
+          "Land use",
+          "Wildfires"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Requiere cuenta Earthdata.",
+          "No funciona bajo nubosidad densa."
+        ],
+        "en": [
+          "Requires Earthdata login.",
+          "Does not work under dense cloud cover."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "vegetación",
+          "NDVI",
+          "verde",
+          "MODIS",
+          "bosque",
+          "deforestación"
+        ],
+        "en": [
+          "vegetation",
+          "NDVI",
+          "green",
+          "MODIS",
+          "forest",
+          "deforestation"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "MODIS_LST_DAY",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Temperatura de la superficie terrestre MODIS (diurno)",
+        "en": "MODIS land surface temperature (daytime)"
+      },
+      "simple_definition": {
+        "es": "Temperatura real de la superficie medida por el satélite MODIS durante el día.",
+        "en": "Actual surface temperature measured by the MODIS satellite during the day."
+      },
+      "unit": "K (Kelvin) — convertir a °C restando 273.15",
+      "ratio_scale": false,
+      "sphere": "land",
+      "source": {
+        "model_or_mission": "MODIS (Moderate Resolution Imaging Spectroradiometer) - Terra/Aqua",
+        "instrument": "Infrarrojo termal en satélites TERRA y AQUA",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "MODIS",
+        "native_resolution": "1 km (producto diario)",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://modis.gsfc.nasa.gov/"
+      },
+      "what_up_means": {
+        "es": "Zonas más calientes; puede indicar olas de calor o islas de calor urbano.",
+        "en": "Hotter areas; may indicate heat waves or urban heat islands."
+      },
+      "what_down_means": {
+        "es": "Enfriamiento superficial o cambios en cobertura terrestre.",
+        "en": "Surface cooling or land cover changes."
+      },
+      "typical_drivers": {
+        "es": [
+          "Radiación solar",
+          "Tipo de superficie (asfalto vs bosque)",
+          "Humedad del suelo"
+        ],
+        "en": [
+          "Solar radiation",
+          "Surface type (asphalt vs forest)",
+          "Soil moisture"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Solo temperatura de SUPERFICIE, NO del aire.",
+          "Requiere cuenta Earthdata."
+        ],
+        "en": [
+          "It is SURFACE temperature, NOT air temperature.",
+          "Requires Earthdata login."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "temperatura",
+          "MODIS",
+          "superficie",
+          "calor",
+          "aqua"
+        ],
+        "en": [
+          "temperature",
+          "MODIS",
+          "surface",
+          "heat",
+          "aqua"
+        ]
+      },
+      "verified": null
+    },
+    {
+      "id": "MODIS_AOD",
+      "connector": "giovanni_csv",
+      "names": {
+        "es": "Profundidad óptica de aerosoles MODIS a 550 nm",
+        "en": "MODIS Aerosol Optical Depth at 550 nm"
+      },
+      "simple_definition": {
+        "es": "Opacidad del aire causada por partículas (humo, polvo) medida directamente por el satélite MODIS.",
+        "en": "Air opacity caused by particles (smoke, dust) measured directly by the MODIS satellite."
+      },
+      "unit": "dimensionless",
+      "ratio_scale": true,
+      "sphere": "atmosphere",
+      "source": {
+        "model_or_mission": "MODIS - Terra/Aqua",
+        "instrument": "Moderate Resolution Imaging Spectroradiometer (visible/infrarrojo)",
+        "via": "NASA Giovanni / GES DISC",
+        "challenge_named_source": "MODIS",
+        "native_resolution": "10 km (producto diario)",
+        "start": null,
+        "homogeneous_since": null,
+        "doi": null,
+        "url": "https://modis.gsfc.nasa.gov/"
+      },
+      "what_up_means": {
+        "es": "Más contaminación, incendios o tormentas de polvo.",
+        "en": "More pollution, wildfires, or dust storms."
+      },
+      "what_down_means": {
+        "es": "Aire más limpio; menor actividad de incendios o lluvias que limpian el aire.",
+        "en": "Cleaner air; less wildfire activity or rain-cleansed atmosphere."
+      },
+      "typical_drivers": {
+        "es": [
+          "Incendios forestales",
+          "Tormentas de polvo",
+          "Emisiones industriales"
+        ],
+        "en": [
+          "Wildfires",
+          "Dust storms",
+          "Industrial emissions"
+        ]
+      },
+      "caveats": {
+        "es": [
+          "Requiere cuenta Earthdata.",
+          "No funciona sobre superficies brillantes (nieve, océano brillante)."
+        ],
+        "en": [
+          "Requires Earthdata login.",
+          "Does not work over bright surfaces (snow, shiny ocean)."
+        ]
+      },
+      "keywords": {
+        "es": [
+          "aerosol",
+          "MODIS",
+          "polvo",
+          "humo",
+          "contaminación"
+        ],
+        "en": [
+          "aerosol",
+          "MODIS",
+          "dust",
+          "smoke",
+          "pollution"
+        ]
+      },
+      "verified": null
+    }
+  ]
+}
