@@ -1,127 +1,346 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EarthTrend Detective - NASA Space Apps</title>
+  <title>EarthTrend Detective</title>
+  <meta name="description" content="Investigate a place on Earth with real NASA Earth science data: what changes, where, how much, and whether it is significant.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css">
-  <!-- Chart.js para visualización de series temporales -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-content">
-      <div class="logo-area">
-        <span class="nasa-badge">NASA Space Apps</span>
-        <h1>EarthTrend Detective</h1>
+  <a class="skip-link" href="#results" data-i18n="nav.skip">Skip to results</a>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="product">
+        <h1 data-i18n="app.title">EarthTrend Detective</h1>
+        <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
       </div>
-      <p class="subtitle">Herramienta interactiva para descubrir y verificar tendencias significativas en Ciencias de la Tierra</p>
+            <nav class="mode-switch" role="tablist" aria-label="Investigation mode">
+        <button type="button" role="tab" id="mode-single" class="mode-tab is-active" aria-selected="true" data-i18n="nav.mode.single">Single point</button>
+        <button type="button" role="tab" id="mode-trendmap" class="mode-tab" aria-selected="false" data-i18n="nav.mode.trendmap">Trend map</button>
+        <button type="button" role="tab" id="mode-compare" class="mode-tab" aria-selected="false" data-i18n="nav.mode.compare">Compare</button>
+      </nav>
+            <div class="header-actions">
+        <button type="button" class="btn btn-ghost btn-small" id="btn-start-demo" data-i18n="demo.btn.start">▶ Guided Demo</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-print-report" data-i18n="panel.report">Download report</button>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Language" data-i18n-aria="lang.label">
+        <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
+        <button type="button" id="lang-es" aria-pressed="false" lang="es">ES</button>
+      </div>
     </div>
   </header>
+  <!-- ============ DEMO NARRATIVE BANNER (U5) ============ -->
+  <aside class="demo-banner plate" id="demo-banner" hidden aria-live="polite">
+    <div class="demo-banner-inner">
+      <div class="demo-text-area">
+        <div class="demo-meta">
+          <span class="demo-badge" data-i18n="demo.label">Guided Demonstration</span>
+          <span class="demo-step-counter" id="demo-counter">Case 1 of 4</span>
+        </div>
+        <h3 id="demo-case-title"></h3>
+        <p class="serif" id="demo-case-text"></p>
+      </div>
+      <div class="demo-controls">
+        <button type="button" class="btn btn-primary btn-small" id="btn-demo-pause" data-i18n="demo.btn.pause">⏸ Pause</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-demo-next" data-i18n="demo.btn.next">Next case ❯</button>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-demo-stop" data-i18n="demo.btn.stop">✕ Exit demo</button>
+      </div>
+    </div>
+    <div class="demo-progress-track">
+      <div class="demo-progress-fill" id="demo-progress-fill"></div>
+    </div>
+  </aside>
 
-  <main class="container">
-    <!-- Casos de Demostración Rápida -->
-    <section class="card demo-banner">
-      <h2>🚀 Casos de Estudio Emblemáticos (1-Clic)</h2>
-      <p class="text-muted">Selecciona uno de los casos verificados para cargar los datos satelitales y el veredicto científico al instante:</p>
-      <div class="preset-buttons">
-        <button class="btn btn-preset" onclick="loadCase('amazon_deforestation_arc', 'MODIS_NDVI')">
-          🌲 Deforestación Amazonía (MODIS NDVI)
-        </button>
-        <button class="btn btn-preset" onclick="loadCase('arctic_svalbard', 'MERRA2_T2M')">
-          ❄️ Calentamiento Ártico (MERRA-2 Temp)
-        </button>
-        <button class="btn btn-preset" onclick="loadCase('aral_sea', 'SWOT_WATER_ELEV')">
-          🌊 Desecación Mar de Aral (SWOT Agua)
-        </button>
-        <button class="btn btn-preset" onclick="loadCase('california_central_valley', 'GLDAS_SOILM')">
-          🌾 Sequía California (GLDAS Humedad)
-        </button>
-      </div>
-    </section>
+  <main class="workbench">
+    <!-- ============ RAIL: place + variable + period ============ -->
+    <form class="rail" id="investigate-form" novalidate>
+            <!-- ============ ASK THE DETECTIVE (U4) ============ -->
+      <section class="detective-box plate" id="detective-box">
+        <label for="detective-input" data-i18n="detective.title">Ask the Detective</label>
+        <div class="search-row">
+          <input type="text" id="detective-input" autocomplete="off"
+                 data-i18n-placeholder="detective.placeholder" placeholder="e.g. Is it raining less in Piura?">
+          <button type="button" class="btn btn-primary btn-small" id="detective-ask-btn" data-i18n="detective.ask">Ask</button>
+        </div>
+        <div class="detective-plan-card" id="detective-plan-card" hidden>
+          <p class="plan-heading" data-i18n="detective.plan.heading">Investigation Plan</p>
+          <p class="plan-intent" id="plan-intent-text"></p>
+          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run">Confirm & Investigate</button>
+        </div>
+      </section>
 
-    <!-- Controles de Selección -->
-    <section class="card controls-grid">
-      <div class="control-group">
-        <label for="select-region"><strong>📍 1. Región o Bioma:</strong></label>
-        <select id="select-region" onchange="onSelectionChange()">
-          <option value="amazon_deforestation_arc">Amazonía - Arco de Deforestación</option>
-          <option value="arctic_svalbard">Ártico - Svalbard</option>
-          <option value="aral_sea">Mar de Aral (Asia Central)</option>
-          <option value="california_central_valley">Valle Central de California</option>
-        </select>
-        <small id="region-desc" class="text-muted"></small>
+      <section class="field">
+        <label for="place-search" data-i18n="panel.search.label">Search a place</label>
+        <div class="search-row">
+          <input type="text" id="place-search" list="place-results" autocomplete="off"
+                 data-i18n-placeholder="panel.search.placeholder" placeholder="e.g. Piura, Peru">
+          <button type="button" class="btn btn-ghost" id="place-search-btn" data-i18n="panel.search.button">Find</button>
+        </div>
+        <datalist id="place-results"></datalist>
+        <p class="help" id="place-chosen" aria-live="polite"></p>
+      </section>
+
+            <!-- Compare fields (visible only in compare mode) -->
+      <section class="field compare-field" id="field-compare-b" hidden>
+        <label for="place-search-b" data-i18n="compare.placeB">Place B</label>
+        <div class="search-row">
+          <input type="text" id="place-search-b" list="place-results-b" autocomplete="off"
+                 data-i18n-placeholder="panel.search.placeholder" placeholder="e.g. Arctic, Svalbard">
+          <button type="button" class="btn btn-ghost" id="place-search-btn-b" data-i18n="panel.search.button">Find</button>
+        </div>
+        <datalist id="place-results-b"></datalist>
+        <p class="help" id="place-chosen-b" aria-live="polite"></p>
+      </section>
+
+      <section class="map-frame">
+        <div id="map" role="application" aria-label="Map" data-i18n-aria="panel.location"></div>
+        <div class="scout-bar" id="scout-bar" hidden>
+          <button type="button" class="btn btn-ghost btn-small" id="btn-scout" data-i18n="detective.scout.btn">¿Qué investigo aquí?</button>
+        </div>
+        <p class="map-hint" data-i18n="panel.map.hint">Click the map to pick a point. Hold Shift and drag to pick a box.</p>
+              <div class="trendmap-bar" id="trendmap-bar" hidden>
+          <button type="button" class="btn btn-primary btn-small" id="btn-calc-trendmap" data-i18n="trendmap.btn">Show trend map for box</button>
+          <span class="help" data-i18n="trendmap.hint"></span>
+        </div>
+      </section>
+
+      <section class="field">
+        <label for="variable-select" data-i18n="panel.variable">Variable</label>
+        <select id="variable-select" required></select>
+        <p class="var-def" id="variable-definition" data-i18n="panel.variable.learn"></p>
+      </section>
+
+      <section class="field">
+        <label data-i18n="panel.period">Period</label>
+        <div class="period-row">
+          <label class="help" for="period-start" data-i18n="panel.period.from">From</label>
+          <label class="help" for="period-end" data-i18n="panel.period.to">To</label>
+        </div>
+        <div class="period-row">
+          <input type="number" id="period-start" min="1880" max="2026" step="1" value="1981" inputmode="numeric">
+          <input type="number" id="period-end" min="1880" max="2026" step="1" value="2025" inputmode="numeric">
+        </div>
+      </section>
+
+      <button type="submit" class="btn btn-primary" id="investigate-btn" data-i18n="panel.investigate">Investigate</button>
+
+      <div class="cases">
+        <h2 data-i18n="cases.title">Frozen cases</h2>
+        <p class="help" data-i18n="cases.body">Real analyses stored with their provenance.</p>
+        <div id="cases-list"></div>
+      </div>
+    </form>
+
+    <!-- ============ RESULTS ============ -->
+    <section class="results" id="results" tabindex="-1" aria-live="polite">
+      <div class="error-state plate" id="error-state" hidden role="alert">
+        <h2 data-i18n="error.title">Data unavailable</h2>
+        <p class="code" id="error-code"></p>
+        <p id="error-message"></p>
+        <p class="muted" data-i18n="error.body"></p>
+        <p><button type="button" class="btn btn-ghost btn-small" id="error-retry" data-i18n="error.retry">Try again</button></p>
       </div>
 
-      <div class="control-group">
-        <label for="select-variable"><strong>🛰️ 2. Variable Satelital / Modelo:</strong></label>
-        <select id="select-variable" onchange="onSelectionChange()">
-          <option value="MODIS_NDVI">MODIS - Vegetación (NDVI)</option>
-          <option value="MERRA2_T2M">MERRA-2 - Temperatura a 2m (°C)</option>
-          <option value="SWOT_WATER_ELEV">SWOT - Elevación de Agua (m)</option>
-          <option value="GLDAS_SOILM">GLDAS - Humedad de Suelo (kg/m²)</option>
-          <option value="GPM_PRECIP">GPM - Precipitación Mensual (mm)</option>
-          <option value="OMI_OZONE">OMI - Capa de Ozono (DU)</option>
-        </select>
-        <small id="variable-desc" class="text-muted"></small>
+      <div class="empty" id="empty-state">
+        <h2 data-i18n="results.empty.title">Pick a place to begin</h2>
+        <p data-i18n="results.empty.body">Click anywhere on the map or search for a place, choose a variable, and press Investigate.</p>
       </div>
 
-      <div class="control-group filter-actions">
-        <button class="btn btn-primary" onclick="runAnalysis()">🔍 Analizar Tendencia</button>
-        <button class="btn btn-secondary" onclick="exportReport()">📄 Exportar Informe</button>
-      </div>
-    </section>
+      <div id="result-root" hidden>
+        <article class="plate verdict" id="verdict-plate">
+          <p class="verdict-eyebrow" data-i18n="verdict.eyebrow">Verdict</p>
+          <h2 id="verdict-title"></h2>
+          <p class="plain serif" id="verdict-plain"></p>
 
-    <!-- Cuatro Respuestas del Detective (Preguntas NASA) -->
-    <section class="detective-answers-grid">
-      <div class="answer-card" id="card-what">
-        <div class="badge-number">1</div>
-        <h3>¿Qué está cambiando?</h3>
-        <p id="ans-what" class="ans-text">Cargando...</p>
-      </div>
-      <div class="answer-card" id="card-where">
-        <div class="badge-number">2</div>
-        <h3>¿Dónde cambia?</h3>
-        <p id="ans-where" class="ans-text">Cargando...</p>
-      </div>
-      <div class="answer-card" id="card-howmuch">
-        <div class="badge-number">3</div>
-        <h3>¿Cuánto cambia?</h3>
-        <p id="ans-howmuch" class="ans-text">Cargando...</p>
-        <div class="stat-highlight" id="rate-highlight">+0.00 / década</div>
-      </div>
-      <div class="answer-card significance-card" id="card-sig">
-        <div class="badge-number">4</div>
-        <h3>¿Es significativo?</h3>
-        <div id="sig-badge" class="badge-pill">Verificando...</div>
-        <p id="ans-sig" class="ans-text">Cargando prueba estadística...</p>
-        <small id="p-val-detail" class="text-muted"></small>
-      </div>
-    </section>
+          <div class="warn-strip" id="provenance-warning" hidden></div>
 
-    <!-- Gráfica de Serie Temporal -->
-    <section class="card chart-section">
-      <div class="chart-header">
-        <h2>📈 Visualización de Serie Temporal y Desestacionalización</h2>
-        <div class="toggle-group">
-          <label><input type="radio" name="view-type" value="raw" checked onchange="toggleSeriesView('raw')"> Datos Crudos + Tendencia</label>
-          <label><input type="radio" name="view-type" value="anomalies" onchange="toggleSeriesView('anomalies')"> Anomalías Desestacionalizadas</label>
+          <div class="ladder">
+            <ul class="ladder-ticks" id="ladder" aria-hidden="true">
+              <li data-tier="1"></li>
+              <li data-tier="2"></li>
+              <li data-tier="3"></li>
+              <li data-tier="4"></li>
+              <li data-tier="5"></li>
+            </ul>
+            <p class="ladder-caption">
+              <span class="state" id="verdict-state"></span>
+              <span class="step" id="verdict-step"></span>
+            </p>
+          </div>
+        </article>
+
+        <article class="plate detective-explain-plate" id="explain-plate">
+          <div class="explain-head">
+            <h3 data-i18n="detective.explain.title">Explicación del Detective</h3>
+            <div class="seg seg-level" role="group">
+              <button type="button" id="lvl-school" class="is-active" aria-pressed="true" data-i18n="detective.explain.level.school">Nivel escolar</button>
+              <button type="button" id="lvl-uni" aria-pressed="false" data-i18n="detective.explain.level.uni">Nivel universitario</button>
+            </div>
+          </div>
+          <span class="ai-badge" data-i18n="detective.explain.badge">Síntesis asistida por IA a partir de las fuentes citadas</span>
+          <p class="serif explain-text" id="explain-text"></p>
+          <div class="explain-sources" id="explain-sources-box" hidden>
+            <h4 data-i18n="detective.explain.sources">Evidencias citadas</h4>
+            <ol id="explain-citations-list"></ol>
+          </div>
+        </article>
+
+        <section class="plate chart-plate" aria-labelledby="chart-heading">
+          <div class="chart-head">
+            <h3 id="chart-heading" data-i18n="verdict.what">What is changing</h3>
+            <div class="seg" role="group">
+              <button type="button" id="view-monthly" aria-pressed="true" data-i18n="chart.monthly">Monthly values</button>
+              <button type="button" id="view-anomalies" aria-pressed="false" data-i18n="chart.anomalies">Anomalies</button>
+              <button type="button" id="view-annual" aria-pressed="false" data-i18n="chart.annual">Annual means</button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trend-chart" role="img" aria-labelledby="chart-heading"></canvas>
+          </div>
+          <p class="chart-note" data-i18n="chart.note"></p>
+        </section>
+
+        <dl class="findings" id="findings">
+          <h2 data-i18n="verdict.eyebrow">Verdict</h2>
+
+          <div class="finding">
+            <dt data-i18n="verdict.where">Where</dt>
+            <dd class="serif" id="f-where"></dd>
+          </div>
+
+          <div class="finding">
+            <dt data-i18n="verdict.howmuch">How much per decade</dt>
+            <dd>
+              <div class="measure">
+                <span class="value" id="f-slope"></span>
+                <span class="unit" id="f-unit"></span>
+                <span class="ci" id="f-ci"></span>
+              </div>
+            </dd>
+          </div>
+
+          <div class="finding">
+            <dt data-i18n="verdict.significant">Is it significant?</dt>
+            <dd class="serif" id="f-significant"></dd>
+          </div>
+
+          <div class="finding">
+            <dt data-i18n="verdict.years">How many years until we can be sure?</dt>
+            <dd>
+              <div class="years">
+                <div class="years-scale" id="years-scale" role="img">
+                  <div class="years-available" id="years-available"></div>
+                  <div class="years-needed" id="years-needed"></div>
+                </div>
+                <p class="years-legend">
+                  <span><span class="swatch swatch-avail"></span><span id="years-avail-label"></span></span>
+                  <span><span class="swatch swatch-need"></span><span id="years-need-label"></span></span>
+                </p>
+                <p class="serif" id="years-statement"></p>
+              </div>
+            </dd>
+          </div>
+        </dl>
+
+        <details class="method" id="method-details">
+          <summary data-i18n="verdict.method">How we know</summary>
+          <div class="method-body">
+            <table class="test-table" id="tests-table">
+              <thead>
+                <tr>
+                  <th data-i18n="method.test">Test</th>
+                  <th data-i18n="method.statistic">Statistic</th>
+                  <th data-i18n="method.p">p-value</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <p class="help" id="method-autocorr"></p>
+            <ul class="warn-list" id="warn-list"></ul>
+            <p class="help" id="method-references"></p>
+          </div>
+        </details>
+
+        <section class="provenance" aria-labelledby="prov-heading">
+          <h2 id="prov-heading" data-i18n="verdict.provenance">Where this comes from</h2>
+          <p><strong data-i18n="provenance.source">Source</strong>: <span id="prov-source"></span></p>
+          <p><strong data-i18n="provenance.underlying">Based on</strong>: <span id="prov-underlying"></span></p>
+          <p><strong data-i18n="provenance.resolution">Native resolution</strong>: <span id="prov-resolution"></span></p>
+          <p><strong data-i18n="provenance.retrieved">Retrieved</strong>: <span id="prov-retrieved"></span></p>
+          <p><strong data-i18n="provenance.query">Exact query</strong>: <a id="prov-url" target="_blank" rel="noopener noreferrer"></a></p>
+          <p><strong data-i18n="provenance.citation">Citation</strong>: <span id="prov-citation"></span></p>
+        </section>
+      </div>
+
+      <!-- ============ COMPARE RESULTS ============ -->
+      <div id="compare-root" hidden>
+        <article class="plate verdict" id="compare-verdict-plate">
+          <p class="verdict-eyebrow" data-i18n="compare.title">Compare Two Places</p>
+          <h2 id="compare-title"></h2>
+          <p class="plain serif" id="compare-statement"></p>
+          <div class="compare-badge" id="compare-badge"></div>
+        </article>
+
+        <div class="compare-charts-grid">
+          <section class="plate chart-plate" aria-labelledby="chart-heading-a">
+            <div class="chart-head">
+              <h3 id="chart-heading-a">Place A</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chart-compare-a" role="img"></canvas>
+            </div>
+          </section>
+
+          <section class="plate chart-plate" aria-labelledby="chart-heading-b">
+            <div class="chart-head">
+              <h3 id="chart-heading-b">Place B</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chart-compare-b" role="img"></canvas>
+            </div>
+          </section>
         </div>
       </div>
-      <div class="chart-container">
-        <canvas id="trendChart"></canvas>
+
+      <!-- ============ TRENDMAP RESULTS ============ -->
+      <div id="trendmap-root" hidden>
+        <article class="plate verdict" id="trendmap-verdict-plate">
+          <p class="verdict-eyebrow" data-i18n="trendmap.title">Spatial Trend Map</p>
+          <h2 id="trendmap-heading"></h2>
+          <p class="plain serif" id="trendmap-summary"></p>
+
+          <div class="trendmap-legend-box" id="trendmap-legend">
+            <div class="legend-scale">
+              <span class="scale-label" id="legend-min">-0.5</span>
+              <div class="scale-gradient"></div>
+              <span class="scale-label" id="legend-max">+0.5</span>
+            </div>
+            <p class="legend-detail">
+              <span class="sig-dot-sample">●</span>
+              <span data-i18n="trendmap.legend.sig">Significant cell (FDR q=0.10)</span>
+            </p>
+          </div>
+        </article>
       </div>
-      <p class="chart-explanation text-muted">
-        <strong>Nota Científica:</strong> La línea punteada roja representa la tendencia calculada mediante mínimos cuadrados (OLS) y validada por la pendiente de Sen (Theil-Sen). El ciclo estacional regular se remueve en la vista de anomalías para evaluar si el cambio de fondo es persistente.
-      </p>
     </section>
   </main>
 
   <footer class="app-footer">
-    <p>Desarrollado para el Reto NASA Space Apps: <em>Earth Science Data Detective - Significant Trend Analysis</em></p>
-    <p>Datos satelitales cortesía de NASA Earthdata, Giovanni, MODIS, MERRA-2, GLDAS y SWOT.</p>
+    <p data-i18n="footer.data">Data: NASA POWER, GISTEMP, NSIDC.</p>
+    <p data-i18n="footer.disclaimer">Not affiliated with or endorsed by NASA.</p>
   </footer>
 
+  <div id="glossary-pop" role="tooltip" hidden></div>
+
+  <script src="i18n.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

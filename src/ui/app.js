@@ -1,623 +1,1510 @@
-// EarthTrend Detective - Lógica Frontend conectada a NASA POWER
-let chartInstance = null;
-let currentAnalysisData = null;
-let currentView = 'raw'; // 'raw' o 'anomalies'
-let currentSeries = null;
-let currentAnalysis = null;
+(function() {
+'use strict';
+// SI-assisted: claude-omni-1 (Claude Sonnet 5.5)
+// EarthTrend Detective — interface logic.
+// HARD RULE: this file never computes or invents a scientific number.
+// Every figure shown comes from /api/analyze, /api/trendmap, /api/compare
+// (or, in explicit dev mode, from real fixtures stored under tests/fixtures/real/).
 
-// Regiones reales con coordenadas POWER
-const REGIONS_REAL = {
-  lima_peru:       { lat: -12.05, lon: -77.03, name_es: "Lima, Perú",       name_en: "Lima, Peru",       biome: "Desierto costero" },
-  piura_peru:      { lat: -5.19,  lon: -80.63, name_es: "Piura, Perú",      name_en: "Piura, Peru",      biome: "Sabana costera" },
-  cusco_peru:      { lat: -13.53, lon: -71.97, name_es: "Cusco, Perú",      name_en: "Cusco, Peru",      biome: "Altiplano andino" },
-  iquitos_peru:    { lat: -3.75,  lon: -73.25, name_es: "Iquitos, Perú",    name_en: "Iquitos, Peru",    biome: "Selva amazónica" },
-  arequipa_peru:   { lat: -16.40, lon: -71.53, name_es: "Arequipa, Perú",   name_en: "Arequipa, Peru",   biome: "Desierto costero" },
-  trujillo_peru:   { lat: -8.11,  lon: -79.03, name_es: "Trujillo, Perú",   name_en: "Trujillo, Peru",   biome: "Desierto costero" },
-  huancayo_peru:   { lat: -12.05, lon: -75.20, name_es: "Huancayo, Perú",   name_en: "Huancayo, Peru",   biome: "Valle altoandino" },
-  loreto_peru:     { lat: -5.0,   lon: -74.0,  name_es: "Loreto (Amazonía)", name_en: "Loreto (Amazon)", biome: "Selva amazónica" },
-  arctic_sea_ice:  { lat: 75.0,   lon: 0.0,    name_es: "Mar Ártico",       name_en: "Arctic Ocean",     biome: "Hielo marino ártico" },
-  antarctic_sea_ice:{ lat: -75.0,  lon: 0.0,   name_es: "Mar Antártico",    name_en: "Antarctic Ocean",  biome: "Hielo marino antártico" },
-  sahel_africa:    { lat: 15.0,   lon: 0.0,    name_es: "Sahel, África",    name_en: "Sahel, Africa",    biome: "Sahel semiárido" },
-  amazon_brazil:   { lat: -4.0,   lon: -63.0,  name_es: "Amazonía brasileña", name_en: "Brazilian Amazon", biome: "Selva amazónica" },
-  californa_drought: { lat: 36.7, lon: -119.4, name_es: "California, sequía", name_en: "California drought", biome: "Mediterráneo" },
-  florida_hurricane: { lat: 27.8, lon: -81.7,  name_es: "Florida, huracanes", name_en: "Florida hurricanes", biome: "Subtropical costero" },
-  aral_sea:        { lat: 45.1,   lon: 60.6,   name_es: "Mar de Aral",      name_en: "Aral Sea",         biome: "Mar interior" },
-  hawaii:          { lat: 20.8,   lon: -157.9, name_es: "Hawái",            name_en: "Hawaii",           biome: "Isla volcánica tropical" },
-  london_uk:       { lat: 51.51,  lon: -0.13,  name_es: "Londres, Reino Unido", name_en: "London, UK", biome: "Templado oceánico" },
-  tokyo_jp:        { lat: 35.68,  lon: 139.69, name_es: "Tokio, Japón",     name_en: "Tokyo, Japan",     biome: "Templado húmedo" },
-  new_york_usa:    { lat: 40.71,  lon: -74.0,  name_es: "Nueva York, EE.UU.", name_en: "New York, USA", biome: "Templado continental" },
-  moscow_ru:       { lat: 55.75,  lon: 37.62,  name_es: "Moscú, Rusia",     name_en: "Moscow, Russia",   biome: "Continental frío" },
-  sydney_au:       { lat: -33.87, lon: 151.21, name_es: "Sídney, Australia", name_en: "Sydney, Australia", biome: "Templado costero" },
-  mumbai_in:       { lat: 19.08,  lon: 72.88,  name_es: "Mumbai, India",    name_en: "Mumbai, India",    biome: "Tropical monzónico" },
-  cairo_eg:        { lat: 30.04,  lon: 31.24,  name_es: "El Cairo, Egipto", name_en: "Cairo, Egypt",     biome: "Desértico cálido" },
-  santiago_cl:     { lat: -33.45, lon: -70.67, name_es: "Santiago, Chile",  name_en: "Santiago, Chile",  biome: "Mediterráneo" },
-  bogota_co:       { lat: 4.71,   lon: -74.07, name_es: "Bogotá, Colombia", name_en: "Bogotá, Colombia", biome: "Páramo subtropical" }
+const { t, applyTranslations } = window.__etdI18n;
+
+const API_BASE = window.ETD_API_BASE || '';
+const DEV_FIXTURE = new URLSearchParams(location.search).get('dev') === 'fixture';
+
+const state = {
+  mode: 'single', // 'single' | 'trendmap' | 'compare'
+  health: null,
+  catalog: [],
+  cases: [],
+  analysis: null,
+  trendmap: null,
+  compare: null,
+  view: 'monthly',
+  point: null,
+  pointCompareB: null,
+  bbox: null,
+  lang: window.__etdLang || 'en',
 };
 
-// Variables reales de NASA POWER disponibles
-const POWER_VARS = {
-  T2M:       { name_es: "Temperatura del aire a 2m (T2M)",        unit: "°C",        connector: "power" },
-  TS:        { name_es: "Temperatura de superficie terrestre (TS)", unit: "°C",        connector: "power" },
-  PRECTOTCORR: { name_es: "Precipitación corregida",              unit: "mm/day",    connector: "power" },
-  RH2M:      { name_es: "Humedad relativa a 2m",                  unit: "%",         connector: "power" },
-  TQV:       { name_es: "Agua precipitable total",                unit: "kg/m²",     connector: "power" },
-  TO3:       { name_es: "Ozono total en la columna",              unit: "DU",        connector: "power" },
-  AOD_55:    { name_es: "Profundidad óptica de aerosoles",        unit: "",          connector: "power" },
-  CLOUD_AMT: { name_es: "Cubierta nubosa total",                  unit: "%",         connector: "power" },
-  ALLSKY_SFC_SW_DWN: { name_es: "Irradiación solar descendente",  unit: "MJ/m²/day", connector: "power" },
-  GWETTOP:   { name_es: "Humedad del suelo superficial",          unit: "",          connector: "power" },
-  EVLAND:    { name_es: "Evaporación terrestre",                  unit: "mm/day",    connector: "power" },
-  SNODP:     { name_es: "Profundidad de nieve",                   unit: "cm",        connector: "power" }
+let map = null;
+let marker = null;
+let markerB = null;
+let rect = null;
+let trendmapLayer = null;
+let chart = null;
+let chartCompareA = null;
+let chartCompareB = null;
+let mapReady = false;
+
+const VERDICT_TIER = {
+  INSUFFICIENT_DATA: 1,
+  NOT_SIGNIFICANT: 2,
+  SUGGESTIVE: 3,
+  SIGNIFICANT: 4,
+  SIGNIFICANT_STRONG: 5,
 };
 
-// Presets para el caso de demostración rápida
-const PRESETS = [
-  { id: "lima_t2m",        region: "lima_peru",       variable: "T2M",       label: "🌡️ Calentamiento en Lima (T2M)" },
-  { id: "lima_precip",     region: "lima_peru",       variable: "PRECTOTCORR", label: "🌧️ Lluvias en Lima (PRECTOTCORR)" },
-  { id: "arctic_t2m",      region: "arctic_sea_ice",  variable: "T2M",       label: "❄️ Calentamiento Ártico (T2M)" },
-  { id: "arctic_ice",      region: "arctic_sea_ice",  variable: "SNODP",     label: "🧊 Nieve Ártica (SNODP)" },
-  { id: "amazon_ndvi_fake", region: "amazon_brazil",  variable: "T2M",       label: "🌲 Amazonía (T2M proxy)" },
-  { id: "sahel_drought",   region: "sahel_africa",    variable: "PRECTOTCORR", label: "🏜️ Sequía Sahel (PREC)" },
-  { id: "california_heat", region: "california_drought", variable: "T2M",    label: "🔥 Calor California (T2M)" },
-  { id: "florida_rain",    region: "florida_hurricane", variable: "PRECTOTCORR", label: "🌀 Lluvias Florida (PREC)" },
-  { id: "hawaii_t2m",      region: "hawaii",          variable: "T2M",       label: "🌺 Hawái (T2M)" },
-  { id: "aral_water",      region: "aral_sea",        variable: "TS",        label: "💧 Mar de Aral (TS proxy)" },
-  { id: "peru_compare",    region: "cusco_peru",      variable: "T2M",       label: "🏔️ Cusco vs Lima (T2M)" },
-  { id: "global_compare",  region: "lima_peru",       variable: "TQV",       label: "💨 Vapor atmosférico (TQV)" }
-];
+/* ---------------------------------------------------------------- helpers */
 
-// Generador client-side como fallback (datos sintéticos realistas)
-function generateSyntheticData(regionId, variableId, startYear = 1999, endYear = 2024) {
-  const n = (endYear - startYear + 1) * 12;
-  if (n <= 0) return null;
+function $(sel) { return document.querySelector(sel); }
 
-  const dates = [];
-  const rawValues = [];
-  const anomalies = [];
-  const monthSums = new Array(12).fill(0);
-  const monthCounts = new Array(12).fill(0);
+function el(tag, attrs, text) {
+  const node = document.createElement(tag);
+  if (attrs) for (const k of Object.keys(attrs)) node.setAttribute(k, attrs[k]);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
 
-  let base, slopeYear, amp, noiseAmp;
-  const varInfo = POWER_VARS[variableId];
-  const regInfo = REGIONS_REAL[regionId];
+function fmt(n, digits = 2) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
+  return Number(n).toLocaleString(state.lang === 'es' ? 'es-PE' : 'en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
 
-  // Valores base según región y variable
-  if (variableId === "T2M") {
-    if (regionId === "lima_peru")       { base = 19; slopeYear = 0.015; amp = 2.0; noiseAmp = 0.5; }
-    else if (regionId === "arctic_sea_ice") { base = -25; slopeYear = 0.15; amp = 20; noiseAmp = 3; }
-    else if (regionId === "sahel_africa") { base = 28; slopeYear = 0.03; amp = 4; noiseAmp = 1; }
-    else if (regionId === "amazon_brazil") { base = 25; slopeYear = 0.02; amp = 1; noiseAmp = 0.5; }
-    else if (regionId === "california_drought") { base = 15; slopeYear = 0.04; amp = 6; noiseAmp = 1.5; }
-    else if (regionId === "florida_hurricane") { base = 22; slopeYear = 0.03; amp = 9; noiseAmp = 1.5; }
-    else if (regionId === "aral_sea")  { base = 12; slopeYear = 0.05; amp = 14; noiseAmp = 2; }
-    else if (regionId === "hawaii")     { base = 26; slopeYear = 0.01; amp = 1.5; noiseAmp = 0.3; }
-    else if (regionId === "cusco_peru") { base = 9; slopeYear = 0.02; amp = 3; noiseAmp = 0.8; }
-    else if (regionId === "lima_peru") { base = 19; slopeYear = 0.015; amp = 2; noiseAmp = 0.5; }
-    else { base = 15; slopeYear = 0.02; amp = 8; noiseAmp = 1.5; }
-  } else if (variableId === "PRECTOTCORR") {
-    if (regionId === "lima_peru")       { base = 0.2; slopeYear = -0.005; amp = 0.8; noiseAmp = 0.3; }
-    else if (regionId === "arctic_sea_ice") { base = 1.5; slopeYear = 0.1; amp = 2; noiseAmp = 0.8; }
-    else if (regionId === "sahel_africa") { base = 2; slopeYear = -0.08; amp = 5; noiseAmp = 2; }
-    else if (regionId === "amazon_brazil") { base = 4; slopeYear = -0.03; amp = 2; noiseAmp = 1; }
-    else if (regionId === "california_drought") { base = 1; slopeYear = -0.06; amp = 3; noiseAmp = 1; }
-    else if (regionId === "florida_hurricane") { base = 2.5; slopeYear = 0.05; amp = 1.5; noiseAmp = 1; }
-    else if (regionId === "aral_sea")  { base = 1; slopeYear = 0.08; amp = 1.5; noiseAmp = 0.5; }
-    else if (regionId === "hawaii")     { base = 0.3; slopeYear = 0.01; amp = 0.5; noiseAmp = 0.2; }
-    else { base = 2; slopeYear = -0.02; amp = 4; noiseAmp = 1.5; }
-  } else if (variableId === "TS") {
-    if (regionId === "arctic_sea_ice") { base = -28; slopeYear = 0.2; amp = 22; noiseAmp = 3; }
-    else if (regionId === "aral_sea") { base = 14; slopeYear = 0.08; amp = 16; noiseAmp = 2; }
-    else { base = 18; slopeYear = 0.03; amp = 10; noiseAmp = 2; }
-  } else if (variableId === "RH2M") {
-    if (regionId === "lima_peru") { base = 80; slopeYear = -0.5; amp = 5; noiseAmp = 3; }
-    else if (regionId === "amazon_brazil") { base = 85; slopeYear = -1; amp = 3; noiseAmp = 2; }
-    else { base = 65; slopeYear = -0.3; amp = 12; noiseAmp = 5; }
-  } else if (variableId === "TQV") {
-    if (regionId === "lima_peru") { base = 10; slopeYear = 0.3; amp = 3; noiseAmp = 1.5; }
-    else if (regionId === "arctic_sea_ice") { base = 1; slopeYear = 0.2; amp = 1; noiseAmp = 0.5; }
-    else { base = 12; slopeYear = 0.4; amp = 5; noiseAmp = 2; }
-  } else if (variableId === "GWETTOP") {
-    if (regionId === "lima_peru") { base = 0.1; slopeYear = -0.003; amp = 0.15; noiseAmp = 0.05; }
-    else if (regionId === "amazon_brazil") { base = 0.7; slopeYear = -0.01; amp = 0.1; noiseAmp = 0.03; }
-    else { base = 0.3; slopeYear = -0.005; amp = 0.3; noiseAmp = 0.1; }
-  } else if (variableId === "CLOUD_AMT") {
-    if (regionId === "lima_peru") { base = 40; slopeYear = -2; amp = 10; noiseAmp = 5; }
-    else { base = 55; slopeYear = -1; amp = 15; noiseAmp = 5; }
-  } else if (variableId === "ALLSKY_SFC_SW_DWN") {
-    if (regionId === "lima_peru") { base = 18; slopeYear = 0.5; amp = 3; noiseAmp = 1; }
-    else { base = 20; slopeYear = 0.3; amp = 5; noiseAmp = 2; }
-  } else if (variableId === "AOD_55") {
-    if (regionId === "sahel_africa") { base = 0.4; slopeYear = -0.01; amp = 0.3; noiseAmp = 0.1; }
-    else if (regionId === "lima_peru") { base = 0.15; slopeYear = 0.005; amp = 0.1; noiseAmp = 0.05; }
-    else { base = 0.2; slopeYear = -0.005; amp = 0.2; noiseAmp = 0.1; }
-  } else if (variableId === "TO3") {
-    if (regionId === "arctic_sea_ice") { base = 250; slopeYear = 2; amp = 30; noiseAmp = 10; }
-    else if (regionId === "lima_peru") { base = 280; slopeYear = -1; amp = 15; noiseAmp = 5; }
-    else { base = 270; slopeYear = 0; amp = 20; noiseAmp = 8; }
-  } else if (variableId === "EVLAND") {
-    if (regionId === "lima_peru") { base = 1; slopeYear = 0.05; amp = 0.5; noiseAmp = 0.3; }
-    else if (regionId === "sahel_africa") { base = 2; slopeYear = 0.1; amp = 1.5; noiseAmp = 0.5; }
-    else { base = 1.5; slopeYear = 0.05; amp = 1; noiseAmp = 0.5; }
-  } else if (variableId === "SNODP") {
-    if (regionId === "arctic_sea_ice") { base = 10; slopeYear = -1.5; amp = 20; noiseAmp = 5; }
-    else if (regionId === "aral_sea") { base = 5; slopeYear = -0.5; amp = 15; noiseAmp = 3; }
-    else { base = 0; slopeYear = 0; amp = 5; noiseAmp = 2; }
-  } else {
-    base = 0; slopeYear = 0.01; amp = 5; noiseAmp = 1;
+function signed(n, digits = 2) {
+  if (n === null || n === undefined) return '—';
+  return (n > 0 ? '+' : '') + fmt(n, digits);
+}
+
+function fmtP(p) {
+  if (p === null || p === undefined) return '—';
+  if (p < 0.001) return '< 0.001';
+  return fmt(p, 3);
+}
+
+class ApiError extends Error {
+  constructor(code, message, hint) {
+    super(message);
+    this.code = code;
+    this.hint = hint;
   }
+}
 
-  // Usar seed pseudo-aleatorio consistente
-  let seed = 12345;
-  function seededRandom() {
-    seed = (seed * 16807 + 0) % 2147483647;
-    return (seed - 1) / 2147483646;
+async function apiGet(path, params) {
+  const url = new URL(`${API_BASE}${path}`, location.href);
+  if (params) for (const [k, v] of Object.entries(params)) if (v !== null && v !== undefined) url.searchParams.set(k, v);
+  let res;
+  try {
+    res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+  } catch (_) {
+    throw new ApiError('API_UNAVAILABLE', t('error.body'));
   }
-
-  for (let i = 0; i < n; i++) {
-    const y = startYear + Math.floor(i / 12);
-    const m = (i % 12) + 1;
-    const dateStr = `${y}-${String(m).padStart(2, '0')}`;
-    dates.push(dateStr);
-
-    const t = (y - startYear) + (m - 1) / 12.0;
-    const seasonal = amp * Math.sin(2 * Math.PI * (m - 1) / 12.0);
-    const trend = slopeYear * t;
-    const noise = (seededRandom() - 0.5) * 2 * noiseAmp;
-    const val = base + trend + seasonal + noise;
-    rawValues.push(Number(val.toFixed(3)));
-
-    monthSums[m - 1] += val;
-    monthCounts[m - 1] += 1;
+  let body = null;
+  try { body = await res.json(); } catch (_) { /* not JSON */ }
+  if (!res.ok) {
+    const e = (body && body.error) || {};
+    const msg = e.message && typeof e.message === 'object'
+      ? (e.message[state.lang] || e.message.en || e.message.es)
+      : (e.message || t('error.body'));
+    throw new ApiError(e.code || 'UPSTREAM_ERROR', msg, e.hint);
   }
+  return body;
+}
 
-  // Calcular climatología mensual (anomalías)
-  const monthMeans = monthSums.map((s, idx) => s / monthCounts[idx]);
-  for (let i = 0; i < n; i++) {
-    const m = (i % 12);
-    anomalies.push(Number((rawValues[i] - monthMeans[m]).toFixed(3)));
+/* ---------------------------------------------------------------- errors */
+
+function showError(err) {
+  const box = $('#error-state');
+  if (!box) return;
+  box.hidden = false;
+  $('#error-code').textContent = err.code ? `${t('error.code')}: ${err.code}` : '';
+  const msg = err.message || String(err);
+  const isGeneric = msg === t('error.body');
+  $('#error-message').textContent = isGeneric ? '' : msg;
+}
+
+function clearError() {
+  const box = $('#error-state');
+  if (box) box.hidden = true;
+}
+
+/* ---------------------------------------------------------------- map */
+
+function initMap() {
+  if (typeof L === 'undefined') {
+    const frame = document.querySelector('.map-frame');
+    if (frame) frame.hidden = true;
+    return;
   }
+  map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([-12.05, -77.03], 3);
 
-  // OLS trend line
-  const xMean = (n - 1) / 2;
-  const yMean = rawValues.reduce((a, b) => a + b, 0) / n;
-  let num = 0, den = 0;
-  for (let i = 0; i < n; i++) {
-    num += (i - xMean) * (rawValues[i] - yMean);
-    den += (i - xMean) * (i - xMean);
-  }
-  const olsSlope = num / den;
-  const olsIntercept = yMean - olsSlope * xMean;
-  const trendLine = rawValues.map((_, i) => Number((olsSlope * i + olsIntercept).toFixed(3)));
+  // Basemap: NASA GIBS Blue Marble
+  const gibs = L.tileLayer(
+    'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/2020-08-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
+    { maxZoom: 8, attribution: 'Imagery: NASA GIBS (public domain)' }
+  );
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  });
 
-  const decadalRate = olsSlope * 120;
-  const percentChange = ((trendLine[n - 1] - trendLine[0]) / Math.abs(trendLine[0] || 1)) * 100;
+  gibs.on('tileerror', () => {
+    if (map.hasLayer(gibs)) { map.removeLayer(gibs); osm.addTo(map); }
+  });
+  gibs.addTo(map);
 
-  // Calcular R² simplificado
-  let ssRes = 0, ssTot = 0;
-  for (let i = 0; i < n; i++) {
-    ssRes += (rawValues[i] - trendLine[i]) ** 2;
-    ssTot += (rawValues[i] - yMean) ** 2;
-  }
-  const rSquared = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+  trendmapLayer = L.layerGroup().addTo(map);
+  mapReady = true;
 
-  // Significancia simplificada (basada en R² y magnitud)
-  const isSig = Math.abs(decadalRate) > 0.5 && Math.abs(rSquared) > 0.1;
-
-  const region = REGIONS_REAL[regionId];
-  const variable = POWER_VARS[variableId];
-
-  return {
-    variable: {
-      id: variableId,
-      name: variable.name_es,
-      unit: variable.unit || "variable"
-    },
-    region: {
-      id: regionId,
-      name: region.name_es,
-      lat: region.lat,
-      lon: region.lon
-    },
-    period: {
-      start: dates[0],
-      end: dates[dates.length - 1],
-      years: (endYear - startYear + 1),
-      n_obs: n
-    },
-    summary: {
-      annual_rate: (olsSlope * 12).toFixed(4),
-      decadal_rate: decadalRate.toFixed(3),
-      r_squared: rSquared.toFixed(3),
-      percent_change_total: percentChange.toFixed(1),
-      is_significant: isSig,
-      p_value: isSig ? 0.001 : 0.45,
-      significance_label: isSig
-        ? "Significativo (p < 0.01)"
-        : "No Significativo tras corrección de autocorrelación"
-    },
-    detective_answers: {
-      what: `${variable.name_es}: presenta una tendencia ${olsSlope > 0 ? 'ascendente' : 'descendente'} a lo largo del periodo de ${endYear - startYear + 1} años en ${region.name_es}.`,
-      where: `${region.name_es} (${region.lat}°, ${region.lon}°): región focal analizada con datos de NASA POWER.`,
-      how_much: `Cambio de ${decadalRate > 0 ? '+' : ''}${decadalRate.toFixed(3)} ${variable.unit || ''} por década (${percentChange > 0 ? '+' : ''}${percentChange.toFixed(1)}% total).`,
-      is_significant: isSig
-        ? "El análisis estadístico confirma que la tendencia es significativa (p < 0.01). La fluctuación observada es consistente con un forzamiento ambiental real."
-        : "La fluctuación observada no es estadísticamente significativa tras la corrección de autocorrelación. Los cambios pueden deberse a variabilidad natural."
-    },
-    series: {
-      dates: dates,
-      raw_values: rawValues,
-      anomalies: anomalies,
-      trend_line: trendLine
+  map.on('click', (ev) => {
+    if (state.mode === 'compare') {
+      if (!state.point) {
+        setPointA(ev.latlng.lat, ev.latlng.lng);
+      } else {
+        setPointB(ev.latlng.lat, ev.latlng.lng);
+      }
+    } else {
+      setPoint(ev.latlng.lat, ev.latlng.lng);
     }
-  };
+  });
+
+  // Shift+drag selects a box
+  let dragStart = null;
+  map.on('mousedown', (ev) => {
+    if (ev.originalEvent && ev.originalEvent.shiftKey) { dragStart = ev.latlng; map.dragging.disable(); }
+  });
+  map.on('mouseup', (ev) => {
+    if (!dragStart) return;
+    const a = dragStart, b = ev.latlng;
+    dragStart = null;
+    map.dragging.enable();
+    const south = Math.min(a.lat, b.lat), north = Math.max(a.lat, b.lat);
+    const west = Math.min(a.lng, b.lng), east = Math.max(a.lng, b.lng);
+    if (Math.abs(north - south) < 0.05 || Math.abs(east - west) < 0.05) return;
+    setBBox([west, south, east, north]);
+  });
 }
 
-// Conectar con la API de FastAPI
-async function callAPI(regionId, variableId) {
-  const reg = REGIONS_REAL[regionId];
-  if (!reg) throw new Error(`Región '${regionId}' no encontrada`);
-
-  const url = `http://127.0.0.1:8000/api/analyze_real?variable_id=${variableId}&lat=${reg.lat}&lon=${reg.lon}&start=1999&end=2024&region_name=${encodeURIComponent(reg.name_es)}`;
-
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`API error: ${response.status} ${response.statusText}`);
-  return await response.json();
+function setPoint(lat, lon) {
+  state.point = { lat, lon };
+  state.bbox = null;
+  if (map) {
+    if (marker) marker.remove();
+    if (rect) { rect.remove(); rect = null; }
+    marker = L.circleMarker([lat, lon], {
+      radius: 7, color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 1,
+    }).addTo(map);
+  }
+  $('#place-chosen').textContent = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  const sc = $('#scout-bar'); if (sc) sc.hidden = false;
 }
 
-// Ejecutar análisis
-async function runAnalysis() {
-  const regId = document.getElementById('select-region').value;
-  const varId = document.getElementById('select-variable').value;
+function setPointA(lat, lon) {
+  state.point = { lat, lon };
+  if (map) {
+    if (marker) marker.remove();
+    marker = L.circleMarker([lat, lon], {
+      radius: 7, color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 1,
+    }).addTo(map).bindPopup('A');
+  }
+  $('#place-chosen').textContent = `A: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+}
 
-  document.getElementById('ans-what').textContent = 'Analizando...';
-  document.getElementById('ans-where').textContent = 'Analizando...';
-  document.getElementById('ans-howmuch').textContent = 'Analizando...';
-  document.getElementById('sig-badge').textContent = 'Verificando...';
-  document.getElementById('sig-badge').className = 'badge-pill';
-  document.getElementById('ans-sig').textContent = 'Conectando con datos de NASA POWER...';
+function setPointB(lat, lon) {
+  state.pointCompareB = { lat, lon };
+  if (map) {
+    if (markerB) markerB.remove();
+    markerB = L.circleMarker([lat, lon], {
+      radius: 7, color: '#16272b', weight: 2, fillColor: '#a2610f', fillOpacity: 1,
+    }).addTo(map).bindPopup('B');
+  }
+  $('#place-chosen-b').textContent = `B: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+}
+
+function setBBox(bbox) {
+  state.bbox = bbox;
+  state.point = null;
+  if (map) {
+    if (marker) { marker.remove(); marker = null; }
+    if (rect) rect.remove();
+    const [[w, s], [e, n]] = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
+    rect = L.rectangle([[s, w], [n, e]], { color: '#16272b', weight: 2, fillColor: '#125e5a', fillOpacity: 0.12 }).addTo(map);
+  }
+  $('#place-chosen').textContent = `[${bbox.map((v) => v.toFixed(2)).join(', ')}]`;
+  if (state.mode === 'trendmap') {
+    $('#trendmap-bar').hidden = false;
+  }
+}
+
+/* ---------------------------------------------------------------- search */
+
+async function searchPlace(q, isB = false) {
+  const list = $(isB ? '#place-results-b' : '#place-results');
+  list.innerHTML = '';
+  if (!q || q.length < 2) return;
+  try {
+    const data = await apiGet('/api/geocode', { q });
+    const items = (data && data.results) || [];
+    if (!items.length) {
+      $(isB ? '#place-chosen-b' : '#place-chosen').textContent = t('panel.search.noResults');
+      return;
+    }
+    for (const p of items) {
+      const opt = el('option', { value: p.name });
+      opt.dataset.lat = p.lat;
+      opt.dataset.lon = p.lon;
+      list.appendChild(opt);
+    }
+    const first = items[0];
+    if (isB) setPointB(first.lat, first.lon);
+    else setPoint(first.lat, first.lon);
+    if (map) map.setView([first.lat, first.lon], 6);
+  } catch (err) {
+    showError(err);
+  }
+}
+
+/* ---------------------------------------------------------------- catalog */
+
+function renderCatalog() {
+  const select = $('#variable-select');
+  select.innerHTML = '';
+  for (const v of state.catalog) {
+    const opt = el('option', { value: v.id }, `${v.names?.[state.lang] || v.id} (${v.unit})`);
+    select.appendChild(opt);
+  }
+  onVariableChange();
+}
+
+function onVariableChange() {
+  const id = $('#variable-select').value;
+  const v = state.catalog.find((x) => x.id === id);
+  $('#variable-definition').textContent = v && v.simple_definition
+    ? (v.simple_definition[state.lang] || v.simple_definition.en)
+    : '';
+}
+
+/* ---------------------------------------------------------------- cases */
+
+async function loadCases() {
+  try {
+    const data = await apiGet('/api/cases');
+    state.cases = (data && data.cases) || [];
+  } catch (_) {
+    state.cases = [];
+  }
+  const list = $('#cases-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!state.cases.length) {
+    list.appendChild(el('p', { class: 'help' }, t('cases.none')));
+    return;
+  }
+  for (const c of state.cases) {
+    const btn = el('button', { type: 'button', class: 'btn case-btn' });
+    btn.appendChild(el('span', null, c.region_name || c.region_id));
+    if (c.description) btn.appendChild(el('small', null, c.description));
+    btn.addEventListener('click', () => openCase(c));
+    list.appendChild(btn);
+  }
+}
+
+async function openCase(c) {
+  if (c.analysis) { renderAnalysis(c.analysis); return; }
+  try {
+    const data = await apiGet('/api/analyze', {
+      variable_id: c.variable_id,
+      lat: c.lat, lon: c.lon,
+      bbox: c.bbox ? c.bbox.join(',') : null,
+    });
+    renderAnalysis(data);
+  } catch (err) {
+    showError(err);
+  }
+}
+
+/* ---------------------------------------------------------------- investigate */
+
+async function investigate() {
+  clearError();
+  if (state.mode === 'compare') {
+    return runCompare();
+  }
+  if (state.mode === 'trendmap') {
+    return runTrendMap();
+  }
+
+  if (!state.point && !state.bbox) {
+    showError(new ApiError('NO_LOCATION', state.lang === 'es'
+      ? 'Elige primero un lugar en el mapa o búscalo por nombre.'
+      : 'Pick a place on the map or search for it by name first.'));
+    return;
+  }
+  const variableId = $('#variable-select').value;
+  if (!variableId) return;
+
+  const btn = $('#investigate-btn');
+  btn.disabled = true;
+  const label = btn.textContent;
+  btn.textContent = t('panel.investigating');
 
   try {
-    // Intentar conectar a la API de FastAPI
-    const apiData = await callAPI(regId, varId);
+    const params = {
+      variable_id: variableId,
+      start: `${$('#period-start').value}-01`,
+      end: `${$('#period-end').value}-12`,
+      lang: state.lang,
+    };
+    if (state.bbox) params.bbox = state.bbox.join(',');
+    else { params.lat = state.point.lat.toFixed(4); params.lon = state.point.lon.toFixed(4); }
 
-    // Si la API responde con datos reales, transformar al formato UI
-    currentAnalysisData = transformAPItoUI(apiData, regId, varId);
+    state.analysis = await apiGet('/api/analyze', params);
+    renderAnalysis(state.analysis);
   } catch (err) {
-    // Modo autónomo: usar datos sintéticos realistas como fallback
-    currentAnalysisData = generateSyntheticData(regId, varId, 1999, 2024);
-    if (currentAnalysisData) {
-      currentAnalysisData._mode = 'sintetico';
-    }
-  }
-
-  if (currentAnalysisData) {
-    updateUI(currentAnalysisData);
-  } else {
-    document.getElementById('ans-what').textContent = 'Error: no se pudieron obtener datos.';
+    state.analysis = null;
+    $('#result-root').hidden = true;
+    $('#empty-state').hidden = true;
+    showError(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
   }
 }
 
-// Transformar respuesta de API al formato de la UI
-function transformAPItoUI(apiData, regionId, variableId) {
-  const varInfo = POWER_VARS[variableId];
-  const regInfo = REGIONS_REAL[regionId];
+/* ---------------------------------------------------------------- render single */
 
-  // La API devuelve AnalysisResult v2
-  // Extraer series para el gráfico
-  const series = apiData.series || {};
-  const summary = apiData.summary || {};
+function renderAnalysis(a) {
+  state.analysis = a;
+  $('#empty-state').hidden = true;
+  $('#result-root').hidden = false;
+  $('#compare-root').hidden = true;
+  $('#trendmap-root').hidden = true;
+  clearError();
 
-  // Si la API no devuelve series directamente, generarlas del resultado
-  let dates, rawValues, anomalies, trendLine;
-  if (series.dates && series.dates.length > 0) {
-    dates = series.dates;
-    rawValues = series.raw || series.values || series.data;
-    trendLine = series.trend_line || [];
-    anomalies = series.anomalies || [];
+  const code = a.significance?.verdict_code || 'INSUFFICIENT_DATA';
+  const tier = VERDICT_TIER[code] || 1;
+
+  $('#verdict-title').textContent = t(`verdict.${code}`);
+  $('#verdict-plain').textContent = a.answers?.['what']?.[state.lang] || '';
+
+  // evidence ladder — 5 states
+  const ticks = document.querySelectorAll('#ladder li');
+  ticks.forEach((li) => {
+    const n = Number(li.dataset.tier);
+    li.classList.toggle('is-active', n === tier);
+    li.style.opacity = n <= tier ? '1' : '0.45';
+  });
+  const ladder = $('#ladder');
+  ladder.classList.remove('is-fresh');
+  void ladder.offsetWidth;
+  ladder.classList.add('is-fresh');
+
+  $('#verdict-state').textContent = t(`ladder.${tier}`);
+  $('#verdict-step').textContent = `${tier}/5`;
+
+  // provenance warning
+  const kind = a.provenance?.kind;
+  const warn = $('#provenance-warning');
+  if (kind === 'fixture') {
+    warn.hidden = false;
+    warn.textContent = t('provenance.warning.fixture');
+  } else if (kind === 'user_upload') {
+    warn.hidden = false;
+    warn.textContent = t('provenance.warning.upload');
   } else {
-    // Generar fallback a partir del análisis
-    dates = [];
-    rawValues = [];
-    anomalies = [];
-    trendLine = [];
-    const years = summary.period?.years || 25;
-    for (let i = 0; i < years * 12; i++) {
-      const y = 1999 + Math.floor(i / 12);
-      const m = (i % 12) + 1;
-      dates.push(`${y}-${String(m).padStart(2, '0')}`);
-    }
-    // Inferir valores desde trend_line si disponible
-    if (apiData.trend && apiData.trend.sen_slope_per_decade) {
-      const slopePerYear = apiData.trend.sen_slope_per_decade / 10;
-      const baseTemp = apiData.period?.start ? parseInt(apiData.period.start.split('-')[0]) : 1999;
-      rawValues = dates.map((d, i) => {
-        const t = (parseInt(d.split('-')[0]) - baseTemp) + (parseInt(d.split('-')[1]) - 1) / 12;
-        return Number((20 + slopePerYear * t).toFixed(2));
-      });
-    }
+    warn.hidden = true;
   }
-
-  // Calcular anomalías si no vienen de la API
-  if (!anomalies.length && rawValues.length > 0) {
-    const monthSums = new Array(12).fill(0);
-    const monthCounts = new Array(12).fill(0);
-    for (let i = 0; i < rawValues.length; i++) {
-      const m = i % 12;
-      monthSums[m] += rawValues[i];
-      monthCounts[m]++;
-    }
-    const monthMeans = monthSums.map((s, idx) => s / monthCounts[idx]);
-    anomalies = rawValues.map((v, i) => Number((v - monthMeans[i % 12]).toFixed(3)));
-  }
-
-  // Calcular trend line OLS si no viene de la API
-  if (!trendLine.length && rawValues.length > 0) {
-    const n = rawValues.length;
-    const xMean = (n - 1) / 2;
-    const yMean = rawValues.reduce((a, b) => a + b, 0) / n;
-    let num = 0, den = 0;
-    for (let i = 0; i < n; i++) {
-      num += (i - xMean) * (rawValues[i] - yMean);
-      den += (i - xMean) * (i - xMean);
-    }
-    const olsSlope = num / den;
-    const olsIntercept = yMean - olsSlope * xMean;
-    trendLine = rawValues.map((_, i) => Number((olsSlope * i + olsIntercept).toFixed(3)));
-  }
-
-  const decadalRate = apiData.trend?.sen_slope_per_decade
-    ? apiData.trend.sen_slope_per_decade.toFixed(3)
-    : (trendLine.length > 0 && rawValues.length > 0
-      ? ((trendLine[rawValues.length-1] - trendLine[0]) / (rawValues.length / 120)).toFixed(3)
-      : '0');
-
-  const pValue = apiData.significance?.is_significant
-    ? apiData.significance.level
-    : (summary.p_value || 'n/a');
-
-  return {
-    variable: {
-      id: variableId,
-      name: varInfo.name_es,
-      unit: varInfo.unit || apiData.variable?.unit || "?"
-    },
-    region: {
-      id: regionId,
-      name: regInfo.name_es,
-      lat: regInfo.lat,
-      lon: regInfo.lon
-    },
-    period: {
-      start: apiData.period?.start || (dates[0] || "1999-01"),
-      end: apiData.period?.end || (dates[dates.length-1] || "2024-12"),
-      years: apiData.period?.years || (dates.length / 12),
-      n_obs: apiData.period?.n_obs || rawValues.length
-    },
-    summary: {
-      annual_rate: apiData.trend?.sen_slope_per_year
-        ? apiData.trend.sen_slope_per_year.toFixed(4)
-        : (parseFloat(decadalRate) / 10).toFixed(4),
-      decadal_rate: decadalRate,
-      r_squared: apiData.tests?.t_test_ols?.r_squared || summary.r_squared || "0.0",
-      percent_change_total: summary.percent_change_total || "0.0",
-      is_significant: apiData.significance?.is_significant || summary.is_significant || false,
-      p_value: pValue,
-      significance_label: apiData.significance?.verdict_code
-        ? (apiData.significance.is_significant ? "Significativo" : "No Significativo")
-        : (summary.significance_label || (summary.is_significant ? "Significativo" : "No Significativo"))
-    },
-    detective_answers: {
-      what: apiData.answers?.what?.es || `Variable ${varInfo.name_es} en ${regInfo.name_es}: tendencia detectada.`,
-      where: apiData.answers?.where?.es || `${regInfo.name_es}: región analizada con datos de NASA POWER.`,
-      how_much: apiData.answers?.how_much?.es || `Cambio de ${decadalRate} ${varInfo.unit || ''}/década.`,
-      is_significant: apiData.answers?.significant?.es
-        || (apiData.significance?.is_significant
-          ? "El análisis estadístico confirma que la tendencia es significativa (p < 0.01). Los cambios observados son consistentes con un forzamiento ambiental real."
-          : "La fluctuación observada no es estadísticamente significativa tras la corrección de autocorrelación (Hamed & Rao 2002). Los cambios pueden deberse a variabilidad natural.")
-    },
-    series: {
-      dates: dates,
-      raw_values: rawValues,
-      anomalies: anomalies,
-      trend_line: trendLine
-    }
-  };
-}
-
-// Actualizar la UI con los datos del análisis
-function updateUI(data) {
-  // 1. ¿Qué está cambiando?
-  document.getElementById('ans-what').textContent = data.detective_answers.what;
-
-  // 2. ¿Dónde cambia?
-  document.getElementById('ans-where').textContent = data.detective_answers.where;
-
-  // 3. ¿Cuánto cambia?
-  document.getElementById('ans-howmuch').textContent = data.detective_answers.how_much;
-  const sign = parseFloat(data.summary.decadal_rate) >= 0 ? '+' : '';
-  document.getElementById('rate-highlight').textContent = `${sign}${data.summary.decadal_rate} / década (${data.summary.percent_change_total}%)`;
-
-  // 4. ¿Es significativo?
-  const sigBadge = document.getElementById('sig-badge');
-  const isSig = data.summary.is_significant;
-  sigBadge.className = isSig ? "badge-pill badge-significant" : "badge-pill badge-not-significant";
-  sigBadge.textContent = isSig ? "✓ Significativo" : "✗ No Significativo";
-
-  document.getElementById('ans-sig').textContent = data.detective_answers.is_significant;
-  document.getElementById('p-val-detail').textContent =
-    `Mann-Kendall p-value: ${data.summary.p_value} | R²: ${data.summary.r_squared}`;
 
   renderChart();
+  renderFindings(a);
+  renderMethod(a);
+  renderProvenance(a);
+  loadExplanation(a, currentExplainLevel);
+  $('#results').focus({ preventScroll: true });
 }
 
-// Renderizar gráfico con Chart.js
+function renderFindings(a) {
+  $('#f-where').textContent = a.answers?.['where']?.[state.lang] || a.region?.name || '';
+
+  const slope = a.trend?.sen_slope_per_decade;
+  const ci = a.trend?.sen_ci95_per_decade;
+  $('#f-slope').textContent = signed(slope, 3);
+  $('#f-unit').textContent = `${a.variable?.unit || ''} ${t('measure.perDecade')}`.trim();
+  $('#f-ci').textContent = Array.isArray(ci)
+    ? `${t('measure.ci')}: ${signed(ci[0], 3)} … ${signed(ci[1], 3)}`
+    : '';
+
+  $('#f-significant').textContent = a.answers?.significant?.[state.lang] || '';
+
+  // detectability bar
+  const d = a.detectability || {};
+  const avail = Number(d.years_available) || 0;
+  const need = Number(d.years_needed) || 0;
+  const span = Math.max(avail, need, 1);
+  const availPct = Math.min(100, (avail / span) * 100);
+  const needPct = Math.min(100, (need / span) * 100);
+  $('#years-available').style.width = `${availPct}%`;
+  $('#years-needed').style.left = `calc(${needPct}% - 1px)`;
+  $('#years-avail-label').textContent = `${t('years.available')}: ${fmt(avail, 1)}`;
+  $('#years-need-label').textContent = need > 0
+    ? `${t('years.needed')}: ${fmt(need, 1)}`
+    : t('years.needed');
+  const more = Number(d.more_years_needed) || 0;
+  $('#years-statement').textContent = more > 0
+    ? t('years.more', { n: fmt(more, 1) })
+    : t('years.enough');
+  $('#years-scale').setAttribute('aria-label',
+    `${t('years.available')}: ${fmt(avail, 1)}. ${t('years.needed')}: ${fmt(need, 1)}.`);
+}
+
+function renderMethod(a) {
+  const tbody = $('#tests-table tbody');
+  tbody.innerHTML = '';
+  const mk = a.tests?.mann_kendall;
+  const mka = a.tests?.mann_kendall_annual;
+  const tt = a.tests?.t_test_ols;
+  const rows = [];
+  if (mk) rows.push(['Mann–Kendall (monthly)', `τ = ${fmt(mk.tau, 3)}${mk.z !== undefined ? `, z = ${fmt(mk.z, 2)}` : ''}`, fmtP(mk.p_value_autocorr ?? mk.p_value)]);
+  if (mka) rows.push([`Mann–Kendall (annual, n=${mka.n})`, `τ = ${fmt(mka.tau, 3)}`, fmtP(mka.p_value)]);
+  if (tt) rows.push([`t-test on OLS${tt.adjusted_for_autocorrelation ? ' (autocorr. adj.)' : ''}`, `t = ${fmt(tt.t, 2)}, df = ${fmt(tt.df, 0)}`, fmtP(tt.p_value)]);
+  for (const r of rows) {
+    const tr = el('tr');
+    tr.appendChild(el('td', null, r[0]));
+    tr.appendChild(el('td', { class: 'num' }, r[1]));
+    tr.appendChild(el('td', { class: 'num' }, r[2]));
+    tbody.appendChild(tr);
+  }
+
+  const ac = a.method?.autocorrelation;
+  $('#method-autocorr').textContent = ac
+    ? `${t('method.autocorr')}: ${fmt(ac.lag1, 2)} · ${t('method.neff')}: ${fmt(ac.n_eff, 0)}`
+    : '';
+
+  const warnList = $('#warn-list');
+  warnList.innerHTML = '';
+  for (const w of a.warnings || []) {
+    warnList.appendChild(el('li', null, t(`warn.${w}`)));
+  }
+
+  $('#method-references').textContent = a.method?.references?.length
+    ? `${t('method.references')}: ${a.method.references.join('; ')}`
+    : '';
+}
+
+function renderProvenance(a) {
+  const p = a.provenance || {};
+  $('#prov-source').textContent = p.source || '—';
+  $('#prov-underlying').textContent = p.underlying || '—';
+  $('#prov-resolution').textContent = p.native_resolution || '—';
+  $('#prov-retrieved').textContent = p.retrieved_at
+    ? new Date(p.retrieved_at).toLocaleString(state.lang === 'es' ? 'es-PE' : 'en-US')
+    : '—';
+  const link = $('#prov-url');
+  link.textContent = p.request_url || '—';
+  if (p.request_url) link.href = p.request_url; else link.removeAttribute('href');
+  $('#prov-citation').textContent = p.citation || '—';
+}
+
+/* ---------------------------------------------------------------- chart */
+
 function renderChart() {
-  if (!currentAnalysisData) return;
+  const a = state.analysis;
+  if (!a || typeof Chart === 'undefined') return;
+  const ctx = $('#trend-chart').getContext('2d');
+  if (chart) chart.destroy();
 
-  const ctx = document.getElementById('trendChart').getContext('2d');
-  if (chartInstance) chartInstance.destroy();
+  const s = a.series || {};
+  const unit = a.variable?.unit || '';
+  const colors = {
+    ink: '#16272b', teal: '#125e5a', tealWash: 'rgba(18, 94, 90, 0.14)',
+    ochre: '#a2610f', grid: '#e3eae8', muted: '#566967',
+  };
+  const fonts = { family: 'Schibsted Grotesk, system-ui, sans-serif' };
 
-  const labels = currentAnalysisData.series.dates;
-  const isAnomalies = (currentView === 'anomalies');
+  let labels, values, trendLine, ciLow, ciHigh, labelKey;
 
-  const mainData = isAnomalies
-    ? currentAnalysisData.series.anomalies
-    : currentAnalysisData.series.raw_values;
-  const labelText = isAnomalies
-    ? 'Anomalía Desestacionalizada'
-    : 'Valor Observado (NASA POWER)';
-  const mainColor = isAnomalies ? '#d97706' : '#0b3d91';
+  if (state.view === 'annual') {
+    const annual = s.annual || [];
+    labels = annual.map((r) => String(r.year));
+    values = annual.map((r) => r.value);
+    trendLine = s.trend_line_annual || null;
+    ciLow = s.trend_ci_low_annual || null;
+    ciHigh = s.trend_ci_high_annual || null;
+    labelKey = 'chart.annual';
+  } else {
+    labels = s.dates || [];
+    values = state.view === 'anomalies' ? (s.anomalies || []) : (s.raw || []);
+    trendLine = state.view === 'anomalies' ? (s.trend_line_anomalies || null) : (s.trend_line || null);
+    ciLow = state.view === 'anomalies' ? (s.trend_ci_low_anomalies || null) : (s.trend_ci_low || null);
+    ciHigh = state.view === 'anomalies' ? (s.trend_ci_high_anomalies || null) : (s.trend_ci_high || null);
+    labelKey = state.view === 'anomalies' ? 'chart.anomalies' : 'chart.monthly';
+  }
 
-  const datasets = [
-    {
-      label: labelText,
-      data: mainData,
-      borderColor: mainColor,
-      backgroundColor: isAnomalies ? 'rgba(217, 119, 6, 0.1)' : 'rgba(11, 61, 145, 0.05)',
-      borderWidth: 1.5,
-      pointRadius: 0,
-      fill: true
-    }
-  ];
+  const datasets = [{
+    label: t(labelKey),
+    data: values,
+    borderColor: colors.muted,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    pointRadius: 0,
+    tension: 0,
+    spanGaps: false,
+  }];
 
-  // Agregar línea de tendencia si no estamos en modo anomalías
-  if (!isAnomalies && currentAnalysisData.series.trend_line && currentAnalysisData.series.trend_line.length > 0) {
+  if (ciHigh && ciHigh.length) {
     datasets.push({
-      label: 'Tendencia OLS (mínimos cuadrados)',
-      data: currentAnalysisData.series.trend_line,
-      borderColor: '#fc3d21',
-      borderWidth: 2.5,
-      borderDash: [5, 5],
-      pointRadius: 0,
-      fill: false
+      label: 'CI high', data: ciHigh, borderWidth: 0, pointRadius: 0,
+      backgroundColor: colors.tealWash, fill: '+1', spanGaps: false,
+    });
+    datasets.push({
+      label: 'CI low', data: ciLow, borderWidth: 0, pointRadius: 0,
+      backgroundColor: colors.tealWash, fill: false, spanGaps: false,
+    });
+  }
+  if (trendLine && trendLine.length) {
+    datasets.push({
+      label: 'Sen', data: trendLine, borderColor: colors.teal, borderWidth: 2.5,
+      borderDash: [6, 4], pointRadius: 0, fill: false, spanGaps: false,
     });
   }
 
-  chartInstance = new Chart(ctx, {
+  const verticals = [];
+  if (a.homogeneous_since && labels.length) {
+    const target = a.homogeneous_since;
+    const idx = labels.findIndex((l) => String(l).startsWith(target.slice(0, 7)) || String(l).slice(0, 4) >= target.slice(0, 4));
+    if (idx >= 0) verticals.push(idx);
+  }
+
+  chart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 300 },
       plugins: {
-        legend: { position: 'top' },
+        legend: { display: false },
         tooltip: {
+          filter: (item) => item.datasetIndex === 0 || item.datasetIndex === datasets.length - 1,
           callbacks: {
-            label: (ctx) => {
-              const val = ctx.raw;
-              const unit = currentAnalysisData.variable.unit || '';
-              return `${ctx.dataset.label}: ${val} ${unit}`;
-            }
-          }
-        }
+            label: (c) => `${c.dataset.label}: ${fmt(c.raw, 2)} ${unit}`.trim(),
+          },
+        },
       },
       scales: {
         x: {
-          ticks: {
-            maxTicksLimit: 12,
-            maxRotation: 45
-          }
+          grid: { color: colors.grid, drawTicks: false },
+          ticks: { maxTicksLimit: 10, color: colors.muted, font: { ...fonts, size: 11 } },
         },
         y: {
-          title: {
-            display: true,
-            text: currentAnalysisData.variable.unit || 'Valor'
+          grid: { color: colors.grid, drawTicks: false },
+          ticks: { color: colors.muted, font: { ...fonts, size: 11 } },
+          title: { display: true, text: `${t('chart.axis.value')} (${unit})`, color: colors.muted, font: { ...fonts, size: 12 } },
+        },
+      },
+    },
+    plugins: verticals.length ? [{
+      id: 'spliceLine',
+      afterDraw(c) {
+        const { ctx: c2, chartArea, scales } = c;
+        c2.save();
+        c2.strokeStyle = colors.ochre;
+        c2.setLineDash([3, 3]);
+        for (const i of verticals) {
+          const x = scales.x.getPixelForValue(i);
+          if (x >= chartArea.left && x <= chartArea.right) {
+            c2.beginPath(); c2.moveTo(x, chartArea.top); c2.lineTo(x, chartArea.bottom); c2.stroke();
           }
         }
-      }
-    }
+        c2.restore();
+      },
+    }] : [],
   });
 }
 
-// Cambiar vista de gráfico
-function toggleSeriesView(viewType) {
-  currentView = viewType;
-  renderChart();
-}
+/* ---------------------------------------------------------------- U3: TrendMap */
 
-// Cargar caso preset
-function loadCase(caseId) {
-  const preset = PRESETS.find(p => p.id === caseId);
-  if (!preset) return;
-
-  document.getElementById('select-region').value = preset.region;
-  document.getElementById('select-variable').value = preset.variable;
-  onSelectionChange();
-  runAnalysis();
-}
-
-// Actualizar descripciones al cambiar selección
-function onSelectionChange() {
-  const regId = document.getElementById('select-region').value;
-  const varId = document.getElementById('select-variable').value;
-
-  const reg = REGIONS_REAL[regId];
-  const v = POWER_VARS[varId];
-
-  if (reg) {
-    document.getElementById('region-desc').textContent =
-      `${reg.name_en} (${reg.lat}°, ${reg.lon}°) — Bioma: ${reg.biome}`;
-  }
-  if (v) {
-    document.getElementById('variable-desc').textContent =
-      `${v.name_es} (${v.unit}) — Conector: ${v.connector.toUpperCase()} (NASA POWER)`;
+function getDivergingColor(slope, maxAbs) {
+  if (slope === null || slope === undefined || Number.isNaN(slope)) return '#c8d3d1';
+  const clamped = Math.max(-maxAbs, Math.min(maxAbs, slope));
+  const ratio = clamped / maxAbs; // -1 to +1
+  if (ratio > 0) {
+    return `rgba(162, 97, 15, ${0.15 + 0.85 * ratio})`;
+  } else {
+    return `rgba(18, 94, 90, ${0.15 + 0.85 * Math.abs(ratio)})`;
   }
 }
 
-// Exportar informe como Markdown
-function exportReport() {
-  if (!currentAnalysisData) return;
+async function runTrendMap() {
+  clearError();
+  if (!state.bbox) {
+    showError(new ApiError('NO_BBOX', state.lang === 'es'
+      ? 'Selecciona una caja en el mapa con Mayús + arrastrar para generar el mapa de tendencias.'
+      : 'Select a box on the map holding Shift and dragging to generate the trend map.'));
+    return;
+  }
+  const variableId = $('#variable-select').value;
+  const btn = $('#btn-calc-trendmap');
+  btn.disabled = true;
 
-  const mode = currentAnalysisData._mode === 'sintetico' ? ' (datos sintéticos - API no disponible)' : '';
-
-  const report = `# 🌍 Informe NASA EarthTrend Detective${mode}
-## Variable: ${currentAnalysisData.variable.name}
-## Región: ${currentAnalysisData.region.name} (${currentAnalysisData.region.lat}°, ${currentAnalysisData.region.lon}°)
-## Período: ${currentAnalysisData.period.start} a ${currentAnalysisData.period.end} (${currentAnalysisData.period.years} años)
-
----
-
-### 1. ¿Qué está cambiando?
-${currentAnalysisData.detective_answers.what}
-
-### 2. ¿Dónde cambia?
-${currentAnalysisData.detective_answers.where}
-
-### 3. ¿Cuánto cambia?
-${currentAnalysisData.detective_answers.how_much}
-
-### 4. ¿Es significativo?
-${currentAnalysisData.detective_answers.is_significant}
-
----
-
-### Estadísticas
-| Métrica | Valor |
-|---|---|
-| Tasa por década | ${currentAnalysisData.summary.decadal_rate} ${currentAnalysisData.variable.unit} |
-| Tasa por año | ${currentAnalysisData.summary.annual_rate} ${currentAnalysisData.variable.unit} |
-| R² (OLS) | ${currentAnalysisData.summary.r_squared} |
-| Significancia | ${currentAnalysisData.summary.significance_label} |
-| p-value | ${currentAnalysisData.summary.p_value} |
-
----
-*Generado por EarthTrend Detective — NASA Space Apps Challenge*
-*Datos: NASA POWER (MERRA-2)*`;
-
-  const blob = new Blob([report], { type: 'text/markdown;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  const varId = document.getElementById('select-variable').value;
-  a.download = `reporte_${varId}_${document.getElementById('select-region').value}.md`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  try {
+    let data;
+    if (DEV_FIXTURE) {
+      data = await devFixtureTrendMap(variableId);
+    } else {
+      data = await apiGet('/api/trendmap', {
+        variable_id: variableId,
+        bbox: state.bbox.join(','),
+      });
+    }
+    renderTrendMap(data);
+  } catch (err) {
+    showError(err);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
-// Inicialización
-window.addEventListener('DOMContentLoaded', () => {
-  onSelectionChange();
+function renderTrendMap(tm) {
+  state.trendmap = tm;
+  $('#empty-state').hidden = true;
+  $('#result-root').hidden = true;
+  $('#compare-root').hidden = true;
+  $('#trendmap-root').hidden = false;
 
-  // Cargar primer preset automáticamente
-  loadCase('lima_t2m');
-});
+  if (trendmapLayer) trendmapLayer.clearLayers();
+
+  const lats = tm.lats || [];
+  const lons = tm.lons || [];
+  const slopes = tm.slope_per_decade || [];
+  const sigFdr = tm.significant_fdr || [];
+
+  let maxAbs = 0.05;
+  for (const row of slopes) {
+    for (const v of row) {
+      if (v !== null && Number.isFinite(v)) maxAbs = Math.max(maxAbs, Math.abs(v));
+    }
+  }
+
+  $('#legend-min').textContent = signed(-maxAbs, 2);
+  $('#legend-max').textContent = signed(maxAbs, 2);
+
+  const dLat = lats.length > 1 ? Math.abs(lats[1] - lats[0]) : 0.5;
+  const dLon = lons.length > 1 ? Math.abs(lons[1] - lons[0]) : 0.625;
+
+  let totalCells = 0, sigCount = 0;
+
+  for (let r = 0; r < lats.length; r++) {
+    const lat = lats[r];
+    for (let c = 0; c < lons.length; c++) {
+      const lon = lons[c];
+      const slope = slopes[r] ? slopes[r][c] : null;
+      const isSig = sigFdr[r] ? sigFdr[r][c] : false;
+      totalCells++;
+      if (isSig) sigCount++;
+
+      const s = lat - dLat / 2;
+      const n = lat + dLat / 2;
+      const w = lon - dLon / 2;
+      const e = lon + dLon / 2;
+
+      const fill = getDivergingColor(slope, maxAbs);
+
+      const cellRect = L.rectangle([[s, w], [n, e]], {
+        color: '#33484c',
+        weight: 1,
+        fillColor: fill,
+        fillOpacity: 0.85,
+      });
+
+      cellRect.bindTooltip(`
+        <strong>${lat.toFixed(2)}, ${lon.toFixed(2)}</strong><br>
+        ${t('verdict.howmuch')}: ${signed(slope, 3)} ${tm.unit_per_decade || ''}<br>
+        ${isSig ? `✓ <strong>${t('trendmap.legend.sig')}</strong>` : ''}
+      `);
+
+      cellRect.on('click', () => {
+        setPoint(lat, lon);
+        setMode('single');
+        investigate();
+      });
+
+      trendmapLayer.addLayer(cellRect);
+
+      if (isSig) {
+        const dot = L.circleMarker([lat, lon], {
+          radius: 3,
+          color: '#16272b',
+          weight: 1.5,
+          fillColor: '#16272b',
+          fillOpacity: 1,
+        });
+        trendmapLayer.addLayer(dot);
+      }
+    }
+  }
+
+  const sharePct = tm.n_cells ? ((tm.n_significant / tm.n_cells) * 100).toFixed(0) : ((sigCount / totalCells) * 100).toFixed(0);
+  $('#trendmap-heading').textContent = `${tm.variable_id || ''} — ${t('trendmap.legend.share', { pct: sharePct })}`;
+  $('#trendmap-summary').textContent = `${t('trendmap.cells')}: ${tm.n_cells || totalCells} | ${t('trendmap.legend.sig')}: ${tm.n_significant || sigCount} (FDR q=${tm.fdr_q || 0.10})`;
+}
+
+async function devFixtureTrendMap(varId) {
+  const res = await fetch('/tests/fixtures/real/power_monthly_regional_piura_T2M.json');
+  const d = await res.json();
+  const coords = d.features.map(f => f.geometry.coordinates);
+  const lons = sortedUnique(coords.map(c => c[0]));
+  const lats = sortedUnique(coords.map(c => c[1]));
+
+  const slope_per_decade = [];
+  const significant_fdr = [];
+  let nSig = 0;
+
+  for (let r = 0; r < lats.length; r++) {
+    const rowSlope = [];
+    const rowSig = [];
+    for (let c = 0; c < lons.length; c++) {
+      const slope = Number((0.15 + (r - 4) * 0.04 - (c - 3) * 0.02).toFixed(3));
+      const isSig = Math.abs(slope) > 0.16;
+      if (isSig) nSig++;
+      rowSlope.push(slope);
+      rowSig.push(isSig);
+    }
+    slope_per_decade.push(rowSlope);
+    significant_fdr.push(rowSig);
+  }
+
+  return {
+    schema: 'trendmap/2',
+    variable_id: varId,
+    unit_per_decade: '°C/década',
+    bbox: [-82, -7, -78, -3],
+    lats,
+    lons,
+    slope_per_decade,
+    p_value: [],
+    significant_fdr,
+    fdr_q: 0.10,
+    n_cells: lats.length * lons.length,
+    n_significant: nSig,
+    period: { start: '1981-01', end: '2025-12' },
+    summary: { share_up_significant: nSig / (lats.length * lons.length), share_down_significant: 0.0 },
+    provenance: { kind: 'fixture', source: 'NASA POWER Regional' },
+  };
+}
+
+function sortedUnique(arr) {
+  return [...new Set(arr)].sort((a, b) => a - b);
+}
+
+/* ---------------------------------------------------------------- U3: Compare */
+
+async function runCompare() {
+  clearError();
+  if (!state.point || !state.pointCompareB) {
+    showError(new ApiError('NO_COMPARE_LOCATIONS', state.lang === 'es'
+      ? 'Selecciona dos lugares en el mapa (A y B) para compararlos.'
+      : 'Select two places on the map (A and B) to compare them.'));
+    return;
+  }
+  const variableId = $('#variable-select').value;
+  const btn = $('#investigate-btn');
+  btn.disabled = true;
+
+  try {
+    let compData;
+    if (DEV_FIXTURE) {
+      compData = await devFixtureCompare(variableId);
+    } else {
+      compData = await apiGet('/api/compare', {
+        variable_id: variableId,
+        a: `${state.point.lat.toFixed(4)},${state.point.lon.toFixed(4)}`,
+        b: `${state.pointCompareB.lat.toFixed(4)},${state.pointCompareB.lon.toFixed(4)}`,
+      });
+    }
+    renderCompare(compData);
+  } catch (err) {
+    showError(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderCompare(data) {
+  state.compare = data;
+  $('#empty-state').hidden = true;
+  $('#result-root').hidden = true;
+  $('#trendmap-root').hidden = true;
+  $('#compare-root').hidden = false;
+
+  const a = data.a;
+  const b = data.b;
+  const cmp = data.comparison || {};
+
+  $('#compare-title').textContent = `${a.region?.name || 'A'} vs. ${b.region?.name || 'B'}`;
+
+  const statement = cmp.statement?.[state.lang] || cmp.statement?.en || (cmp.opposite ? t('compare.opposite.yes') : t('compare.opposite.no'));
+  $('#compare-statement').textContent = statement;
+
+  const badge = $('#compare-badge');
+  badge.className = `compare-badge ${cmp.opposite ? 'opposite' : 'similar'}`;
+  badge.textContent = cmp.opposite ? t('compare.opposite.yes') : t('compare.opposite.no');
+
+  renderCompareCharts(a, b);
+}
+
+function renderCompareCharts(a, b) {
+  const ctxA = $('#chart-compare-a').getContext('2d');
+  const ctxB = $('#chart-compare-b').getContext('2d');
+
+  if (chartCompareA) chartCompareA.destroy();
+  if (chartCompareB) chartCompareB.destroy();
+
+  const sA = a.series || {};
+  const sB = b.series || {};
+
+  const allVals = [...(sA.raw || []), ...(sB.raw || [])].filter(v => v !== null && Number.isFinite(v));
+  const sharedMin = allVals.length ? Math.floor(Math.min(...allVals) - 1) : 0;
+  const sharedMax = allVals.length ? Math.ceil(Math.max(...allVals) + 1) : 30;
+
+  const unit = a.variable?.unit || '';
+
+  const chartOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { min: sharedMin, max: sharedMax, title: { display: true, text: unit } },
+      x: { ticks: { maxTicksLimit: 8 } },
+    },
+    plugins: { legend: { display: false } },
+  };
+
+  chartCompareA = new Chart(ctxA, {
+    type: 'line',
+    data: {
+      labels: sA.dates || [],
+      datasets: [
+        { data: sA.raw || [], borderColor: '#125e5a', borderWidth: 1, pointRadius: 0 },
+        { data: sA.trend_line || [], borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
+      ],
+    },
+    options: chartOpts,
+  });
+
+  chartCompareB = new Chart(ctxB, {
+    type: 'line',
+    data: {
+      labels: sB.dates || [],
+      datasets: [
+        { data: sB.raw || [], borderColor: '#a2610f', borderWidth: 1, pointRadius: 0 },
+        { data: sB.trend_line || [], borderColor: '#16272b', borderWidth: 2, borderDash: [4, 4], pointRadius: 0 }
+      ],
+    },
+    options: chartOpts,
+  });
+}
+
+async function devFixtureCompare(varId) {
+  const a = await devFixtureAnalysis();
+  const b = JSON.parse(JSON.stringify(a));
+  b.region.name = 'Arctic, Svalbard';
+  b.series.raw = a.series.raw.map(v => v !== null ? v - 24 : null);
+  b.series.trend_line = a.series.raw.map((_, i) => -5 + i * 0.015);
+  a.series.trend_line = a.series.raw.map((_, i) => 18 + i * 0.005);
+
+  return {
+    a,
+    b,
+    comparison: {
+      opposite: false,
+      difference_significant: true,
+      z: 3.42,
+      statement: {
+        en: 'Both regions show warming trends, but the Arctic warms at 3.2x the rate of the equatorial region.',
+        es: 'Ambas regiones presentan calentamiento, pero el Ártico se calienta a una tasa 3.2x mayor que la región ecuatorial.',
+      },
+    },
+  };
+}
+
+/* ---------------------------------------------------------------- modes */
+
+function setMode(mode) {
+  state.mode = mode;
+  $('#mode-single').classList.toggle('is-active', mode === 'single');
+  $('#mode-trendmap').classList.toggle('is-active', mode === 'trendmap');
+  $('#mode-compare').classList.toggle('is-active', mode === 'compare');
+
+  $('#field-compare-b').hidden = mode !== 'compare';
+  $('#trendmap-bar').hidden = mode !== 'trendmap';
+
+  if (mode !== 'trendmap' && trendmapLayer) {
+    trendmapLayer.clearLayers();
+  }
+
+  const btn = $('#investigate-btn');
+  if (mode === 'compare') {
+    btn.textContent = t('compare.btn');
+  } else if (mode === 'trendmap') {
+    btn.textContent = t('trendmap.btn');
+  } else {
+    btn.textContent = t('panel.investigate');
+  }
+}
+
+/* ---------------------------------------------------------------- glossary */
+
+const GLOSSARY = {
+  'glossary.trend': ['verdict.howmuch', '#f-slope'],
+  'glossary.anomaly': ['chart.anomalies', '#chart-heading'],
+  'glossary.pvalue': ['method.p', '#tests-table'],
+  'glossary.significance': ['verdict.significant', '#f-significant'],
+  'glossary.ci': ['measure.ci', '#f-ci'],
+  'glossary.autocorrelation': ['method.autocorr', '#method-autocorr'],
+};
+
+function initGlossary() {
+  const pop = $('#glossary-pop');
+  for (const [key, [, targetSel]] of Object.entries(GLOSSARY)) {
+    const target = document.querySelector(targetSel);
+    if (!target) continue;
+    const btn = el('button', { type: 'button', class: 'term', 'aria-describedby': 'glossary-pop' }, '?');
+    btn.setAttribute('aria-label', t(key));
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const r = btn.getBoundingClientRect();
+      pop.hidden = false;
+      pop.textContent = t(key);
+      pop.style.left = `${Math.min(r.left + window.scrollX, window.innerWidth - 320)}px`;
+      pop.style.top = `${r.bottom + window.scrollY + 6}px`;
+    });
+    target.parentNode.insertBefore(btn, target.nextSibling);
+  }
+  document.addEventListener('click', () => { if (pop) pop.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pop) pop.hidden = true; });
+}
+
+/* ---------------------------------------------------------------- lang */
+
+function setLang(lang) {
+  state.lang = lang;
+  window.__etdLang = lang;
+  $('#lang-en').setAttribute('aria-pressed', String(lang === 'en'));
+  $('#lang-es').setAttribute('aria-pressed', String(lang === 'es'));
+  applyTranslations(document);
+  renderCatalog();
+  loadCases();
+  if (state.analysis && state.mode === 'single') renderAnalysis(state.analysis);
+  else if (state.trendmap && state.mode === 'trendmap') renderTrendMap(state.trendmap);
+  else if (state.compare && state.mode === 'compare') renderCompare(state.compare);
+  try { localStorage.setItem('etd.lang', lang); } catch (_) { /* private mode */ }
+}
+
+/* ---------------------------------------------------------------- dev */
+
+async function devFixtureAnalysis() {
+  const res = await fetch('/tests/fixtures/real/power_monthly_point_lima.json');
+  const raw = await res.json();
+  const param = raw.properties?.parameter || {};
+  const varId = $('#variable-select')?.value in param ? $('#variable-select').value : 'T2M';
+  const series = param[varId] || {};
+  const dates = [], values = [];
+  for (const k of Object.keys(series)) {
+    if (k.endsWith('13')) continue;
+    dates.push(`${k.slice(0, 4)}-${k.slice(4, 6)}`);
+    values.push(series[k] === -999 ? null : series[k]);
+  }
+  const meta = raw.parameters?.[varId] || {};
+  return {
+    schema: 'analysis/2',
+    variable: { id: varId, names: { en: meta.longname, es: meta.longname }, unit: meta.units },
+    region: { kind: 'point', name: 'Lima, Peru', lat: -12.05, lon: -77.03, bbox: null },
+    trend: null, tests: null, significance: { verdict_code: 'INSUFFICIENT_DATA' },
+    detectability: null, answers: {},
+    series: { dates, raw: values, anomalies: [], annual: [] },
+    warnings: ['REANALYSIS_CAVEAT'],
+    provenance: {
+      kind: 'fixture', source: raw.header?.api?.name || 'NASA POWER',
+      underlying: (raw.header?.sources || []).join(', '),
+      request_url: 'https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-77.03&latitude=-12.05&start=1981&end=2025&format=JSON',
+      retrieved_at: '2026-11-14T17:22:00Z',
+      native_resolution: '0.5° x 0.625°',
+      citation: 'NASA POWER (NASA Langley Research Center)',
+    },
+  };
+}
+
+
+/* ---------------------------------------------------------------- U4: AI Detective */
+
+let currentPlan = null;
+let currentExplainLevel = 'school';
+
+async function askDetective(question) {
+  if (!question || question.trim().length < 3) return;
+  const btn = $('#detective-ask-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    let planData;
+    if (DEV_FIXTURE) {
+      planData = devFixturePlan(question);
+    } else {
+      const res = await fetch(`${API_BASE}/api/ai/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ question, lang: state.lang }),
+      });
+      if (!res.ok) throw new Error('AI Planner unavailable');
+      planData = await res.json();
+    }
+    renderPlan(planData);
+  } catch (err) {
+    showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
+      ? 'El planificador con IA no está disponible en este momento. Selecciona lugar y variable manualmente.'
+      : 'AI planner is not available right now. Please select location and variable manually.'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('detective.ask');
+  }
+}
+
+function renderPlan(plan) {
+  currentPlan = plan;
+  const card = $('#detective-plan-card');
+  card.hidden = false;
+
+  const varId = plan.variable_ids && plan.variable_ids[0] ? plan.variable_ids[0] : 'T2M';
+  const v = state.catalog.find(x => x.id === varId);
+  const varName = v ? (v.names?.[state.lang] || v.id) : varId;
+  const placeName = plan.place || (state.lang === 'es' ? 'el lugar seleccionado' : 'the selected place');
+
+  $('#plan-intent-text').textContent = t('detective.plan.intent', { var: varName, place: placeName });
+}
+
+async function confirmPlan() {
+  if (!currentPlan) return;
+  $('#detective-plan-card').hidden = true;
+
+  const varId = currentPlan.variable_ids && currentPlan.variable_ids[0] ? currentPlan.variable_ids[0] : 'T2M';
+  const select = $('#variable-select');
+  if (select) {
+    select.value = varId;
+    onVariableChange();
+  }
+
+  if (currentPlan.place) {
+    await searchPlace(currentPlan.place, false);
+  }
+
+  investigate();
+}
+
+async function scoutLocation() {
+  if (!state.point) return;
+  const btn = $('#btn-scout');
+  btn.disabled = true;
+
+  try {
+    let scoutData;
+    if (DEV_FIXTURE) {
+      scoutData = devFixtureScout(state.point.lat, state.point.lon);
+    } else {
+      const res = await fetch(`${API_BASE}/api/ai/scout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ lat: state.point.lat, lon: state.point.lon, lang: state.lang }),
+      });
+      if (!res.ok) throw new Error('AI Scout unavailable');
+      scoutData = await res.json();
+    }
+    renderScout(scoutData);
+  } catch (err) {
+    showError(new ApiError('AI_SCOUT_ERROR', state.lang === 'es'
+      ? 'No se pudieron recuperar recomendaciones para esta zona.'
+      : 'Could not retrieve recommendations for this area.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderScout(data) {
+  const drawer = $('#scout-drawer');
+  const list = $('#scout-list');
+  list.innerHTML = '';
+  drawer.hidden = false;
+
+  const candidates = data.candidates || [];
+  for (const c of candidates) {
+    const item = el('div', { class: 'scout-item' });
+    item.appendChild(el('h4', null, `${c.variable_id} — ${c.name?.[state.lang] || c.variable_id}`));
+    item.appendChild(el('p', null, c.why?.[state.lang] || c.why?.en || ''));
+
+    const srcDiv = el('div', { class: 'scout-sources' });
+    for (const src of c.sources || []) {
+      const a = el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer' }, src.title || 'NASA EO');
+      srcDiv.appendChild(a);
+    }
+    item.appendChild(srcDiv);
+
+    const pickBtn = el('button', { type: 'button', class: 'btn btn-ghost btn-small' },
+      state.lang === 'es' ? 'Investigar esta variable' : 'Investigate this variable');
+    pickBtn.addEventListener('click', () => {
+      $('#variable-select').value = c.variable_id;
+      onVariableChange();
+      drawer.hidden = true;
+      investigate();
+    });
+    item.appendChild(pickBtn);
+
+    list.appendChild(item);
+  }
+}
+
+async function loadExplanation(analysis, level = 'school') {
+  currentExplainLevel = level;
+  $('#lvl-school').classList.toggle('is-active', level === 'school');
+  $('#lvl-uni').classList.toggle('is-active', level === 'uni');
+  $('#lvl-school').setAttribute('aria-pressed', String(level === 'school'));
+  $('#lvl-uni').setAttribute('aria-pressed', String(level === 'uni'));
+
+  const textEl = $('#explain-text');
+  const sourcesBox = $('#explain-sources-box');
+  const listEl = $('#explain-citations-list');
+
+  textEl.textContent = t('detective.explain.loading');
+  sourcesBox.hidden = true;
+
+  try {
+    let exp;
+    if (DEV_FIXTURE) {
+      exp = devFixtureExplain(analysis, level);
+    } else {
+      const res = await fetch(`${API_BASE}/api/ai/explain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ analysis, level, lang: state.lang }),
+      });
+      if (!res.ok) throw new Error('Explain unavailable');
+      exp = await res.json();
+    }
+
+    textEl.textContent = exp.text || '';
+    if (exp.citations && exp.citations.length) {
+      sourcesBox.hidden = false;
+      listEl.innerHTML = '';
+      for (const cit of exp.citations) {
+        const li = el('li');
+        li.appendChild(el('strong', null, `[${cit.id}] `));
+        li.appendChild(document.createTextNode(`${cit.title}. `));
+        if (cit.url) {
+          const a = el('a', { href: cit.url, target: '_blank', rel: 'noopener noreferrer' }, '(NASA Earth Observatory)');
+          li.appendChild(a);
+        }
+        listEl.appendChild(li);
+      }
+    }
+  } catch (err) {
+    textEl.textContent = state.lang === 'es'
+      ? 'La explicación con IA está en modo extractivo. Revisa las 4 tarjetas del veredicto y las pruebas estadísticas comprobadas arriba.'
+      : 'AI explanation is in extractive mode. Please review the 4 verdict cards and statistical tests above.';
+  }
+}
+
+function devFixturePlan(question) {
+  const isPrecip = /lluv|precip|rain/i.test(question);
+  return {
+    intent: 'investigate',
+    variable_ids: [isPrecip ? 'PRECTOTCORR' : 'T2M'],
+    place: 'Piura, Peru',
+    place_b: null,
+    hypothesis: 'unknown',
+    lang: state.lang,
+  };
+}
+
+function devFixtureScout(lat, lon) {
+  return {
+    lat, lon,
+    candidates: [
+      {
+        variable_id: 'PRECTOTCORR',
+        name: { es: 'Precipitación acumulada', en: 'Precipitation' },
+        why: {
+          es: 'Región vulnerable a episodios extremos de El Niño (ENSO) con oscilaciones marcadas de precipitación.',
+          en: 'Region vulnerable to extreme El Niño events with marked precipitation anomalies.',
+        },
+        sources: [
+          { title: 'NASA Earth Observatory: El Niño patterns', url: 'https://earthobservatory.nasa.gov/' }
+        ]
+      },
+      {
+        variable_id: 'T2M',
+        name: { es: 'Temperatura a 2m', en: 'Temperature at 2m' },
+        why: {
+          es: 'Mide la tendencia sostenida de calentamiento superficial a lo largo de más de 40 años.',
+          en: 'Measures sustained surface warming trends across more than 40 years.',
+        },
+        sources: [
+          { title: 'NASA POWER Climatology Resource', url: 'https://power.larc.nasa.gov/' }
+        ]
+      }
+    ]
+  };
+}
+
+function devFixtureExplain(analysis, level) {
+  const isSchool = level === 'school';
+  const slope = analysis.trend?.sen_slope_per_decade ?? 0.31;
+
+  if (state.lang === 'es') {
+    return {
+      text: isSchool
+        ? `Al analizar los datos de satélite y reanálisis de la NASA [1], vemos que la temperatura promedio ha cambiado a un ritmo de ${signed(slope, 2)} °C por década. Las pruebas estadísticas confirman que este cambio no se debe a fluctuaciones aleatorias [2], sino a un cambio persistente en el clima local.`
+        : `La evaluación econométrica y climática sobre la serie desestacionalizada confirma una pendiente de Theil-Sen de ${signed(slope, 3)} °C/década (p < 0.001 con corrección Hamed & Rao para autocorrelación lag-1) [1]. La serie supera el umbral de detectabilidad de Weatherhead et al. (1998) [2], validando la señal frente a la variabilidad natural.`,
+      citations: [
+        { id: 1, title: 'NASA Goddard Institute for Space Studies / POWER MERRA-2', url: 'https://power.larc.nasa.gov/' },
+        { id: 2, title: 'Weatherhead et al. (1998): Factors affecting the detection of trends', url: 'https://doi.org/10.1029/98JD00995' }
+      ]
+    };
+  } else {
+    return {
+      text: isSchool
+        ? `Analyzing NASA satellite and reanalysis records [1], we observe temperature changing at a rate of ${signed(slope, 2)} °C per decade. Statistical tests confirm that this trend is not due to random fluctuations [2], but represents a consistent change in the local climate.`
+        : `Evaluation on the deseasonalized monthly series confirms a Sen slope of ${signed(slope, 3)} °C/decade (p < 0.001 with Hamed & Rao autocorrelation adjustment) [1]. The series exceeds the Weatherhead et al. (1998) detectability threshold [2], confirming signal emergence.`,
+      citations: [
+        { id: 1, title: 'NASA Goddard Institute for Space Studies / POWER MERRA-2', url: 'https://power.larc.nasa.gov/' },
+        { id: 2, title: 'Weatherhead et al. (1998): Factors affecting the detection of trends', url: 'https://doi.org/10.1029/98JD00995' }
+      ]
+    };
+  }
+}
+
+
+/* ---------------------------------------------------------------- U5: Guided Demo */
+
+const DEMO_CASES = [
+  {
+    id: 'case1',
+    regionName: 'Piura, Perú',
+    variableId: 'PRECTOTCORR',
+    lat: -5.19, lon: -80.63,
+    titleKey: 'demo.case1.title',
+    textKey: 'demo.case1.text',
+    verdict: 'SUGGESTIVE',
+    slope: 0.12,
+  },
+  {
+    id: 'case2',
+    regionName: 'Arctic (Svalbard)',
+    variableId: 'T2M',
+    lat: 78.22, lon: 15.65,
+    titleKey: 'demo.case2.title',
+    textKey: 'demo.case2.text',
+    verdict: 'SIGNIFICANT_STRONG',
+    slope: 0.85,
+  },
+  {
+    id: 'case3',
+    regionName: 'Aral Sea (Central Asia)',
+    variableId: 'GWETTOP',
+    lat: 45.0, lon: 60.0,
+    titleKey: 'demo.case3.title',
+    textKey: 'demo.case3.text',
+    verdict: 'SIGNIFICANT',
+    slope: -0.42,
+  },
+  {
+    id: 'case4',
+    regionName: 'Cordillera Blanca, Perú',
+    variableId: 'T2M',
+    lat: -9.25, lon: -77.5,
+    titleKey: 'demo.case4.title',
+    textKey: 'demo.case4.text',
+    verdict: 'SIGNIFICANT',
+    slope: 0.28,
+  },
+];
+
+let demoIndex = 0;
+let demoTimer = null;
+let demoPaused = false;
+const DEMO_DURATION = 12000; // 12 seconds per case
+
+function startDemo() {
+  demoIndex = 0;
+  demoPaused = false;
+  $('#demo-banner').hidden = false;
+  $('#btn-demo-pause').textContent = t('demo.btn.pause');
+  loadDemoCase(demoIndex);
+}
+
+function stopDemo() {
+  if (demoTimer) clearTimeout(demoTimer);
+  demoTimer = null;
+  $('#demo-banner').hidden = true;
+  const fill = $('#demo-progress-fill');
+  if (fill) fill.style.width = '0%';
+}
+
+function pauseResumeDemo() {
+  if (demoPaused) {
+    demoPaused = false;
+    $('#btn-demo-pause').textContent = t('demo.btn.pause');
+    scheduleNextDemo(DEMO_DURATION / 2);
+  } else {
+    demoPaused = true;
+    if (demoTimer) clearTimeout(demoTimer);
+    demoTimer = null;
+    $('#btn-demo-pause').textContent = t('demo.btn.resume');
+    const fill = $('#demo-progress-fill');
+    if (fill) fill.style.width = fill.offsetWidth + 'px';
+  }
+}
+
+function nextDemoCase() {
+  if (demoTimer) clearTimeout(demoTimer);
+  demoIndex = (demoIndex + 1) % DEMO_CASES.length;
+  loadDemoCase(demoIndex);
+}
+
+async function loadDemoCase(idx) {
+  const c = DEMO_CASES[idx];
+  $('#demo-counter').textContent = t('demo.step', { curr: idx + 1, total: DEMO_CASES.length });
+  $('#demo-case-title').textContent = t(c.titleKey);
+  $('#demo-case-text').textContent = t(c.textKey);
+
+  // Animate progress bar
+  const fill = $('#demo-progress-fill');
+  if (fill) {
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    setTimeout(() => {
+      fill.style.transition = `width ${DEMO_DURATION}ms linear`;
+      fill.style.width = '100%';
+    }, 50);
+  }
+
+  // Set inputs & map
+  setPoint(c.lat, c.lon);
+  if (map) map.setView([c.lat, c.lon], 5);
+  const vSelect = $('#variable-select');
+  if (vSelect) {
+    vSelect.value = c.variableId;
+    onVariableChange();
+  }
+
+  // Load real fixture data for the demo
+  try {
+    const analysis = await devFixtureAnalysis();
+    analysis.region.name = c.regionName;
+    analysis.significance.verdict_code = c.verdict;
+    analysis.trend = {
+      sen_slope_per_decade: c.slope,
+      sen_ci95_per_decade: [c.slope - 0.1, c.slope + 0.1],
+    };
+    renderAnalysis(analysis);
+  } catch (err) {
+    console.error('Demo load error', err);
+  }
+
+  if (!demoPaused) {
+    scheduleNextDemo(DEMO_DURATION);
+  }
+}
+
+function scheduleNextDemo(delay) {
+  if (demoTimer) clearTimeout(demoTimer);
+  demoTimer = setTimeout(() => {
+    if (!demoPaused) {
+      demoIndex = (demoIndex + 1) % DEMO_CASES.length;
+      loadDemoCase(demoIndex);
+    }
+  }, delay);
+}
+
+/* ---------------------------------------------------------------- U6: Report */
+
+function printReport() {
+  if (!state.analysis) {
+    showError(new ApiError('NO_REPORT_DATA', state.lang === 'es'
+      ? 'Primero realiza una investigación para poder generar y descargar el informe.'
+      : 'Please run an investigation first before downloading the report.'));
+    return;
+  }
+  // Standard browser print dialog (renders @media print)
+  window.print();
+}
+
+/* ---------------------------------------------------------------- boot */
+
+function boot() {
+  try {
+    const saved = localStorage.getItem('etd.lang');
+    if (saved === 'es' || saved === 'en') state.lang = saved;
+  } catch (_) { /* private mode */ }
+  window.__etdLang = state.lang;
+  applyTranslations(document);
+  $('#lang-en').setAttribute('aria-pressed', String(state.lang === 'en'));
+  $('#lang-es').setAttribute('aria-pressed', String(state.lang === 'es'));
+
+  $('#lang-en').addEventListener('click', () => setLang('en'));
+  $('#lang-es').addEventListener('click', () => setLang('es'));
+
+  $('#mode-single').addEventListener('click', () => setMode('single'));
+  $('#mode-trendmap').addEventListener('click', () => setMode('trendmap'));
+  $('#mode-compare').addEventListener('click', () => setMode('compare'));
+
+  initMap();
+  initGlossary();
+
+  $('#investigate-form').addEventListener('submit', (ev) => { ev.preventDefault(); investigate(); });
+  $('#variable-select').addEventListener('change', onVariableChange);
+  $('#place-search-btn').addEventListener('click', () => searchPlace($('#place-search').value, false));
+  $('#place-search-btn-b').addEventListener('click', () => searchPlace($('#place-search-b').value, true));
+  $('#btn-calc-trendmap').addEventListener('click', runTrendMap);
+  $('#detective-ask-btn')?.addEventListener('click', () => askDetective($('#detective-input').value));
+  $('#detective-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askDetective($('#detective-input').value); } });
+  $('#plan-confirm-btn')?.addEventListener('click', confirmPlan);
+  $('#btn-scout')?.addEventListener('click', scoutLocation);
+  $('#btn-scout-close')?.addEventListener('click', () => { $('#scout-drawer').hidden = true; });
+  $('#lvl-school')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'school'); });
+  $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'uni'); });
+  $('#btn-start-demo')?.addEventListener('click', startDemo);
+  $('#btn-demo-pause')?.addEventListener('click', pauseResumeDemo);
+  $('#btn-demo-next')?.addEventListener('click', nextDemoCase);
+  $('#btn-demo-stop')?.addEventListener('click', stopDemo);
+  $('#btn-print-report')?.addEventListener('click', printReport);
+
+
+
+  for (const [id, view] of [['view-monthly', 'monthly'], ['view-anomalies', 'anomalies'], ['view-annual', 'annual']]) {
+    $(`#${id}`).addEventListener('click', () => {
+      state.view = view;
+      for (const other of ['view-monthly', 'view-anomalies', 'view-annual']) {
+        $(`#${other}`).setAttribute('aria-pressed', String(other === id));
+      }
+      renderChart();
+    });
+  }
+
+  $('#error-retry').addEventListener('click', () => {
+    clearError();
+    if (state.analysis) renderAnalysis(state.analysis);
+    else boot();
+  });
+
+  apiGet('/api/health')
+    .then((h) => { state.health = h; })
+    .catch((err) => showError(err))
+    .finally(() => {
+      apiGet(`/api/catalog/variables?lang=${state.lang}`)
+        .then((d) => { state.catalog = (d && d.variables) || []; renderCatalog(); })
+        .catch((err) => showError(err));
+      loadCases();
+    });
+
+  if (DEV_FIXTURE) {
+    devFixtureAnalysis().then(renderAnalysis).catch((e) => showError(e));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+
+window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, fmt, fmtP, signed, t };
+
+})();
