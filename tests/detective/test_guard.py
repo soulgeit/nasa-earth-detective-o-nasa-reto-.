@@ -87,3 +87,39 @@ def test_run_guard_reports_every_check():
     assert payload["language_ok"] is True
     assert payload["retries"] == 0
     assert payload["reasons"]
+
+
+# --- false positives found in RONDA_2 §6.1 -------------------------------
+# The guard rejected our own correct extractive text because it counted the
+# digits of a URL and of a reference line ("Hermes 1 summary") as invented figures.
+
+def test_urls_are_not_numbers():
+    text = "Según la fuente, la serie está en https://science.nasa.gov/earth/peru-89931/ desde 1981."
+    ok, bad = check_numbers(text, {"period": {"start": "1981-01"}})
+    assert ok, f"a URL's digits were read as a claim: {bad}"
+
+
+def test_dois_are_not_numbers():
+    ok, bad = check_numbers("Método: https://doi.org/10.1016/S0022-1694(97)00125-X", {"x": 1})
+    assert ok, f"a DOI was read as a claim: {bad}"
+
+
+def test_reference_lines_are_metadata():
+    text = (
+        "La tendencia es significativa [1].\n"
+        "[1] What the Mann-Kendall test is — Hermes 1 summary of cited sources: \"Non-parametric test.\"\n"
+        "     https://doi.org/10.1016/S0022-1694(97)00125-X"
+    )
+    ok, bad = check_numbers(text, {"significance": {"is_significant": True}}, passages=[
+        {"n": 1, "title": "What the Mann-Kendall test is",
+         "publisher": "Hermes 1 summary of cited sources",
+         "text": "The Mann-Kendall test is a non-parametric test for monotonic trend."}
+    ])
+    assert ok, f"reference metadata was read as a claim: {bad}"
+
+
+def test_real_invented_number_still_caught_in_prose():
+    """Regression guard: relaxing metadata must not open a door."""
+    text = "La temperatura subió 7.5 °C por década."
+    ok, _bad = check_numbers(text, {"trend": {"sen_slope_per_decade": 0.31}})
+    assert not ok

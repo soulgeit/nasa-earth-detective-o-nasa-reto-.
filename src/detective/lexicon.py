@@ -66,8 +66,9 @@ ALIASES: dict[str, tuple[str, ...]] = {
         "ozono", "capa de ozono", "agujero de ozono", "ozone", "ozone hole", "ozone column",
     ),
     "AOD_55": (
-        "aerosoles", "aerosol", "polvo", "smog", "contaminacion del aire", "bruma", "neblina",
-        "aerosol", "dust", "haze", "smoke", "air pollution", "particulate",
+        "aerosoles", "aerosol", "polvo", "bruma", "neblina", "calima",
+        "contaminacion del aire", "aire contaminado", "calidad del aire",
+        "dust", "haze", "smoke", "particulate", "air pollution", "air quality", "polluted air",
     ),
     "CLOUD_AMT": (
         "nubes", "nubosidad", "cielo cubierto", "nublado", "clouds", "cloud cover", "overcast",

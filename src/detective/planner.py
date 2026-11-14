@@ -160,7 +160,110 @@ def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: 
     }
     if cards:
         plan["why"] = cards[0].get("title")
+    plan.update(_coverage(question, plan, lang))
     return plan
+
+
+# --- coverage: "we do not have that variable" -------------------------------
+# RONDA_2 §6.2: before proposing the closest thing we happen to have, the planner
+# must say that the data the student asked for is not in the catalogue.
+MISSING_TOPICS: dict[str, dict[str, tuple[str, ...]]] = {
+    "MODIS_NDVI": {
+        "terms": ("ndvi", "vegetacion", "vegetation", "deforestacion", "deforestation",
+                  "selva", "bosque", "forest", "verdor", "greenness", "plantas", "plants",
+                  "cultivos", "crops", "biomasa", "biomass"),
+        "names": {"es": "NDVI / vegetación (MODIS)", "en": "NDVI / vegetation (MODIS)"},
+        # Physically related variables we do carry: water/energy balance of the land
+        # surface is what MODIS NDVI would have shown the greenness of.
+        "related": ("GWETTOP", "EVLAND", "TS", "ALLSKY_SFC_SW_DWN"),
+    },
+    "GPM_IMERG_PRECIP": {
+        "terms": ("gpm", "imerg", "lluvia satelital", "satellite rain"),
+        "names": {"es": "precipitación GPM IMERG", "en": "GPM IMERG precipitation"},
+        "related": ("PRECTOTCORR", "TQV", "RH2M"),
+    },
+    "GLDAS_SOILM_0_10": {
+        "terms": ("gldas", "humedad satelital", "satellite soil moisture"),
+        "names": {"es": "humedad del suelo GLDAS", "en": "GLDAS soil moisture"},
+        "related": ("GWETTOP", "EVLAND", "PRECTOTCORR"),
+    },
+    "AIRS_SURF_AIR_TEMP": {
+        "terms": ("airs", "temperatura satelital"),
+        "names": {"es": "temperatura del aire AIRS", "en": "AIRS air temperature"},
+        "related": ("T2M", "TS"),
+    },
+    "OMI_NO2_TROP": {
+        "terms": ("no2", "dioxido de nitrogeno", "nitrogen dioxide"),
+        "names": {"es": "NO₂ troposférico (OMI)", "en": "tropospheric NO₂ (OMI)"},
+        "related": ("AOD_55", "CLOUD_AMT"),
+    },
+    "OMI_O3_TOTAL": {
+        "terms": ("omi",),
+        "names": {"es": "ozono total OMI", "en": "OMI total ozone"},
+        "related": ("TO3",),
+    },
+}
+
+
+def _catalog_variable_ids() -> set[str]:
+    """Variables the app can actually fetch today (the live catalogue)."""
+    from .rag import corpus_documents
+
+    return {v for doc in corpus_documents() for v in doc.variables if v}
+
+
+def _coverage(question: str, plan: dict[str, Any], lang: str) -> dict[str, Any]:
+    """Mark `no_match` when the student named a product we do not carry.
+
+    A question about vegetation is not a question about soil evaporation. Instead of
+    returning the nearest available variable, we say which data are missing and
+    which catalogue variables are closest, so the UI can offer an honest alternative.
+    """
+    folded = fold(question)
+    available = _catalog_variable_ids()
+    wanted: list[str] = []
+    for variable_id, spec in MISSING_TOPICS.items():
+        if variable_id in available:
+            continue  # we do carry it: nothing missing
+        if any(re.search(rf"(?<!\w){re.escape(fold(t))}(?!\w)", folded) for t in spec["terms"]):
+            wanted.append(variable_id)
+    if not wanted:
+        return {}
+
+    # What we *can* offer instead: retrieved candidates that really exist.
+    from .rag import retrieve_for_plan
+
+    cards = retrieve_for_plan(question, lang=lang, k=6)
+    related = MISSING_TOPICS[wanted[0]].get("related", ())
+    seen: set[str] = set()
+    ranked: list[tuple[int, dict[str, Any]]] = []
+    for c in cards:
+        vids = c.get("variables") or []
+        if not vids or vids[0] not in available or vids[0] in seen:
+            continue
+        seen.add(vids[0])
+        # A sensible substitute shares the sphere or the physical process; a
+        # bare "nearest neighbour" can be nonsense (soil evaporation as a stand-in
+        # for vegetation). Related variables rank first, the rest keep retrieval order.
+        ranked.append((0 if vids[0] in related else 1, {"variable_id": vids[0], "title": c.get("title")}))
+    ranked.sort(key=lambda pair: pair[0])
+    available_cards = [item for _rank, item in ranked[:3]]
+    if plan.get("mode") in ("lora", "llm"):
+        # The model answered from candidates we do have; do not override its choice
+        # unless it silently swapped the topic.
+        if plan.get("variable_ids") and set(plan["variable_ids"]) <= available:
+            return {"missing": [MISSING_TOPICS[v]["names"][lang] for v in wanted]}
+    return {
+        "intent": "no_match" if plan.get("intent") in ("investigate", "compare") else plan.get("intent"),
+        "variable_ids": [],
+        "missing": [MISSING_TOPICS[v]["names"][lang] for v in wanted],
+        "missing_ids": wanted,
+        "alternatives": available_cards[:3],
+        "note": (
+            "missing_variable: " + ", ".join(wanted)
+            + " — the catalogue does not carry it yet (Giovanni CSV pending)"
+        ),
+    }
 
 
 def _system_prompt() -> str | None:

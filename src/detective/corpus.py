@@ -197,11 +197,19 @@ def load_corpus(langs: Iterable[str] = ("es", "en")) -> list[Document]:
             doc = _doc_from_jsonl(row, source=knowledge)
             if doc.lang in ("es", "en"):
                 docs.append(doc)
+
+    # Hermes 1's docs.jsonl now carries a verified card per variable per language.
+    # A card derived from data/catalog/variables.json would be a second, poorer copy
+    # of the same thing, so we only derive cards for variables the corpus still lacks.
+    covered = {(doc.variables[0], doc.lang) for doc in docs if doc.type == "variable_card" and doc.variables}
     for card, available in load_catalog_cards():
         if not card.get("id"):
             continue
         for lang in langs:
+            if (str(card["id"]), lang) in covered:
+                continue
             docs.append(_card_to_doc(card, lang, derived_from="catalog", available=available))
+
     # de-duplicate by id, keeping the first occurrence (knowledge file wins)
     seen: set[str] = set()
     unique: list[Document] = []
