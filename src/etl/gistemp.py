@@ -185,18 +185,29 @@ def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=N
                 raise DataUnavailable("OUT_OF_COVERAGE", f"la caja {bbox} no cubre celdas GISTEMP")
         else:
             if lat is None or lon is None:
-                raise DataUnavailable("OUT_OF_COVERAGE", "se necesita lat/lon o bbox")
-            lat_f, lon_f = float(lat), float(lon)
-            if not (-90 <= lat_f <= 90) or not (-180 <= lon_f <= 180):
-                raise DataUnavailable("OUT_OF_COVERAGE", f"coordenadas fuera de rango: {lat},{lon}")
-            # La rejilla son centros de celda de 2°: se toma la celda mas cercana.
-            i = min(range(len(lats)), key=lambda k: abs(lats[k] - lat_f))
-            j = min(range(len(lons)), key=lambda k: abs(((lons[k] - lon_f + 180) % 360) - 180))
-            region = {"kind": "point", "name": None, "lat": lat_f, "lon": lon_f, "bbox": None}
-            aggregation = "point"
-            lat_idx, lon_idx = [i], [j]
-            provenance = dict(provenance)
-            provenance["grid_cell"] = {"lat": lats[i], "lon": lons[j]}
+                # Sin coordenadas: la serie GLOBAL del planeta (la referencia del
+                # calentamiento global). Se declara en `region` y `aggregation`.
+                region = {
+                    "kind": "named",
+                    "name": "Global (all GISTEMP land+ocean cells)",
+                    "lat": None,
+                    "lon": None,
+                    "bbox": None,
+                }
+                aggregation = "area_mean_coslat"
+                lat_idx, lon_idx = list(range(len(lats))), list(range(len(lons)))
+            else:
+                lat_f, lon_f = float(lat), float(lon)
+                if not (-90 <= lat_f <= 90) or not (-180 <= lon_f <= 180):
+                    raise DataUnavailable("OUT_OF_COVERAGE", f"coordenadas fuera de rango: {lat},{lon}")
+                # La rejilla son centros de celda de 2 grados: se toma la mas cercana.
+                i = min(range(len(lats)), key=lambda k: abs(lats[k] - lat_f))
+                j = min(range(len(lons)), key=lambda k: abs(((lons[k] - lon_f + 180) % 360) - 180))
+                region = {"kind": "point", "name": None, "lat": lat_f, "lon": lon_f, "bbox": None}
+                aggregation = "point"
+                lat_idx, lon_idx = [i], [j]
+                provenance = dict(provenance)
+                provenance["grid_cell"] = {"lat": lats[i], "lon": lons[j]}
 
         values = _values_for(ds, lat_idx, lon_idx, var_info, len(times))
 

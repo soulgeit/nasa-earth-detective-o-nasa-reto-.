@@ -1,29 +1,52 @@
 """
-Servidor API REST con FastAPI para EarthTrend Detective.
-Provee endpoints para consultar variables satelitales, regiones y ejecutar
-el análisis estadístico en tiempo real.
+Servidor API REST v2 con FastAPI para EarthTrend Detective.
+
+Endpoints:
+  GET  /api/health              — estado del servidor
+  GET  /api/variables           — catálogo de variables NASA POWER
+  GET  /api/regions             — regiones predefinidas (Lima, Piura, etc.)
+  GET  /api/analyze_real        — análisis con datos reales de NASA POWER
+  GET  /api/analyze             — análisis legacy (datos cached)
+  POST /api/analyze_custom      — análisis sobre serie arbitraria
+
+El motor estadístico (trend_engine v2) incluye:
+  - Mann-Kendall con corrección de empates y autocorrelación (Hamed & Rao 2002)
+  - Theil-Sen completo
+  - OLS con IC 95 %, valor-p de la pendiente y R² ajustado
 """
 
 import os
+import sys
 import json
+import time
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# Import local del motor estadístico
-import sys
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(BASE_DIR)
-from src.stats.trend_engine import analyze_earth_science_trend
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys_path = str(BASE_DIR)
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from src.stats.trend_engine import analyze as analyze_trend
+from src.etl.power import PowerClient, POWER_PARAMETERS
+
+
+# ---------------------------------------------------------------------------
+# Instancia
+# ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="NASA EarthTrend Detective API",
-    description="API de análisis de tendencias y significancia estadística para datos de Ciencias de la Tierra.",
-    version="1.0.0"
+    title="NASA EarthTrend Detective API v2",
+    description=(
+        "Análisis de tendencias en variables de Ciencias de la Tierra "
+        "con datos reales de NASA POWER y estadística corregida."
+    ),
+    version="2.0.0",
 )
 
-# Habilitar CORS para permitir llamadas desde el frontend local o la red de Herdr
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,90 +55,259 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CATALOG_PATH = os.path.join(BASE_DIR, "data", "variables_catalog.json")
-PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "data", "processed")
+# Caché del cliente POWER (reutiliza sesión)
+_power_client = None
 
 
-def load_catalog() -> Dict[str, Any]:
-    if not os.path.exists(CATALOG_PATH):
-        raise HTTPException(status_code=500, detail="Catálogo de variables no encontrado")
-    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+def get_power_client() -> PowerClient:
+    global _power_client
+    if _power_client is None:
+        _power_client = PowerClient()
+    return _power_client
 
+
+# ---------------------------------------------------------------------------
+# Datos estáticos
+# ---------------------------------------------------------------------------
+
+CATALOG_PATH = BASE_DIR / "data" / "variables_catalog.json"
+
+PREDEFINED_REGIONS = [
+    {
+        "id": "lima_peru",
+        "name": "Lima, Perú",
+        "lat": -12.05,
+        "lon": -77.03,
+        "biome": "Desierto costero",
+        "description": "Ciudad de Lima, clima desértico con influencia de El Niño",
+    },
+    {
+        "id": "piura_peru",
+        "name": "Piura, Perú",
+        "lat": -5.19,
+        "lon": -80.63,
+        "biome": "Sabana costera / El Niño",
+        "description": "Región norte afectada fuertemente por El Niño",
+    },
+    {
+        "id": "cusco_peru",
+        "name": "Cusco, Perú",
+        "lat": -13.53,
+        "lon": -71.97,
+        "biome": "Altiplano andino",
+        "description": "Ciudad del Cusco, 3.400 msnm, clima de montaña",
+    },
+    {
+        "id": "iyaca_peru",
+        "name": "Iquitos, Perú",
+        "lat": -3.75,
+        "lon": -73.25,
+        "biome": "Selva amazónica",
+        "description": "Puerto principal de la selva amazónica peruana",
+    },
+    {
+        "id": "arctic_sea_ice",
+        "name": "Mar Ártico",
+        "lat": 75.0,
+        "lon": 0.0,
+        "biome": "Hielo marino ártico",
+        "description": "Región ártica con tendencia de pérdida de hielo documentada",
+    },
+    {
+        "id": "sahel_africa",
+        "name": "Sahel, África",
+        "lat": 15.0,
+        "lon": 0.0,
+        "biome": "Sahel semiárido",
+        "description": "Zona de transición Sahara-Sahel, alta variabilidad",
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
 @app.get("/")
 def health_check():
     return {
         "status": "online",
-        "service": "NASA EarthTrend Detective API",
-        "endpoints": ["/api/variables", "/api/regions", "/api/cases", "/api/analyze"]
+        "service": "EarthTrend Detective API v2",
+        "version": "2.0.0",
+        "endpoints": [
+            "/api/variables",
+            "/api/regions",
+            "/api/analyze_real",
+            "/api/analyze",
+            "/api/analyze_custom",
+            "/docs",
+        ],
     }
 
 
 @app.get("/api/variables")
 def get_variables():
-    catalog = load_catalog()
-    return {"variables": catalog.get("variables", [])}
+    """Devuelve las variables de NASA POWER con nombre y unidades."""
+    return {
+        "source": "NASA POWER (MERRA-2 / CERES)",
+        "variables": [
+            {"id": k, "name": v[0], "unit": v[1]}
+            for k, v in POWER_PARAMETERS.items()
+        ],
+    }
 
 
 @app.get("/api/regions")
 def get_regions():
-    catalog = load_catalog()
-    return {"regions": catalog.get("predefined_regions", [])}
+    """Regiones predefinidas con coordenadas."""
+    return {"regions": PREDEFINED_REGIONS}
 
 
-@app.get("/api/cases")
-def get_cases():
-    """Retorna los casos emblemáticos listos para análisis instantáneo."""
-    catalog = load_catalog()
-    cases = []
-    for reg in catalog.get("predefined_regions", []):
-        cases.append({
-            "region_id": reg["id"],
-            "region_name": reg["name"],
-            "variable_id": reg["primary_variable"],
-            "description": reg["description"]
-        })
-    return {"cases": cases}
+@app.get("/api/analyze_real")
+def analyze_real(
+    variable_id: str = Query(..., description="Variable POWER (ej: T2M)"),
+    lat: float = Query(..., description="Latitud"),
+    lon: float = Query(..., description="Longitud"),
+    start: int = Query(2000, description="Año o YYYYMM inicio"),
+    end: int = Query(2024, description="Año o YYYYMM fin"),
+    temporal: str = Query("monthly", regex="daily|monthly"),
+    community: str = Query("RE", regex="RE|AG|SB|HY"),
+    region_name: Optional[str] = Query(None, description="Nombre de región"),
+    biome: Optional[str] = Query(None, description="Bioma"),
+):
+    """
+    Análisis con datos reales de NASA POWER.
+
+    1. Descarga la serie de POWER (o cache local).
+    2. Ejecuta el motor estadístico v2 (MK corregido + Theil-Sen + OLS con IC).
+    3. Devuelve veredicto con las 4 preguntas.
+    """
+    client = get_power_client()
+
+    # 1. Obtener datos reales
+    try:
+        power_data = client.get_point(
+            variables=[variable_id],
+            lat=lat,
+            lon=lon,
+            start=start,
+            end=end,
+            temporal=temporal,
+            community=community,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"POWER API error: {e}")
+
+    series = power_data["data"]
+    if not series:
+        raise HTTPException(
+            status_code=400,
+            detail="POWER devolvió 0 observaciones. Verifica coordenadas y rango."
+        )
+
+    # 2. Metadata de variable
+    var_meta = power_data["variables"].get(variable_id, {
+        "name": variable_id,
+        "unit": "?",
+    })
+
+    # 3. Metadata de región
+    region_meta = {
+        "id": f"{region_name or 'custom'}_{lat}_{lon}",
+        "name": region_name or f"Lat {lat}, Lon {lon}",
+        "lat": lat,
+        "lon": lon,
+        "biome": biome or "Región personalizada",
+    }
+
+    # 4. Proveniencia
+    provenance = {
+        "source": power_data.get("source", "NASA POWER"),
+        "source_url": power_data.get("source_url", "https://power.larc.nasa.gov"),
+        "fetched_at": power_data.get("provenance", {}).get("fetched_at", ""),
+        "model": power_data.get("provenance", {}).get("model", "MERRA-2"),
+    }
+
+    # 5. Análisis estadístico
+    result = analyze_trend(
+        series=series,
+        variable_id=variable_id,
+        variable_name=var_meta.get("name", variable_id),
+        unit=var_meta.get("unit", "?"),
+        region=region_meta,
+        provenance=provenance,
+    )
+
+    return result
 
 
 @app.get("/api/analyze")
-def analyze(
-    region_id: str = Query(..., description="ID de la región (ej: amazon_deforestation_arc)"),
-    variable_id: str = Query(..., description="ID de la variable (ej: MODIS_NDVI)")
+def analyze_legacy(
+    region_id: str = Query(..., description="ID de región predefinida"),
+    variable_id: str = Query("T2M", description="Variable POWER"),
 ):
-    catalog = load_catalog()
+    """
+    Análisis legacy: carga la región del catálogo y llama a analyze_real.
+    Equivalente a analyze_real con las coordenadas de la región.
+    """
+    region = next((r for r in PREDEFINED_REGIONS if r["id"] == region_id), None)
+    if not region:
+        # Buscar en catálogo legacy
+        if CATALOG_PATH.exists():
+            with open(CATALOG_PATH, "r") as f:
+                catalog = json.load(f)
+            region = next(
+                (r for r in catalog.get("predefined_regions", []) if r["id"] == region_id),
+                None,
+            )
+        if not region:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Región '{region_id}' no encontrada"
+            )
 
-    # Buscar variable
-    var_meta = next((v for v in catalog.get("variables", []) if v["id"] == variable_id), None)
-    if not var_meta:
-        raise HTTPException(status_code=404, detail=f"Variable '{variable_id}' no encontrada en el catálogo.")
+    # Llamada a analyze_real con los params de la región
+    lat = region.get("lat", 0.0)
+    lon = region.get("lon", 0.0)
 
-    # Buscar región
-    reg_meta = next((r for r in catalog.get("predefined_regions", []) if r["id"] == region_id), None)
-    if not reg_meta:
-        reg_meta = {"id": region_id, "name": region_id, "biome": "Región personalizada"}
+    client = get_power_client()
+    try:
+        power_data = client.get_point(
+            variables=[variable_id],
+            lat=lat,
+            lon=lon,
+            start=2000,
+            end=2024,
+            temporal="monthly",
+            community="RE",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"POWER API error: {e}")
 
-    # Cargar archivo procesado correspondiente
-    filename = f"{region_id}_{variable_id}.json"
-    filepath = os.path.join(PROCESSED_DATA_DIR, filename)
+    series = power_data["data"]
+    var_meta = power_data["variables"].get(variable_id, {"name": variable_id, "unit": "?"})
+    region_meta = {
+        "id": region_id,
+        "name": region.get("name", region_id),
+        "lat": lat,
+        "lon": lon,
+        "biome": region.get("biome", "Región personalizada"),
+    }
+    provenance = {
+        "source": power_data.get("source", "NASA POWER"),
+        "source_url": power_data.get("source_url", ""),
+        "fetched_at": power_data.get("provenance", {}).get("fetched_at", ""),
+        "model": power_data.get("provenance", {}).get("model", "MERRA-2"),
+    }
 
-    if not os.path.exists(filepath):
-        # Fallback inteligente: buscar cualquier archivo de esa región o usar el primero disponible
-        available = [f for f in os.listdir(PROCESSED_DATA_DIR) if f.endswith(".json")]
-        if not available:
-            raise HTTPException(status_code=404, detail="No hay series temporales cargadas en data/processed/")
-        filepath = os.path.join(PROCESSED_DATA_DIR, available[0])
-
-    with open(filepath, "r", encoding="utf-8") as f:
-        payload = json.load(f)
-
-    series_data = payload.get("data", [])
-    if not series_data:
-        raise HTTPException(status_code=400, detail="La serie temporal no contiene observaciones.")
-
-    result = analyze_earth_science_trend(series_data, var_meta, reg_meta)
-    return result
+    return analyze_trend(
+        series=series,
+        variable_id=variable_id,
+        variable_name=var_meta["name"],
+        unit=var_meta["unit"],
+        region=region_meta,
+        provenance=provenance,
+    )
 
 
 class CustomAnalysisRequest(BaseModel):
@@ -126,17 +318,35 @@ class CustomAnalysisRequest(BaseModel):
 
 @app.post("/api/analyze_custom")
 def analyze_custom(req: CustomAnalysisRequest):
-    catalog = load_catalog()
-    var_meta = next((v for v in catalog.get("variables", []) if v["id"] == req.variable_id), {
-        "id": req.variable_id,
-        "name": req.variable_id,
-        "unit": "unidades"
-    })
-    reg_meta = {"id": "custom", "name": req.region_name, "biome": "Área de estudio definida por usuario"}
+    """
+    Análisis sobre una serie arbitraria (ej: CSV subido de Giovanni).
+    La serie debe tener campos: "date" y <variable_id>.
+    """
+    region_meta = {
+        "id": "custom",
+        "name": req.region_name,
+        "biome": "Área de estudio definida por usuario",
+    }
+    provenance = {
+        "source": "Datos del usuario (subido)",
+        "source_url": "",
+        "fetched_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "model": "Custom upload",
+    }
 
-    result = analyze_earth_science_trend(req.series, var_meta, reg_meta)
-    return result
+    return analyze_trend(
+        series=req.series,
+        variable_id=req.variable_id,
+        variable_name=req.variable_id,
+        unit="?",
+        region=region_meta,
+        provenance=provenance,
+    )
 
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import uvicorn

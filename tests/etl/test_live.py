@@ -47,3 +47,14 @@ def test_live_gistemp_piura_el_nino():
 def test_live_error_code_for_bad_variable():
     with pytest.raises(DataUnavailable):
         registry.get_series("NOPE", lat=0, lon=0)
+
+
+@pytest.mark.live
+def test_live_gistemp_global_series():
+    # Sin coordenadas: serie GLOBAL de GISTEMP (la referencia del calentamiento).
+    s = registry.get_series("GISTEMP_TANOM", start="1970-01", end="2024-12")
+    assert s["region"]["kind"] == "named"
+    assert s["aggregation"] == "area_mean_coslat"
+    assert len(s["data"]) == 660
+    values = {p["date"]: p["value"] for p in s["data"]}
+    assert values["2024-12"] > values["1970-01"]
