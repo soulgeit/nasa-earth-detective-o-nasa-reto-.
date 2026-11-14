@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Claude Opus 5.5 / Gemini 3.8 Flash)
 """
 Registro de fuentes del ETL (contrato v2 §6).
 
@@ -9,6 +9,8 @@ dato, lanza `DataUnavailable` con su codigo: nunca sustituye por otra serie.
 
 from __future__ import annotations
 
+from typing import Any, Dict, List
+
 from . import catalog, giovanni, gistemp, nsidc_seaice, power
 from .errors import DataUnavailable
 
@@ -18,7 +20,14 @@ CONNECTORS = {
     "nsidc_seaice": nsidc_seaice,
 }
 
-__all__ = ["get_series", "get_grid", "parse_giovanni_csv", "DataUnavailable"]
+__all__ = [
+    "get_series",
+    "get_grid",
+    "parse_giovanni_csv",
+    "load_catalog",
+    "list_variables",
+    "DataUnavailable",
+]
 
 
 def get_series(variable_id, *, lat=None, lon=None, bbox=None, start=None, end=None) -> dict:
@@ -50,3 +59,14 @@ def get_grid(variable_id, bbox, *, start=None, end=None) -> dict:
 def parse_giovanni_csv(text: str, variable_id: str | None = None) -> dict:
     """CSV de Giovanni (subido por el usuario) -> TimeSeries v2, kind=user_upload."""
     return giovanni.parse_csv(text, variable_id=variable_id)
+
+
+def load_catalog() -> Dict[str, dict]:
+    """Carga el catalogo de variables como diccionario id -> metadata."""
+    cards = catalog.variables()
+    return {c["id"]: c for c in cards if "id" in c}
+
+
+def list_variables() -> List[dict]:
+    """Retorna la lista de variables registradas en el catalogo."""
+    return catalog.variables()
