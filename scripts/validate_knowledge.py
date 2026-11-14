@@ -192,6 +192,25 @@ def validate_corpus(failures: Failures, online: bool, max_url_checks: int) -> tu
 
     if online:
         for url in unique_urls[:max_url_checks]:
+            # A DOI link is checked as a DOI: doi.org must answer with a
+            # redirect (302) to the publisher and the metadata must resolve in
+            # DataCite/Crossref. Publisher pages (Wiley, Taylor & Francis, JSTOR)
+            # answer 403 to automated clients even for real articles, so holding
+            # them to 200 would reject valid citations.
+            doi_match = re.match(r"^https?://(?:dx\.)?doi\.org/(.+)$", url, re.I)
+            if doi_match:
+                resolved = doi_redirects(doi_match.group(1))
+                if not resolved:
+                    failures.add(f"corpus: DOI does not resolve ({url})")
+                    continue
+                title = next(
+                    (d.get("doi") for d in url_to_titles.get(url, []) if d.get("doi")),
+                    doi_match.group(1),
+                )
+                if not doi_resolves(title):
+                    failures.add(f"corpus: DOI metadata not found in DataCite/Crossref ({title})")
+                continue
+
             ok, status, final = http_ok(url)
             if not ok:
                 failures.add(f"corpus: URL not 200 ({status}) {url}")
@@ -216,6 +235,19 @@ def validate_corpus(failures: Failures, online: bool, max_url_checks: int) -> tu
                     failures.add(f"doc {doc.get('id')}: stored title not found in page {url}")
 
     return len(docs), counts
+
+
+def doi_redirects(doi: str) -> bool:
+    """True when doi.org issues its redirect for this DOI (any 3xx)."""
+    try:
+        resp = requests.get(
+            "https://doi.org/" + doi,
+            timeout=(10, 30), headers=HEADERS, verify=certifi.where(),
+            allow_redirects=False,
+        )
+        return 300 <= resp.status_code < 400
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def validate_requirements(failures: Failures, counts: dict[str, int]) -> None:
