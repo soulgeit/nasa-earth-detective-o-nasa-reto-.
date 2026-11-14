@@ -46,13 +46,15 @@ Training data for the small open model that turns a student's question into an
 
 | Split | Examples |
 |---|---|
-| train | 2 558 |
-| val | 509 |
-| test | 452 |
+| train | 4 323 |
+| val | 814 |
+| test | 632 |
 
-Intent mix actually obtained in train: investigate 59.0 %, compare 15.8 %,
-define 10.5 %, out_of_scope 9.7 %, no_match 5.0 %. Language mix: 54.8 % Spanish,
-45.2 % English. Every variable appears at least 197 times as the gold answer.
+Intent mix actually obtained in train: investigate 60.3 %, compare 15.3 %,
+define 9.1 %, out_of_scope 10.2 %, no_match 5.1 %. Language mix: 53.1 % Spanish,
+46.9 % English. Every variable appears at least 322 times as the gold answer.
+Built against the final `variables.json` and `gazetteer.json` from Hermes 1
+(task S4).
 
 ## Checks
 

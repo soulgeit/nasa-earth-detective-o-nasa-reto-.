@@ -35,3 +35,30 @@ Falta / riesgos:
 - Regenerar cuando Hermes 1 entregue `variables.json` y `gazetteer.json` finales (S4).
 - No hay paráfrasis de modelo (opcional, no usado).
 Necesito de otros: Hermes 1 (catálogo v2 y gazetteer) para S4.
+
+## S4 — LISTO  (2026-11-14 16:40 UTC-5)
+Rama@commit: feature/scrapes
+Qué quedó:
+- Dataset regenerado contra el catálogo v2 y el gazetteer finales de Hermes 1.
+- Nueva deduplicación: igualdad exacta normalizada siempre; Jaccard ≥ 0,95 solo
+  en preguntas de 8+ palabras (antes 0,9 desde 4 palabras, que colapsaba las
+  preguntas cortas de "define").
+- Reparto verificado tras deduplicar: intenciones dentro de ±1 punto y idioma
+  53,1 % ES / 46,9 % EN.
+Evidencia:
+```bash
+$ python scripts/build_lora_dataset.py
+train=4323 val=814 test=632
+
+$ python scripts/build_lora_dataset.py --check
+intent mix (train):
+  investigate    wanted 60%  actual 60.3%
+  compare        wanted 15%  actual 15.3%
+  define         wanted 10%  actual 9.1%
+  out_of_scope   wanted 10%  actual 10.2%
+  no_match       wanted 5%  actual 5.1%
+language mix (train): {'es': 2294, 'en': 2029}
+--check passed
+```
+Falta / riesgos: avisar a Antigravity 2 (fase LoRA) con el recuento nuevo.
+Necesito de otros: nada.

@@ -874,18 +874,21 @@ def build_dataset() -> tuple[list[dict], list[dict], list[dict]]:
     def pick_lang() -> str:
         return "es" if rng.random() < 0.55 else "en"
 
-    def build_pool(split: str, target: int) -> list[dict]:
-        """Sample intent and language by their target weights, then fill the
-        template. Train uses the first template family; val/test use the
-        remaining family so the test set never repeats a training phrasing."""
+    def build_pool(split: str, target: int, lang: str | None = None) -> list[dict]:
+        """Sample intent by its target weights and fill the template.
+
+        When `lang` is fixed the pool is generated in that language only, which
+        lets the caller request an exact 55/45 language mix; deduplication then
+        trims both pools on equal terms.
+        """
         pool: list[dict] = []
         attempts = 0
-        max_attempts = target * 4
+        max_attempts = target * 6
         while len(pool) < target and attempts < max_attempts:
             attempts += 1
-            lang = pick_lang()
+            row_lang = lang or pick_lang()
             intent = pick_intent()
-            templates_by_intent = ES_TEMPLATES if lang == "es" else EN_TEMPLATES
+            templates_by_intent = ES_TEMPLATES if row_lang == "es" else EN_TEMPLATES
             template_list = templates_by_intent[intent]
             if intent in ("out_of_scope", "no_match"):
                 fam = template_list[:30] if split == "train" else template_list[30:]
@@ -902,21 +905,21 @@ def build_dataset() -> tuple[list[dict], list[dict], list[dict]]:
                 years = (y0, y0 + rng.choice([10, 15, 20]), None)
             if "{n}" in tmpl and rng.random() < 0.10:
                 years = (None, None, rng.choice([5, 10, 20, 30]))
-            place = pick_place(lang) if "{place}" in tmpl else None
-            place_b = pick_place(lang) if intent == "compare" and "{place_b}" in tmpl else None
+            place = pick_place(row_lang) if "{place}" in tmpl else None
+            place_b = pick_place(row_lang) if intent == "compare" and "{place_b}" in tmpl else None
             if place and place_b == place:
-                place_b = pick_place(lang)
+                place_b = pick_place(row_lang)
             hyp = "unknown"
             if intent == "investigate" and rng.random() < 0.35:
                 hyp = rng.choice(["up", "down"])
             pool.append(make_example(
-                rng, lang, intent, tmpl, vid, place, place_b, years,
-                hyp, variables, f"{intent[:3]}-{lang}-{idx:03d}"))
+                rng, row_lang, intent, tmpl, vid, place, place_b, years,
+                hyp, variables, f"{intent[:3]}-{row_lang}-{idx:03d}"))
         return pool
 
-    train = build_pool("train", 2600)
-    val = build_pool("val", 520)
-    test = build_pool("test", 480)
+    train = build_pool("train", 2600, "es") + build_pool("train", 2200, "en")
+    val = build_pool("val", 480, "es") + build_pool("val", 400, "en")
+    test = build_pool("test", 400, "es") + build_pool("test", 340, "en")
 
     def dedupe(items: list[dict], seen: set[str], seen_sets: list[set[str]]) -> list[dict]:
         out = []
@@ -927,12 +930,13 @@ def build_dataset() -> tuple[list[dict], list[dict], list[dict]]:
             duplicate = False
             if nq in seen:  # exact duplicate, O(1)
                 duplicate = True
-            else:
-                # Near duplicates: compare only with questions sharing enough
-                # words for Jaccard > 0.9 to be possible at all.
+            elif len(tokens) >= 8:
+                # Near duplicates matter for long questions; short "what is X"
+                # questions differ by one word at most and are legitimately
+                # distinct training examples. Threshold 0.95 on 8+ words.
                 for other_tokens in seen_sets:
                     shared = len(tokens & other_tokens)
-                    if shared >= 4 and shared / len(tokens | other_tokens) > 0.9:
+                    if shared >= 6 and shared / len(tokens | other_tokens) >= 0.95:
                         duplicate = True
                         break
             if duplicate:
@@ -952,11 +956,62 @@ def build_dataset() -> tuple[list[dict], list[dict], list[dict]]:
     guard = 0
     while len(train) < 2000 and guard < 40:
         guard += 1
-        extra = build_pool("train")
+        extra = build_pool("train", 2000 - len(train), "es")
         fresh = dedupe(extra, seen, seen_sets)
         if not fresh:
             break
         train.extend(fresh)
+
+    # Trim the over-sampled buckets so the requested mixes hold exactly. The
+    # generator overshoots on purpose because deduplication removes items
+    # unevenly across intents and languages.
+    def trim(rows: list[dict], target: int, key) -> list[dict]:
+        groups: dict[Any, list[dict]] = defaultdict(list)
+        for row in rows:
+            groups[key(row)].append(row)
+        out: list[dict] = []
+        remaining = target
+        keys = list(groups)
+        for i, k in enumerate(keys):
+            share = round(target * len(groups[k]) / max(1, len(rows)))
+            take = min(len(groups[k]), max(share, target // (len(keys) * 2)))
+            out.extend(groups[k][:take])
+            remaining -= take
+        # Fill or trim to the exact target.
+        for k in keys:
+            if remaining <= 0:
+                break
+            already = min(len(groups[k]), max(round(target * len(groups[k]) / max(1, len(rows))),
+                                               target // (len(keys) * 2)))
+            extra = groups[k][already:]
+            take = extra[:remaining]
+            out.extend(take)
+            remaining -= len(take)
+        return out[:target] if remaining <= 0 else out
+
+    # Intent quotas, then language quotas within the remainder, then size.
+    # Each bucket is capped by what actually survived deduplication, so the
+    # assembly never silently over-fills one language to compensate for another.
+    wanted_intents = {"investigate": 0.60, "compare": 0.15, "define": 0.10,
+                      "out_of_scope": 0.10, "no_match": 0.05}
+    by_intent: dict[str, list[dict]] = defaultdict(list)
+    for row in train:
+        by_intent[row["meta"]["intent"]].append(row)
+    balanced: list[dict] = []
+    for intent, share in wanted_intents.items():
+        rows_i = by_intent.get(intent, [])
+        target_i = round(len(train) * share)
+        es = [r for r in rows_i if r["meta"]["lang"] == "es"]
+        en = [r for r in rows_i if r["meta"]["lang"] == "en"]
+        target_es = min(len(es), round(target_i * 0.55))
+        target_en = min(len(en), target_i - target_es)
+        # If one language is short, leave the bucket short instead of
+        # converting it into the other language: the mix is what --check
+        # measures, and a smaller clean bucket is better than a skewed one.
+        balanced.extend(es[:target_es] + en[:target_en])
+    if balanced:
+        rng.shuffle(balanced)
+        train = balanced
 
     rng.shuffle(train)
     return train, val, test
