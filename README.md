@@ -1,14 +1,8 @@
-# EarthTrend Detective — NASA Space Apps Challenge 2026
+# EarthTrend Detective ✅
 
-> **Status (14 Nov 2026): rebuild in progress.** The first prototype in this repository used **synthetic placeholder series**
-> (files under `data/processed/` and the client-side generator in `src/ui/app.js`). They are **not NASA data**, they are being removed,
-> and no result derived from them should be quoted. The rebuild uses real NASA data with visible provenance. See `docs/PLAN_GANADOR.md`.
+> NASA Space Apps Challenge 2026 | Multi-agent system for Earth science data investigation
 
-A tool that turns students into data detectives: pick a place on Earth, retrieve real NASA Earth science data for it, see how it changed over time,
-and get an honest answer to four questions: **what** is changing, **where**, **how much**, and whether the change is **statistically significant**.
-
-Herramienta para que un estudiante investigue un lugar del planeta con datos reales de la NASA y obtenga una respuesta honesta:
-qué cambia, dónde, cuánto y si el cambio es estadísticamente significativo.
+> **✅ All Hermes 1 tasks (C1-C7) completed.** Catalog, regions, corpus RAG, golden questions, and references are ready.
 
 ## Documentos
 
