@@ -326,15 +326,30 @@ def analyze_series(
 
     # 9. Veredicto
     ci_excludes_zero = (sen_ci95_decade[0] * sen_ci95_decade[1] > 0)
+    ols_ci_excludes_zero = (ols_ci95_decade[0] * ols_ci95_decade[1] > 0)
     sig_p_corr = (mk_p_autocorr < alpha)
     sig_p_ann = (mk_ann_p < alpha)
     sig_p_t = (ols["p_value"] < alpha)
+    sufficient_years = (detectability["more_years_needed"] <= 0.0)
 
-    if mk_p_autocorr < 0.01 and sig_p_ann and ci_excludes_zero:
+    # Concordancia entre pruebas: ¿coinciden todas las pruebas sobre significancia?
+    test_signals = [sig_p_corr, sig_p_ann, sig_p_t, ci_excludes_zero, ols_ci_excludes_zero]
+    all_agree_sig = all(test_signals)
+    all_agree_not_sig = not any(test_signals)
+    tests_concordant = (all_agree_sig or all_agree_not_sig)
+
+    if not tests_concordant:
+        warnings.append("TESTS_DISAGREE")
+
+    if all_agree_sig and sufficient_years and mk_p_autocorr < 0.01:
+        # Fuerte: TODAS las pruebas coinciden (p<0.01 en MK corregido, p<alpha en MK anual y OLS,
+        # ambos IC excluyen el cero) Y la longitud del registro supera la detectabilidad.
         verdict_code = "SIGNIFICANT_STRONG"
         level_str = "p<0.01"
         is_significant = True
-    elif sig_p_corr and (sig_p_ann or sig_p_t):
+    elif sig_p_corr and ci_excludes_zero and (sig_p_ann or sig_p_t):
+        # Significativo: evidencia sólida en MK corregido y Theil-Sen, pero no cumple
+        # todos los criterios de "Fuerte" (p. ej. MCO discrepa o faltan años de detectabilidad).
         verdict_code = "SIGNIFICANT"
         level_str = "p<0.05"
         is_significant = True
@@ -342,7 +357,6 @@ def analyze_series(
         verdict_code = "SUGGESTIVE"
         level_str = "p<0.10"
         is_significant = False
-        warnings.append("TESTS_DISAGREE")
     else:
         verdict_code = "NOT_SIGNIFICANT"
         level_str = "p>=0.10"
@@ -373,10 +387,15 @@ def analyze_series(
     trend_ci_low = [round(float(sen_intercept + (sen_ci_low_ann) * t_val), 4) for t_val in t_all]
     trend_ci_high = [round(float(sen_intercept + (sen_ci_high_ann) * t_val), 4) for t_val in t_all]
 
+    var_name_es, var_name_en = _resolve_variable_names(ts.get("variable_id", "Variable"), ts)
+    reg_name_es, reg_name_en = _resolve_region_name(ts.get("region", {}))
+
     answers = _build_answers(
-        variable_id=ts.get("variable_id", "Variable"),
+        var_name_es=var_name_es,
+        var_name_en=var_name_en,
         unit=ts.get("unit", ""),
-        region_name=ts.get("region", {}).get("name", "la región analizada"),
+        reg_name_es=reg_name_es,
+        reg_name_en=reg_name_en,
         direction=direction,
         sen_slope_decade=sen_slope_decade,
         total_change=total_change,
@@ -463,10 +482,82 @@ def analyze_series(
     }
 
 
+def _resolve_variable_names(variable_id: str, ts: dict) -> Tuple[str, str]:
+    """Resuelve nombres descriptivos legibles para la variable (es, en) para evitar usar IDs crudos."""
+    var_meta = ts.get("variable")
+    if isinstance(var_meta, dict):
+        names = var_meta.get("names", {})
+        if names.get("es") and names.get("en"):
+            return names["es"], names["en"]
+        if var_meta.get("name"):
+            return var_meta["name"], var_meta["name"]
+    if ts.get("variable_name"):
+        return ts["variable_name"], ts["variable_name"]
+
+    try:
+        from pathlib import Path
+        import json
+        cat_file = Path(__file__).resolve().parent.parent.parent / "data" / "catalog" / "variables.json"
+        if cat_file.exists():
+            with open(cat_file, "r", encoding="utf-8") as f:
+                cat_data = json.load(f)
+            vars_list = cat_data if isinstance(cat_data, list) else cat_data.get("variables", [])
+            for v in vars_list:
+                if v.get("id") == variable_id:
+                    n = v.get("names", {})
+                    es_name = n.get("es") or v.get("name") or variable_id
+                    en_name = n.get("en") or v.get("name") or variable_id
+                    return es_name, en_name
+    except Exception:
+        pass
+
+    well_known = {
+        "T2M": ("Temperatura del aire a 2 metros", "Air temperature at 2 meters"),
+        "TS": ("Temperatura de la superficie terrestre", "Earth skin temperature"),
+        "PRECTOTCORR": ("Precipitación", "Precipitation"),
+        "WS10M": ("Velocidad del viento a 10 metros", "Wind speed at 10 meters"),
+        "ALLSKY_SFC_SW_DWN": ("Radiación solar de onda corta", "All-sky surface shortwave downward irradiance"),
+        "CLOUD_AMT": ("Cobertura nubosa", "Cloud amount"),
+        "AOD_55": ("Espesor óptico de aerosoles", "Aerosol optical depth at 550 nm"),
+        "GISTEMP_TANOM": ("Anomalía de temperatura superficial global", "Global surface temperature anomaly"),
+        "SEAICE_EXTENT_N": ("Extensión de hielo marino ártico", "Arctic sea ice extent"),
+        "SEAICE_EXTENT_S": ("Extensión de hielo marino antártico", "Antarctic sea ice extent"),
+    }
+    if variable_id in well_known:
+        return well_known[variable_id]
+
+    return variable_id, variable_id
+
+
+def _resolve_region_name(region: dict) -> Tuple[str, str]:
+    """Resuelve un nombre geográfico válido para evitar 'None'."""
+    if not isinstance(region, dict):
+        return "la región analizada", "the analyzed region"
+
+    name = region.get("name")
+    if name and str(name).strip().lower() not in ("none", "null", ""):
+        return str(name).strip(), str(name).strip()
+
+    lat = region.get("lat")
+    lon = region.get("lon")
+    if lat is not None and lon is not None:
+        coord_es = f"las coordenadas ({lat:+.2f}°, {lon:+.2f}°)"
+        coord_en = f"coordinates ({lat:+.2f}°, {lon:+.2f}°)"
+        return coord_es, coord_en
+
+    bbox = region.get("bbox")
+    if bbox and len(bbox) == 4:
+        bbox_str = f"[{bbox[0]:.1f}, {bbox[1]:.1f}, {bbox[2]:.1f}, {bbox[3]:.1f}]"
+        return f"el área {bbox_str}", f"the area {bbox_str}"
+
+    return "la región seleccionada", "the selected region"
+
+
 def _insufficient_data_result(ts: dict, reason: str, warnings: List[str]) -> dict:
     pts = ts.get("data", [])
     start_dt = pts[0]["date"] if pts else "N/A"
     end_dt = pts[-1]["date"] if pts else "N/A"
+    reg_name_es, reg_name_en = _resolve_region_name(ts.get("region", {}))
     return {
         "schema": "analysis/2",
         "region": ts.get("region", {}),
@@ -479,7 +570,7 @@ def _insufficient_data_result(ts: dict, reason: str, warnings: List[str]) -> dic
         "series": {"dates": [p["date"] for p in pts], "raw": [p.get("value") for p in pts], "climatology": [], "anomalies": [], "trend_line": [], "trend_ci_low": [], "trend_ci_high": [], "annual": []},
         "answers": {
             "what": {"es": f"Datos insuficientes: {reason}", "en": f"Insufficient data: {reason}"},
-            "where": {"es": ts.get("region", {}).get("name", "Ubicación"), "en": ts.get("region", {}).get("name", "Location")},
+            "where": {"es": reg_name_es, "en": reg_name_en},
             "how_much": {"es": "No determinable con los datos disponibles.", "en": "Undetermined with available data."},
             "significant": {"es": "No es posible evaluar significancia estadística.", "en": "Statistical significance cannot be evaluated."},
             "detectability": {"es": "Se requiere una serie temporal más extensa.", "en": "A longer time series is required."}
@@ -490,9 +581,11 @@ def _insufficient_data_result(ts: dict, reason: str, warnings: List[str]) -> dic
 
 
 def _build_answers(
-    variable_id: str,
+    var_name_es: str,
+    var_name_en: str,
     unit: str,
-    region_name: str,
+    reg_name_es: str,
+    reg_name_en: str,
     direction: str,
     sen_slope_decade: float,
     total_change: float,
@@ -527,12 +620,12 @@ def _build_answers(
 
     return {
         "what": {
-            "es": f"{variable_id} se encuentra {dir_es} a lo largo del periodo analizado.",
-            "en": f"{variable_id} is {dir_en} across the analyzed period."
+            "es": f"{var_name_es} se encuentra {dir_es} a lo largo del periodo analizado.",
+            "en": f"{var_name_en} is {dir_en} across the analyzed period."
         },
         "where": {
-            "es": f"Observado en {region_name}.",
-            "en": f"Observed in {region_name}."
+            "es": f"Observado en {reg_name_es}.",
+            "en": f"Observed in {reg_name_en}."
         },
         "how_much": {
             "es": f"Tasa estimada de {sen_slope_decade:+.3f} {unit}/década{pct_str_es}, con un cambio acumulado de {total_change:+.3f} {unit}.",
