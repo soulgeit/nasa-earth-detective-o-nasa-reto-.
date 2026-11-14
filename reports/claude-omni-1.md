@@ -1,7 +1,7 @@
 # Reportes de Claude Omni 1 (Interfaz)
 
 ## U1 — LISTO  (2026-11-14 13:26 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@b5ac5e8
 Qué quedó:
 - Eliminado completamente el generador sintético `calculateStatsClientSide` de `src/ui/app.js`.
 - Eliminado el catálogo embebido de variables inventadas y los valores por defecto inventados (`0.82`, `0.00001`, `Valor Observado (Satélite)`).
@@ -16,7 +16,7 @@ Falta / riesgos: Ninguno para U1.
 Necesito de otros: Antigravity 1 y Claude Omni 3 para que `/api/analyze` y `/api/catalog/variables` devuelvan datos reales en vivo.
 
 ## U2 — LISTO  (2026-11-14 13:28 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@b5ac5e8
 Qué quedó:
 - Pantalla principal implementada en una sola página con tres zonas (mapa interactivo Leaflet con mosaico base NASA GIBS Blue Marble y fallback a OSM; panel de investigación con selector de variable, periodo y buscador de lugares; zona de resultados).
 - Gráfica temporal con Chart.js conmutador triple: valores mensuales, anomalías y medias anuales; banda de confianza y recta de Sen; línea punteada de empalme de productos (`homogeneous_since`).
