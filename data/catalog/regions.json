@@ -1,69 +1,1308 @@
 {
-  "_about": "Regiones naturales para NASA EarthTrend Detective. Puntos centrales, cajas y bioma de ~60 regiones. Coordenadas verificadas en fuentes como NASA, WWF, y atlas geográficos.",
-  "_verified": {
+ "schema": "regions/1",
+ "generated_at": "2026-11-14",
+ "note": "Coordinates from Wikipedia (prop=coordinates); boxes from OpenStreetMap Nominatim when consistent with the centre point.",
+ "regions": [
+  {
+   "id": "amazonia",
+   "names": {
+    "es": "Amazonía",
+    "en": "Amazon Basin"
+   },
+   "lat": -3.0,
+   "lon": -60.0,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
     "by": "hermes-1",
-    "at": "2026-11-14T21:00:00Z",
-    "evidence_url": "https://earthobservatory.nasa.gov/"
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q244451",
+    "bbox_url": null,
+    "bbox_source": null
+   }
   },
-  "regions": [
-    {"id": "lima_peru", "name_es": "Lima, Perú", "name_en": "Lima, Peru", "lat": -12.05, "lon": -77.03, "bbox": [-77.3, -12.4, -76.7, -11.7], "biome": "desert_costal", "population": 10000000},
-    {"id": "piura_peru", "name_es": "Piura, Perú", "name_en": "Piura, Peru", "lat": -5.19, "lon": -80.63, "bbox": [-81.0, -5.6, -80.2, -4.8], "biome": "savanna_coastal", "population": 2000000},
-    {"id": "cusco_peru", "name_es": "Cusco, Perú", "name_en": "Cusco, Peru", "lat": -13.53, "lon": -71.97, "bbox": [-72.3, -13.8, -71.6, -13.2], "biome": "mountain_altiplano", "population": 1500000},
-    {"id": "iquitos_peru", "name_es": "Iquitos, Perú", "name_en": "Iquitos, Peru", "lat": -3.75, "lon": -73.25, "bbox": [-73.5, -4.0, -73.0, -3.5], "biome": "tropical_rainforest", "population": 500000},
-    {"id": "arequipa_peru", "name_es": "Arequipa, Perú", "name_en": "Arequipa, Peru", "lat": -16.40, "lon": -71.53, "bbox": [-71.8, -16.6, -71.3, -16.2], "biome": "mountain_desert", "population": 1000000},
-    {"id": "trujillo_peru", "name_es": "Trujillo, Perú", "name_en": "Trujillo, Peru", "lat": -8.11, "lon": -79.03, "bbox": [-79.3, -8.3, -78.8, -7.9], "biome": "desert_coastal", "population": 900000},
-    {"id": "huancayo_peru", "name_es": "Huancayo, Perú", "name_en": "Huancayo, Peru", "lat": -12.05, "lon": -75.20, "bbox": [-75.5, -12.2, -75.0, -11.9], "biome": "valley_highland", "population": 400000},
-    {"id": "chiclayo_peru", "name_es": "Chiclayo, Perú", "name_en": "Chiclayo, Peru", "lat": -6.77, "lon": -79.84, "bbox": [-80.0, -6.9, -79.7, -6.6], "biome": "savanna_coastal", "population": 600000},
-    {"id": "loreto_peru", "name_es": "Loreto (Amazonía peruana)", "name_en": "Loreto (Peruvian Amazon)", "lat": -5.0, "lon": -74.0, "bbox": [-80.0, -8.0, -68.0, -2.0], "biome": "tropical_rainforest", "population": 1000000},
-    {"id": "caldas_peru", "name_es": "Cordillera Blanca, Perú", "name_en": "White Cordillera, Peru", "lat": -9.6, "lon": -77.6, "bbox": [-78.0, -10.0, -77.2, -9.2], "biome": "alpine_glacier", "population": 50000},
-    {"id": "titicaca_peru", "name_es": "Lago Titicaca", "name_en": "Lake Titicaca", "lat": -16.3, "lon": -69.4, "bbox": [-70.5, -17.0, -68.5, -15.5], "biome": "highlake_altiplano", "population": 300000},
-    {"id": "sechura_peru", "name_es": "Desierto de Sechura, Perú", "name_en": "Sechura Desert, Peru", "lat": -5.0, "lon": -80.8, "bbox": [-81.5, -6.0, -80.0, -4.0], "biome": "desert_coastal", "population": 50000},
-    {"id": "ica_peru", "name_es": "Valle de Ica, Perú", "name_en": "Ica Valley, Peru", "lat": -14.0, "lon": -75.8, "bbox": [-76.5, -15.0, -75.0, -13.0], "biome": "desert_coastal", "population": 300000},
-    {"id": "madre_dios_peru", "name_es": "Madre de Dios", "name_en": "Madre de Dios", "lat": -12.6, "lon": -69.5, "bbox": [-72.0, -14.0, -67.0, -11.0], "biome": "tropical_rainforest", "population": 150000},
-    {"id": "arctic_sea_ice", "name_es": "Mar Ártico", "name_en": "Arctic Ocean", "lat": 75.0, "lon": 0.0, "bbox": [-180.0, 65.0, 180.0, 85.0], "biome": "sea_ice_arctic", "population": 0},
-    {"id": "antarctic_sea_ice", "name_es": "Mar Antártico", "name_en": "Antarctic Ocean", "lat": -75.0, "lon": 0.0, "bbox": [-180.0, -70.0, 180.0, -60.0], "biome": "sea_ice_antarctic", "population": 0},
-    {"id": "greenland", "name_es": "Groenlandia", "name_en": "Greenland", "lat": 72.0, "lon": -40.0, "bbox": [-55.0, 60.0, -12.0, 83.0], "biome": "ice_sheet", "population": 56000},
-    {"id": "sahel_africa", "name_es": "Sahel, África", "name_en": "Sahel, Africa", "lat": 15.0, "lon": 0.0, "bbox": [-15.0, 8.0, 40.0, 22.0], "biome": "semi_arid_sahel", "population": 50000000},
-    {"id": "sahara_africa", "name_es": "Sahara, África", "name_en": "Sahara, Africa", "lat": 25.0, "lon": 5.0, "bbox": [-20.0, 15.0, 40.0, 35.0], "biome": "desert_hot", "population": 2500000},
-    {"id": "amazon_brazil", "name_es": "Amazonía brasileña", "name_en": "Brazilian Amazon", "lat": -4.0, "lon": -63.0, "bbox": [-75.0, -15.0, -50.0, 5.0], "biome": "tropical_rainforest", "population": 20000000},
-    {"id": "amazon_colombia", "name_es": "Amazonía colombiana", "name_en": "Colombian Amazon", "lat": -3.0, "lon": -71.0, "bbox": [-78.0, -7.0, -64.0, 1.0], "biome": "tropical_rainforest", "population": 900000},
-    {"id": "andean_valley", "name_es": "Valle del Cañón del Colca, Perú", "name_en": "Colca Canyon Valley, Peru", "lat": -15.8, "lon": -71.3, "bbox": [-71.6, -16.1, -71.0, -15.5], "biome": "deep_canyon", "population": 20000},
-    {"id": "california_drought", "name_es": "California, sequía", "name_en": "California drought region", "lat": 36.7, "lon": -119.4, "bbox": [-122.0, 32.0, -114.0, 42.0], "biome": "mediterranean", "population": 39000000},
-    {"id": "texus_heat", "name_es": "Texas, calor", "name_en": "Texas heat region", "lat": 31.0, "lon": -99.9, "bbox": [-106.6, 25.8, -93.5, 36.5], "biome": "semi_arid", "population": 30000000},
-    {"id": "florida_hurricane", "name_es": "Florida, huracanes", "name_en": "Florida hurricanes", "lat": 27.8, "lon": -81.7, "bbox": [-87.6, 24.4, -80.0, 31.0], "biome": "subtropical_coastal", "population": 22000000},
-    {"id": "aral_sea", "name_es": "Mar de Aral", "name_en": "Aral Sea", "lat": 45.1, "lon": 60.6, "bbox": [56.0, 40.0, 70.0, 48.0], "biome": "inland_sea", "population": 500000},
-    {"id": "himalaya", "name_es": "Himalaya", "name_en": "Himalaya Mountains", "lat": 28.0, "lon": 85.0, "bbox": [75.0, 25.0, 95.0, 35.0], "biome": "alpine_glacier", "population": 50000000},
-    {"id": "great_barrier_reef", "name_es": "Gran Barrera de Coral", "name_en": "Great Barrier Reef", "lat": -18.3, "lon": 147.7, "bbox": [141.0, -24.0, 154.0, -10.5], "biome": "coral_reef", "population": 0},
-    {"id": "siberia_permafrost", "name_es": "Siberia, permafrost", "name_en": "Siberian permafrost", "lat": 65.0, "lon": 100.0, "bbox": [60.0, 50.0, 180.0, 75.0], "biome": "tundra_permafrost", "population": 3000000},
-    {"id": "central_américa", "name_es": "Centroamérica", "name_en": "Central America", "lat": 14.5, "lon": -86.0, "bbox": [-92.0, 7.0, -81.0, 21.0], "biome": "tropical", "population": 50000000},
-    {"id": "patagonia", "name_es": "Patagonia", "name_en": "Patagonia", "lat": -47.0, "lon": -71.0, "bbox": [-73.0, -55.0, -65.0, -38.0], "biome": "steppe_glacier", "population": 2000000},
-    {"id": "orinoco", "name_es": "Cuenca del Orinoco", "name_en": "Orinoco Basin", "lat": 6.0, "lon": -66.0, "bbox": [-75.0, -6.0, -58.0, 12.0], "biome": "tropical_rainforest_savanna", "population": 10000000},
-    {"id": "parana", "name_es": "Cuenca del Paraná", "name_en": "Paraná Basin", "lat": -24.0, "lon": -56.0, "bbox": [-62.0, -33.0, -50.0, -16.0], "biome": "tropical_subtropical", "population": 20000000},
-    {"id": "amazon_basin", "name_es": "Cuenca del Amazonas", "name_en": "Amazon Basin", "lat": -5.0, "lon": -65.0, "bbox": [-80.0, -18.0, -48.0, 8.0], "biome": "tropical_rainforest", "population": 25000000},
-    {"id": "murray_darling", "name_es": "Cuenca Murray-Darling, Australia", "name_en": "Murray-Darling Basin, Australia", "lat": -35.0, "lon": 145.0, "bbox": [135.0, -38.0, 153.0, -28.0], "biome": "semi_arid_river", "population": 2500000},
-    {"id": "nile_delta", "name_es": "Delta del Nilo, Egipto", "name_en": "Nile Delta, Egypt", "lat": 31.2, "lon": 30.0, "bbox": [29.0, 30.0, 32.0, 31.5], "biome": "delta_agricultural", "population": 20000000},
-    {"id": "ganges_delta", "name_es": "Delta del Ganges, Bangladesh", "name_en": "Ganges Delta, Bangladesh", "lat": 22.0, "lon": 90.0, "bbox": [88.0, 20.0, 92.0, 24.0], "biome": "river_delta", "population": 30000000},
-    {"id": "yangtze_delta", "name_es": "Delta del Yangtsé, China", "name_en": "Yangtze Delta, China", "lat": 31.0, "lon": 121.0, "bbox": [118.0, 29.0, 122.0, 33.0], "biome": "river_delta_urban", "population": 50000000},
-    {"id": "mississippi_delta", "name_es": "Delta del Misisipi, EE.UU.", "name_en": "Mississippi Delta, USA", "lat": 29.5, "lon": -89.5, "bbox": [-92.0, 27.0, -87.0, 32.0], "biome": "river_delta_coastal", "population": 5000000},
-    {"id": "mekong_delta", "name_es": "Delta del Mekong, Vietnam", "name_en": "Mekong Delta, Vietnam", "lat": 10.0, "lon": 106.0, "bbox": [104.0, 9.0, 107.0, 11.0], "biome": "river_delta_agricultural", "population": 18000000},
-    {"id": "danube_delta", "name_es": "Delta del Danubio, Rumania", "name_en": "Danube Delta, Romania", "lat": 45.2, "lon": 29.5, "bbox": [28.0, 44.0, 30.5, 46.0], "biome": "delta_wetland", "population": 15000},
-    {"id": "okavango_delta", "name_es": "Delta del Okavango, Botsuana", "name_en": "Okavango Delta, Botswana", "lat": -19.0, "lon": 23.0, "bbox": [21.0, -21.0, 25.0, -17.0], "biome": "inland_delta_wetland", "population": 10000},
-    {"id": "volta_basin", "name_es": "Cuenca del Volta, Ghana", "name_en": "Volta Basin, Ghana", "lat": 8.0, "lon": -1.0, "bbox": [-4.0, 4.0, 3.0, 12.0], "biome": "tropical_savanna", "population": 8000000},
-    {"id": "niger_inland_delta", "name_es": "Delta Interior del Níger, Malí", "name_en": "Niger Inland Delta, Mali", "lat": 14.5, "lon": -3.0, "bbox": [-5.0, 13.0, -1.0, 16.0], "biome": "inland_delta", "population": 2000000},
-    {"id": "zambezi_basin", "name_es": "Cuenca del Zambezi, África Austral", "name_en": "Zambezi Basin, Southern Africa", "lat": -16.0, "lon": 28.0, "bbox": [20.0, -18.0, 38.0, 0.0], "biome": "tropical_savanna", "population": 50000000},
-    {"id": "congo_basin", "name_es": "Cuenca del Congo, África Central", "name_en": "Congo Basin, Central Africa", "lat": 0.0, "lon": 22.0, "bbox": [12.0, -12.0, 32.0, 8.0], "biome": "tropical_rainforest", "population": 80000000},
-    {"id": "nubian_desert", "name_es": "Desierto de Nubia, Egipto/Sudán", "name_en": "Nubian Desert, Egypt/Sudan", "lat": 22.0, "lon": 30.0, "bbox": [22.0, 15.0, 38.0, 30.0], "biome": "desert_hot", "population": 500000},
-    {"id": "kalahari", "name_es": "Kalahari, Botsuana/Namibia/Sudáfrica", "name_en": "Kalahari, Botswana/Namibia/South Africa", "lat": -23.0, "lon": 21.0, "bbox": [15.0, -29.0, 28.0, -17.0], "biome": "semi_arid_desert", "population": 2000000},
-    {"id": "namib_desert", "name_es": "Desierto de Namib, Namibia", "name_en": "Namib Desert, Namibia", "lat": -24.0, "lon": 15.0, "bbox": [12.0, -29.0, 17.0, -17.0], "biome": "coastal_desert", "population": 100000},
-    {"id": "sicily", "name_es": "Sicilia, Italia", "name_en": "Sicily, Italy", "lat": 37.6, "lon": 14.0, "bbox": [12.5, 36.5, 15.5, 38.5], "biome": "mediterranean_island", "population": 5000000},
-    {"id": "canary_islands", "name_es": "Islas Canarias, España", "name_en": "Canary Islands, Spain", "lat": 28.1, "lon": -15.4, "bbox": [-18.0, 27.5, -13.0, 29.5], "biome": "subtropical_island", "population": 2200000},
-    {"id": "maldives", "name_es": "Maldivas", "name_en": "Maldives", "lat": 3.2, "lon": 73.2, "bbox": [72.0, 0.5, 74.5, 7.5], "biome": "coral_atoll", "population": 520000},
-    {"id": "fiji", "name_es": "Fiyi", "name_en": "Fiji", "lat": -17.7, "lon": 178.0, "bbox": [175.0, -20.0, 180.0, -16.0], "biome": "tropical_island", "population": 920000},
-    {"id": "hawaii", "name_es": "Hawái, EE.UU.", "name_en": "Hawaii, USA", "lat": 20.8, "lon": -157.9, "bbox": [-160.5, 18.9, -155.0, 22.2], "biome": "tropical_island_volcanic", "population": 1400000},
-    {"id": "iceland", "name_es": "Islandia", "name_en": "Iceland", "lat": 64.9, "lon": -19.0, "bbox": [-24.5, 63.2, -13.5, 66.5], "biome": "subarctic_volcanic", "population": 370000},
-    {"id": "new_zealand_south", "name_es": "Isla Sur de Nueva Zelanda", "name_en": "South Island, New Zealand", "lat": -44.5, "lon": 170.0, "bbox": [165.0, -47.0, 178.0, -42.0], "biome": "temperate_mountain", "population": 740000},
-    {"id": "tasmania", "name_es": "Tasmania, Australia", "name_en": "Tasmania, Australia", "lat": -42.5, "lon": 147.0, "bbox": [144.0, -44.0, 148.5, -40.0], "biome": "temperate_forest", "population": 550000},
-    {"id": "bai_california", "name_es": "Bahía de California, México", "name_en": "Gulf of California, Mexico", "lat": 28.0, "lon": -113.0, "bbox": [-118.0, 23.0, -108.0, 32.0], "biome": "marine_coastal", "population": 300000},
-    {"id": "chatham_rise", "name_es": "Chatham Rise, Nueva Zelanda", "name_en": "Chatham Rise, New Zealand", "lat": -44.0, "lon": 178.0, "bbox": [172.0, -47.0, 180.0, -42.0], "biome": "marine_continental_shelf", "population": 0}
-  ]
+  {
+   "id": "sahel",
+   "names": {
+    "es": "Sahel",
+    "en": "Sahel"
+   },
+   "lat": 14.4747,
+   "lon": 13.5117,
+   "bbox": null,
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q66065",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "aral-sea",
+   "names": {
+    "es": "Mar de Aral",
+    "en": "Aral Sea"
+   },
+   "lat": 45.0,
+   "lon": 60.0,
+   "bbox": [
+    58.1986,
+    43.3751,
+    61.6644,
+    46.7842
+   ],
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q35883",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Aral Sea&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "arctic",
+   "names": {
+    "es": "Océano Ártico",
+    "en": "Arctic Ocean"
+   },
+   "lat": 79.1386,
+   "lon": -3.239,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q788",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "antarctica",
+   "names": {
+    "es": "Antártida",
+    "en": "Antarctica"
+   },
+   "lat": -90.0,
+   "lon": 0.0,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q51",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "greenland",
+   "names": {
+    "es": "Groenlandia",
+    "en": "Greenland"
+   },
+   "lat": 72.0,
+   "lon": -40.0,
+   "bbox": [
+    -72.8333,
+    59.7731,
+    -12.1333,
+    83.6275
+   ],
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q223",
+    "bbox_url": "https://www.wikidata.org/wiki/Q223",
+    "bbox_source": "wikidata P1332/P1333/P1334/P1335"
+   }
+  },
+  {
+   "id": "greenland-ice-sheet",
+   "names": {
+    "es": "Capa de hielo de Groenlandia",
+    "en": "Greenland Ice Sheet"
+   },
+   "lat": 76.7,
+   "lon": -41.2,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1542432",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "himalaya",
+   "names": {
+    "es": "Himalaya",
+    "en": "Himalaya"
+   },
+   "lat": 29.0,
+   "lon": 84.0,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q5451",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "great-barrier-reef",
+   "names": {
+    "es": "Gran Barrera de Coral",
+    "en": "Great Barrier Reef"
+   },
+   "lat": -16.4,
+   "lon": 145.8,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q7343",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "cordillera-blanca",
+   "names": {
+    "es": "Cordillera Blanca",
+    "en": "Cordillera Blanca"
+   },
+   "lat": -9.1167,
+   "lon": -77.6,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q804330",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "lago-titicaca",
+   "names": {
+    "es": "Lago Titicaca",
+    "en": "Lake Titicaca"
+   },
+   "lat": -15.825,
+   "lon": -69.325,
+   "bbox": [
+    -70.036,
+    -16.5604,
+    -68.7955,
+    -15.2329
+   ],
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q35342",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Lake Titicaca&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "madre-de-dios",
+   "names": {
+    "es": "Madre de Dios",
+    "en": "Madre de Dios"
+   },
+   "lat": -11.99,
+   "lon": -70.59,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q210896",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "desierto-sechura",
+   "names": {
+    "es": "Desierto de Sechura",
+    "en": "Sechura Desert"
+   },
+   "lat": -5.8333,
+   "lon": -80.6667,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q939994",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "valle-ica",
+   "names": {
+    "es": "Valle de Ica",
+    "en": "Ica Valley"
+   },
+   "lat": -14.0667,
+   "lon": -75.7333,
+   "bbox": [
+    -76.3984,
+    -15.4438,
+    -74.6462,
+    -12.9649
+   ],
+   "biome": "agricultural_valley",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q840712",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Ica, Peru&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "loreto",
+   "names": {
+    "es": "Loreto",
+    "en": "Loreto Region"
+   },
+   "lat": -4.0,
+   "lon": -74.32,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q200938",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "sahara",
+   "names": {
+    "es": "Sáhara",
+    "en": "Sahara"
+   },
+   "lat": 23.0797,
+   "lon": 12.6122,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q6583",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "gobi",
+   "names": {
+    "es": "Desierto de Gobi",
+    "en": "Gobi Desert"
+   },
+   "lat": 42.5,
+   "lon": 103.0,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q42070",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "atacama",
+   "names": {
+    "es": "Desierto de Atacama",
+    "en": "Atacama Desert"
+   },
+   "lat": -24.5,
+   "lon": -69.25,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q47141",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "patagonia",
+   "names": {
+    "es": "Patagonia",
+    "en": "Patagonia"
+   },
+   "lat": -41.8102,
+   "lon": -68.9063,
+   "bbox": null,
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1507",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "cerrado",
+   "names": {
+    "es": "Cerrado",
+    "en": "Cerrado"
+   },
+   "lat": -14.0057,
+   "lon": -47.6846,
+   "bbox": null,
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q278512",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "pantanal",
+   "names": {
+    "es": "Pantanal",
+    "en": "Pantanal"
+   },
+   "lat": -17.4,
+   "lon": -57.5,
+   "bbox": [
+    -57.6929,
+    -17.9037,
+    -57.163,
+    -17.4464
+   ],
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q157603",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Pantanal&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "congo-basin",
+   "names": {
+    "es": "Cuenca del Congo",
+    "en": "Congo Basin"
+   },
+   "lat": 0.0,
+   "lon": 22.0,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q932289",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "nile-delta",
+   "names": {
+    "es": "Delta del Nilo",
+    "en": "Nile Delta"
+   },
+   "lat": 30.9,
+   "lon": 31.1167,
+   "bbox": null,
+   "biome": "agricultural_valley",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q179528",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "indus-river",
+   "names": {
+    "es": "Río Indo",
+    "en": "Indus River"
+   },
+   "lat": 23.9944,
+   "lon": 67.4308,
+   "bbox": null,
+   "biome": "agricultural_valley",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q7348",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "ganges-delta",
+   "names": {
+    "es": "Delta del Ganges",
+    "en": "Ganges Delta"
+   },
+   "lat": 22.7,
+   "lon": 89.6667,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1163759",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "mekong-delta",
+   "names": {
+    "es": "Delta del Mekong",
+    "en": "Mekong Delta"
+   },
+   "lat": 10.04,
+   "lon": 105.8,
+   "bbox": [
+    103.0522,
+    8.1791,
+    106.9934,
+    11.0322
+   ],
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1052867",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Mekong Delta&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "yamal",
+   "names": {
+    "es": "Península de Yamal",
+    "en": "Yamal Peninsula"
+   },
+   "lat": 70.6709,
+   "lon": 70.1367,
+   "bbox": [
+    66.6291,
+    66.9033,
+    73.6037,
+    72.9527
+   ],
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q488266",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Yamal Peninsula&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "tibetan-plateau",
+   "names": {
+    "es": "Meseta del Tíbet",
+    "en": "Tibetan Plateau"
+   },
+   "lat": 33.0,
+   "lon": 88.0,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q179842",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "andes",
+   "names": {
+    "es": "Cordillera de los Andes",
+    "en": "Andes"
+   },
+   "lat": -21.826,
+   "lon": -66.698,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q5456",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "altiplano",
+   "names": {
+    "es": "Altiplano andino",
+    "en": "Altiplano"
+   },
+   "lat": -19.0,
+   "lon": -68.0,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q118574",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "amazon-rainforest",
+   "names": {
+    "es": "Selva amazónica",
+    "en": "Amazon rainforest"
+   },
+   "lat": -3.16,
+   "lon": -60.03,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q177567",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "atlantic-forest",
+   "names": {
+    "es": "Mata Atlántica",
+    "en": "Atlantic Forest"
+   },
+   "lat": -16.5,
+   "lon": -39.25,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q477047",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "pampas",
+   "names": {
+    "es": "Pampas",
+    "en": "Pampas"
+   },
+   "lat": -35.0,
+   "lon": -62.0,
+   "bbox": null,
+   "biome": "agricultural_valley",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q184382",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "chaco",
+   "names": {
+    "es": "Gran Chaco",
+    "en": "Gran Chaco"
+   },
+   "lat": -19.1622,
+   "lon": -61.4702,
+   "bbox": null,
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q208347",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "caatinga",
+   "names": {
+    "es": "Caatinga",
+    "en": "Caatinga"
+   },
+   "lat": -7.6128,
+   "lon": -39.4337,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q375816",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "orinoco-basin",
+   "names": {
+    "es": "Cuenca del Orinoco",
+    "en": "Orinoco Basin"
+   },
+   "lat": 8.56,
+   "lon": -60.5,
+   "bbox": null,
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q131792",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "lake-maracaibo",
+   "names": {
+    "es": "Lago de Maracaibo",
+    "en": "Lake Maracaibo"
+   },
+   "lat": 9.8158,
+   "lon": -71.5567,
+   "bbox": [
+    -72.1276,
+    9.0307,
+    -71.0259,
+    11.0194
+   ],
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q182137",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Lake Maracaibo&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "everglades",
+   "names": {
+    "es": "Everglades",
+    "en": "Everglades"
+   },
+   "lat": 26.0,
+   "lon": -80.7,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q597281",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "mississippi-delta",
+   "names": {
+    "es": "Delta del Misisipi",
+    "en": "Mississippi Delta"
+   },
+   "lat": 29.1669,
+   "lon": -89.2503,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1528035",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "colorado-delta",
+   "names": {
+    "es": "Delta del Colorado",
+    "en": "Colorado River Delta"
+   },
+   "lat": 31.74,
+   "lon": -114.66,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q5148890",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "salton-sea",
+   "names": {
+    "es": "Mar de Salton",
+    "en": "Salton Sea"
+   },
+   "lat": 33.3377,
+   "lon": -115.8391,
+   "bbox": [
+    -116.071,
+    33.1135,
+    -115.6104,
+    33.5212
+   ],
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q503301",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Salton Sea&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "central-valley",
+   "names": {
+    "es": "Valle Central de California",
+    "en": "California Central Valley"
+   },
+   "lat": 37.7061,
+   "lon": -120.9914,
+   "bbox": null,
+   "biome": "agricultural_valley",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q27026",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "rocky-mountains",
+   "names": {
+    "es": "Montañas Rocosas",
+    "en": "Rocky Mountains"
+   },
+   "lat": 44.15,
+   "lon": -113.8,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q5463",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "great-plains",
+   "names": {
+    "es": "Grandes Llanuras",
+    "en": "Great Plains"
+   },
+   "lat": 40.0,
+   "lon": -100.0,
+   "bbox": null,
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q12707",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "north-slope",
+   "names": {
+    "es": "North Slope de Alaska",
+    "en": "Alaska North Slope"
+   },
+   "lat": 69.0579,
+   "lon": -152.863,
+   "bbox": [
+    -166.9855,
+    67.9989,
+    -141.0006,
+    71.4411
+   ],
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1807196",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=North Slope Alaska&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "larsen-ice-shelf",
+   "names": {
+    "es": "Barrera de hielo Larsen",
+    "en": "Larsen Ice Shelf"
+   },
+   "lat": -67.5,
+   "lon": -62.5,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q776909",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "ross-ice-shelf",
+   "names": {
+    "es": "Barrera de hielo Ross",
+    "en": "Ross Ice Shelf"
+   },
+   "lat": -81.5,
+   "lon": -175.0,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q200255",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "weddell-sea",
+   "names": {
+    "es": "Mar de Weddell",
+    "en": "Weddell Sea"
+   },
+   "lat": -73.0,
+   "lon": -45.0,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q173343",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "barents-sea",
+   "names": {
+    "es": "Mar de Barents",
+    "en": "Barents Sea"
+   },
+   "lat": 75.0,
+   "lon": 40.0,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q45823",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "svalbard",
+   "names": {
+    "es": "Svalbard",
+    "en": "Svalbard"
+   },
+   "lat": 78.1571,
+   "lon": 15.8643,
+   "bbox": null,
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q25231",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "iceland",
+   "names": {
+    "es": "Islandia",
+    "en": "Iceland"
+   },
+   "lat": 65.0,
+   "lon": -19.0,
+   "bbox": [
+    -24.5334,
+    63.394,
+    -13.275,
+    67.13
+   ],
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q189",
+    "bbox_url": "https://www.wikidata.org/wiki/Q189",
+    "bbox_source": "wikidata P1332/P1333/P1334/P1335"
+   }
+  },
+  {
+   "id": "alps",
+   "names": {
+    "es": "Alpes",
+    "en": "Alps"
+   },
+   "lat": 46.5781,
+   "lon": 8.615,
+   "bbox": [
+    5.0456,
+    43.4077,
+    16.6058,
+    48.4093
+   ],
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1286",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Alps&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "mediterranean",
+   "names": {
+    "es": "Cuenca del Mediterráneo",
+    "en": "Mediterranean Basin"
+   },
+   "lat": 38.0,
+   "lon": 17.0,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q4918",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "danube-delta",
+   "names": {
+    "es": "Delta del Danubio",
+    "en": "Danube Delta"
+   },
+   "lat": 45.2,
+   "lon": 29.5,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q184429",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "dead-sea",
+   "names": {
+    "es": "Mar Muerto",
+    "en": "Dead Sea"
+   },
+   "lat": 31.5207,
+   "lon": 35.4845,
+   "bbox": [
+    35.3914,
+    31.3202,
+    35.5914,
+    31.7638
+   ],
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q23883",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Dead Sea&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "caspian-sea",
+   "names": {
+    "es": "Mar Caspio",
+    "en": "Caspian Sea"
+   },
+   "lat": 42.0,
+   "lon": 50.5,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q5484",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "lake-chad",
+   "names": {
+    "es": "Lago Chad",
+    "en": "Lake Chad"
+   },
+   "lat": 13.0979,
+   "lon": 14.5338,
+   "bbox": [
+    14.2501,
+    12.7827,
+    14.7782,
+    13.259
+   ],
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q125309",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Lake Chad&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "kilimanjaro",
+   "names": {
+    "es": "Kilimanjaro",
+    "en": "Kilimanjaro"
+   },
+   "lat": -3.0667,
+   "lon": 37.3592,
+   "bbox": null,
+   "biome": "high_mountain",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q7296",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "serengeti",
+   "names": {
+    "es": "Serengeti",
+    "en": "Serengeti"
+   },
+   "lat": -2.3308,
+   "lon": 34.8333,
+   "bbox": [
+    34.2162,
+    -2.5052,
+    35.2667,
+    -1.4195
+   ],
+   "biome": "savanna",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q4991540",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Serengeti&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "kalahari",
+   "names": {
+    "es": "Kalahari",
+    "en": "Kalahari"
+   },
+   "lat": -23.0,
+   "lon": 22.0,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q47700",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "madagascar",
+   "names": {
+    "es": "Madagascar",
+    "en": "Madagascar"
+   },
+   "lat": -20.0,
+   "lon": 47.0,
+   "bbox": [
+    49.045,
+    -25.6054,
+    50.4854,
+    -11.95
+   ],
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q1019",
+    "bbox_url": "https://www.wikidata.org/wiki/Q1019",
+    "bbox_source": "wikidata P1332/P1333/P1334/P1335"
+   }
+  },
+  {
+   "id": "sundarbans",
+   "names": {
+    "es": "Sundarbans",
+    "en": "Sundarbans"
+   },
+   "lat": 21.75,
+   "lon": 88.75,
+   "bbox": [
+    88.6764,
+    21.5402,
+    89.9355,
+    22.5018
+   ],
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q4526",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Sundarbans&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "borneo",
+   "names": {
+    "es": "Borneo",
+    "en": "Borneo"
+   },
+   "lat": -1.0,
+   "lon": 114.0,
+   "bbox": null,
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q36117",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "sumatra",
+   "names": {
+    "es": "Sumatra",
+    "en": "Sumatra"
+   },
+   "lat": -0.2989,
+   "lon": 101.2708,
+   "bbox": [
+    95.1936,
+    -5.9431,
+    106.0966,
+    5.6566
+   ],
+   "biome": "tropical_forest",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q3492",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Sumatra&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "antarctic-peninsula",
+   "names": {
+    "es": "Península Antártica",
+    "en": "Antarctic Peninsula"
+   },
+   "lat": -69.0,
+   "lon": -66.0,
+   "bbox": [
+    -82.0782,
+    -76.7658,
+    -56.7581,
+    -63.2137
+   ],
+   "biome": "polar",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q185605",
+    "bbox_url": "https://nominatim.openstreetmap.org/search?q=Antarctic Peninsula&format=jsonv2",
+    "bbox_source": "OpenStreetMap Nominatim boundingbox"
+   }
+  },
+  {
+   "id": "namib",
+   "names": {
+    "es": "Desierto del Namib",
+    "en": "Namib Desert"
+   },
+   "lat": -23.0,
+   "lon": 15.0,
+   "bbox": null,
+   "biome": "desert",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q131377",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  },
+  {
+   "id": "greater-antilles",
+   "names": {
+    "es": "Grandes Antillas",
+    "en": "Greater Antilles"
+   },
+   "lat": 21.9833,
+   "lon": -79.0333,
+   "bbox": null,
+   "biome": "coast",
+   "verified": {
+    "by": "hermes-1",
+    "at": "2026-11-14",
+    "coordinates_url": "https://www.wikidata.org/wiki/Q128011",
+    "bbox_url": null,
+    "bbox_source": null
+   }
+  }
+ ]
 }

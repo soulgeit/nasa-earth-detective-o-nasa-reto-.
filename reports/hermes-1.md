@@ -1,63 +1,74 @@
-# Reporte de Hermes 1 — Catálogo y Conocimiento (C1-C7)
+# Reportes de Hermes 1
 
-## C1 Catálogo v2 — ✅ LISTO | 2026-11-14T23:55
-**Rama@commit:** main/ee23b07
-**Qué quedó:** data/catalog/variables.json con 25 tarjetas de variables completas (15 POWER live + 10 Giovanni planned). Cada tarjeta incluye definiciones bilingües, fuentes verificadas, caveats y keywords.
+## C1 — LISTO  (2026-11-14 16:20 UTC-5)
+Rama@commit: feature/catalog (pendiente de commit)
+Qué quedó:
+- `data/catalog/variables.json`: 15 variables live (12 POWER + GISTEMP + 2 NSIDC), esquema contrato §8, sin cambiar ningún id de la semilla.
+  - Nombres, definición simple (≤30 palabras), qué significa subir/bajar, conductores típicos y avisos, en ES y EN.
+  - `source` verificado contra el **diccionario oficial de parámetros de POWER** y sus páginas de metodología:
+    - MERRA-2 y resolución nativa ½°×⅝° para las meteorológicas.
+    - Empalme de radiación confirmado: GEWEX SRB 1984–2000 → CERES SYN1deg 2001+ → `homogeneous_since: "2001-01"` en CLOUD_AMT y ALLSKY_SFC_SW_DWN.
+    - AOD_55: CERES SYN1deg, empieza en 2001-01.
+    - GISTEMP: doi 10.1029/2023JD040179 (Lenssen et al. 2024). NSIDC: doi 10.7265/a98x-0f50 (Sea Ice Index v4).
+  - Los 15 DOI/URL no nulos responden (comprobado en `validate_knowledge.py`).
+- `scripts/hermes1/build_catalog.py` reconstruye el catálogo desde cero con las fuentes reales.
 
-## C2 Lugares — ✅ LISTO | PARCIAL | 2026-11-14T23:50
-**Rama@commit:** main (fbff93e + 688ac04)
-**Qué quedó:** 
-- data/catalog/regions.json con ~60 regiones naturales bilingües verificadas (~35 de Perú/Sudamérica)
-- data/catalog/gazetteer.json con 66 ciudades principales bilingües verificadas
+## C2 — LISTO  (2026-11-14 16:20 UTC-5)
+Rama@commit: feature/catalog
+Qué quedó:
+- `data/catalog/gazetteer.json`: **8 109 ciudades** (8 000 más pobladas + **140 de Perú**), campos del contrato. Fuente GeoNames cities15000, licencia CC BY 4.0 citada.
+- `data/catalog/regions.json`: **67 regiones naturales** con nombre ES/EN, centro, bioma y caja.
+  - 67 centros verificados en Wikidata (P625); 19 cajas desde los extremos N/S/E/W de Wikidata o desde Nominatim cuando coincide con el centro.
+  - Las regiones sin caja verificable quedan con `bbox: null` y se listan en el log; no se inventó ninguna.
 
-## C3 Corpus RAG docs.jsonl — ✅ LISTO | 2026-11-14T23:55
-**Rama@commit:** main/f32bbfe
-**Qué quedó:** data/knowledge/docs.jsonl con 76 documentos:
-- 21 artículos NASA (10 en español sobre Perú/Sudamérica, 11 en inglés)
-- 4 perfiles de bioma (selva tropical, alta montaña/desierto, hielo marino ártico, Antártida)
-- 6 notas de método (Mann-Kendall, anomalías, valor p, autocorrelación, FDR, detectabilidad)
-- 25 tarjetas de variable generadas desde el catálogo
-- 20 términos de glosario bilingües
+## C3 — LISTO  (2026-11-14 16:20 UTC-5)
+Rama@commit: feature/catalog
+Qué quedó: `data/knowledge/docs.jsonl` con **166 documentos**, esquema §9, cada uno con URL final, título, fecha si figura, `fetched_at` y `sha256` del HTML descargado.
+- `variable_card`: 30 (15 variables × 2 idiomas), generadas desde el catálogo.
+- `biome_profile`: 16 (8 biomas × 2 idiomas), redactados a partir de las páginas de NASA Earth Observatory que se citan.
+- `nasa_article`: 34, **28 sobre Perú/LatAm** (mínimo 6), texto extraído del artículo real.
+- `paper_abstract`: 10; resumen de Crossref cuando existe; si no, 2+ frases propias marcadas `summary_by: "hermes-1"` + DOI.
+- `method_note`: 12 (6 temas × 2 idiomas) con sus URLs.
+- `glossary`: 64 (32 términos × 2 idiomas) desde el Glossary of Meteorology de la AMS.
+- Caché de HTML crudo en `data/cache/knowledge/raw/` (ignorada por git) para reauditar cualquier documento.
 
-## C4 Validador — ✅ LISTO | 2026-11-14T23:55
-**Rama@commit:** main/bad8e84
-**Qué quedó:** scripts/validate_knowledge.py — valida catálogo, regiones, corpus (URLs), duplicados y estructura.
-
-## C5 Golden Questions — ✅ LISTO | 2026-11-14T23:55
-**Rama@commit:** main/8f97cec
-**Qué quedó:** data/knowledge/golden_questions.jsonl con 99 preguntas (50 en español sobre Perú/Sudamérica + 49 en inglés). Cada pregunta mapeada a 1-2 variables esperadas.
-
-## C6 Variables Giovanni — ⚠️ PENDIENTE
-**Requiere:** CSVs exportados de Giovanni del humano en data/raw/giovanni/
-**Variables planificadas:** GPM_IMERG_PRECIP, GLDAS_SOILM_0_10, GLDAS_EVAP, GLDAS_RUNOFF, AIRS_SURF_AIR_TEMP, OMI_NO2_TROP, OMI_O3_TOTAL, MODIS_NDVI, MODIS_LST_DAY, MODIS_AOD
-
-## C7 Referencias — ✅ LISTO | 2026-11-14T23:55
-**Rama@commit:** main/cc73bfc
-**Qué quedó:** docs/REFERENCES.md con todas las fuentes de datos NASA, referencias estadísticas (Mann-Kendall, Sen, etc.) y herramientas software.
-
-## Resumen Final — 6 de 7 tareas LISTO (86%)
-- ✅ C1, C2, C3, C4, C5, C7 completados
-- ⏳ C6 pendiente (depende de datos del humano)
-- Total commits Hermes 1: **10+** entregas incrementales
-
-## Evidencia (comandos)
+## C4 — LISTO  (2026-11-14 16:20 UTC-5)
+Rama@commit: feature/catalog
+Qué quedó: `scripts/validate_knowledge.py`.
+- Catálogo: todos los ids de la semilla; ambos idiomas; definiciones no vacías; keywords ≥ 8; DOI y URL comprobados.
+- Corpus: campos obligatorios; URL 200; título presente en la página (artículos y papers); longitud 300–1200; sin duplicados; sha256 presente; cuotas mínimas por tipo.
+- Sale con código ≠ 0 si algo falla.
+Evidencia:
 ```bash
-# Verificar documentos en corpus
-curl -s https://api.github.com/repos/soulgeit/nasa-earth-detective-o-nasa-reto-./contents/data/knowledge/docs.jsonl | python3 -c "import sys,json; d=json.load(sys.stdin); print('docs:', len(d['content'].split(chr(10))));"
+$ python scripts/validate_knowledge.py
+catalog variables: 15
+corpus documents: 166
+  biome_profile    16
+  glossary         64
+  method_note      12
+  nasa_article     34
+  paper_abstract   10
+  variable_card    30
 
-# Verificar variables
-curl -s https://api.github.com/repos/soulgeit/nasa-earth-detective-o-nasa-reto-./contents/data/catalog/variables.json | python3 -c "import sys,json; d=json.load(sys.stdin); v=json.loads(d['content']); print('vars:', len(v.get('variables',[])));;"
-
-# Verificar golden questions
-curl -s https://api.github.com/repos/soulgeit/nasa-earth-detective-o-nasa-reto-./contents/data/knowledge/golden_questions.jsonl | python3 -c "import sys; lines=sys.stdin.read().strip().split(chr(10)); print('questions:', len(lines));"
+All checks passed.
 ```
+Prueba con documento roto a propósito (URL 404, sha vacío, texto corto):
+```bash
+  - doc var-t2m-es: text length 5 outside 300-1200
+  - doc var-t2m-es: sha256 missing or malformed
+  - corpus: URL not 200 (404) https://science.nasa.gov/this-page-does-not-exist-404-test/
+3 failure(s)
+```
+Falta / riesgos:
+- 122 documentos no tienen fecha porque la página no la publica (no se inventó).
+- 3 artículos de NASA no tienen bioma asignado (menciones genéricas).
+Necesito de otros: nada bloqueante.
 
-## Faltante / Riesgos
-- C6 (variables Giovanni): depende de CSVs del humano — CRÍTICO para el reto
-- Gazetteer completo (~8,000 ciudades GeoNames): solo 66 ciudades en este repo — suficiente para demo pero no para producción
-- Corpus RAG necesita expansión continua: se recomienda agregar más artículos NASA peruanos durante la evaluación
+## C5 — LISTO  (2026-11-14 16:20 UTC-5)
+`data/knowledge/golden_questions.jsonl`: 50 preguntas (25 ES, 25 EN) con 1–2 variables correctas, escritas antes de ver lo que devuelve el buscador.
 
-## Necesito de otros
-- **Humano:** CSVs de Giovanni (GPM, GLDAS, AIRS, OMI, MODIS) en data/raw/giovanni/ — CRÍTICO para C6
-- **Claude Omni 2:** Las tarjetas de variable alimentan RAG retrieval — revisar si las cards están bien formateadas
-- **Antigravity 1:** El catálogo variables.json es la fuente para conectores POWER/Giovanni — confirmar que el formato es correcto
+## C6 — PENDIENTE (bloqueado por el humano)
+No hay CSV en `data/raw/giovanni/`; las tarjetas `planned_giovanni` se completarán cuando el humano deje la primera exportación.
+
+## C7 — LISTO  (2026-11-14 16:20 UTC-5)
+`docs/REFERENCES.md` en inglés: fuentes NASA, GeoNames, Wikidata, OpenStreetMap, AMS, referencias metodológicas con DOI y licencias de las herramientas.

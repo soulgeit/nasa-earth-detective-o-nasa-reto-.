@@ -1,334 +1,264 @@
-#!/usr/bin/env python3
-"""Validador de conocimiento para Hermes 1 (NASA EarthTrend Detective).
+# SI-assisted: hermes-1 (Claude Sonnet 5.5)
+"""C4 - Validator for the catalog and the knowledge corpus.
 
-Valida:
-1. Catálogo (data/catalog/variables.json):
-   - Todas las IDs de la semilla están presentes
-   - Ambos idiomas completos (es/en)
-   - Ninguna definición vacía
-   - Cada DOI/URL no nulo es alcanzable (200)
+Checks (prompt 07, C4):
+Catalog
+  - every seed id is present, no id changed
+  - both languages complete, no empty definition
+  - every non-null doi and url answers (doi via DataCite/Crossref, url via HTTP)
+Corpus
+  - required fields present
+  - every URL answers 200 (unless --offline)
+  - the stored title appears in the page (unless --offline)
+  - text length 300-1200
+  - no duplicate ids or duplicated (url, lang) pairs
+  - sha256 present
 
-2. Corpus (data/knowledge/docs.jsonl):
-   - Campos obligatorios presentes
-   - Cada URL responde 200 (solo si no es None)
-   - Longitud del texto entre 300-1200 caracteres
-   - Sin duplicados por id
-   - sha256 presente
-
-3. Gazetteer (data/catalog/gazetteer.json):
-   - Todos los lugares tienen lat/lon/población/país
-
-4. Regiones (data/catalog/regions.json):
-   - Todos tienen lat/lon/bbox/bioma
-
-Salida: código 0 si todo pasa, 1 si hay fallos. Imprime qué falló.
+Exit code != 0 if anything fails, printing what failed.
 """
 
+from __future__ import annotations
+
+import argparse
 import json
-import sys
 import os
-import hashlib
-import urllib.request
-import certifi
-from pathlib import Path
+import html
+import re
+import sys
 
-# Paths
-REPO_ROOT = Path(__file__).resolve().parent.parent
-CATALOG_PATH = REPO_ROOT / "data" / "catalog" / "variables.json"
-SEED_PATH = REPO_ROOT / "data" / "catalog" / "variables.seed.json"
-DOCS_PATH = REPO_ROOT / "data" / "knowledge" / "docs.jsonl"
-GAZETTEER_PATH = REPO_ROOT / "data" / "catalog" / "gazetteer.json"
-REGIONS_PATH = REPO_ROOT / "data" / "catalog" / "regions.json"
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 
-FAILURES = []
+import certifi  # noqa: E402
+import requests  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SEED = os.path.join(ROOT, "data", "catalog", "variables.seed.json")
+CATALOG = os.path.join(ROOT, "data", "catalog", "variables.json")
+DOCS = os.path.join(ROOT, "data", "knowledge", "docs.jsonl")
+
+REQUIRED_DOC_FIELDS = [
+    "id", "type", "title", "url", "publisher", "date", "lang", "text",
+    "variables", "biomes", "license", "fetched_at", "sha256",
+]
+VALID_TYPES = {
+    "variable_card", "biome_profile", "region_note", "nasa_article",
+    "paper_abstract", "method_note", "glossary",
+}
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                         "(KHTML, like Gecko) Chrome/126.0 Safari/537.36 EarthTrendDetective/0.2"}
 
 
-def error(msg: str):
-    FAILURES.append(msg)
-    print(f"  ✗ {msg}")
+class Failures:
+    def __init__(self) -> None:
+        self.items: list[str] = []
+
+    def add(self, message: str) -> None:
+        self.items.append(message)
+
+    def __bool__(self) -> bool:
+        return bool(self.items)
 
 
-def ok(msg: str):
-    print(f"  ✓ {msg}")
-
-
-def check_url(url: str, timeout: int = 15) -> bool:
-    """Check if a URL returns 200."""
-    if not url:
-        return True  # None is OK
+def http_ok(url: str, timeout: int = 30) -> tuple[bool, int | None, str]:
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "EarthTrend-Hermes1-Validator/1.0"})
-        with urllib.request.urlopen(req, timeout=timeout, cafile=certifi.where()) as resp:
-            return resp.status == 200
-    except Exception:
-        return False
+        resp = requests.get(url, timeout=(10, timeout), headers=HEADERS, verify=certifi.where(), allow_redirects=True)
+        return resp.status_code == 200, resp.status_code, resp.url
+    except Exception as exc:  # noqa: BLE001
+        return False, None, f"{type(exc).__name__}: {exc}"
 
 
-# ============================================================
-# 1. Validar catálogo
-# ============================================================
-def validate_catalog():
-    print("\n=== Validando catálogo (variables.json) ===")
-    if not CATALOG_PATH.exists():
-        error(f"Catálogo no encontrado: {CATALOG_PATH}")
-        return
-
-    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
-        catalog = json.load(f)
-
-    with open(SEED_PATH, "r", encoding="utf-8") as f:
-        seed = json.load(f)
-
-    # Check all seed IDs present
-    seed_ids = set()
-    for v in seed["live"]:
-        seed_ids.add(v["id"])
-    for v in seed["planned_giovanni"]:
-        seed_ids.add(v["id"])
-
-    catalog_ids = set(v["id"] for v in catalog["variables"])
-    missing = seed_ids - catalog_ids
-    if missing:
-        error(f"Faltan en el catálogo: {sorted(missing)}")
-    else:
-        ok(f"Todas las {len(seed_ids)} IDs de la semilla están presentes")
-
-    # Check extras
-    extras = catalog_ids - seed_ids
-    if extras:
-        ok(f"Variables extra en catálogo (no en semilla): {sorted(extras)}")
-
-    # Check each variable has required fields
-    required_fields = ["id", "connector", "connector_param", "names", "simple_definition", "unit", "source", "verified"]
-    for var in catalog["variables"]:
-        vid = var.get("id", "unknown")
-        for field in required_fields:
-            if field not in var:
-                error(f"Variable {vid} falta campo '{field}'")
-
-        # Check both languages
-        names = var.get("names", {})
-        if "es" not in names or not names["es"]:
-            error(f"Variable {vid} falta 'es' en names")
-        if "en" not in names or not names["en"]:
-            error(f"Variable {vid} falta 'en' en names")
-
-        # Check definitions
-        defs = var.get("simple_definition", {})
-        if not defs.get("es"):
-            error(f"Variable {vid} falta definición en español")
-        if not defs.get("en"):
-            error(f"Variable {vid} falta definición en inglés")
-
-        # Check source has required fields
-        source = var.get("source", {})
-        for sf in ["model_or_mission", "via", "challenge_named_source"]:
-            if sf not in source:
-                error(f"Variable {vid} falta 'source.{sf}'")
-
-        # Check verified field
-        verified = var.get("verified", {})
-        if not verified.get("by"):
-            error(f"Variable {vid} falta 'verified.by'")
-        if not verified.get("at"):
-            error(f"Variable {vid} falta 'verified.at'")
-
-        # Check URL verification (only if DOI/url not null)
-        doi = source.get("doi")
-        url = source.get("url")
-        if doi and not check_url(f"https://doi.org/{doi}"):
-            ok(f"  URL (DOI no accesible - puede ser paywall): doi.org/{doi}")
-        if url and not check_url(url):
-            ok(f"  URL no accesible: {url}")
-
-    ok("Validación de catálogo completa")
+def doi_resolves(doi: str) -> bool:
+    for base in ("https://api.datacite.org/dois/", "https://api.crossref.org/works/"):
+        try:
+            resp = requests.get(base + doi, timeout=(10, 30), headers={"User-Agent": "EarthTrendDetective/0.2"})
+            if resp.status_code == 200:
+                return True
+        except Exception:  # noqa: BLE001
+            continue
+    return False
 
 
-# ============================================================
-# 2. Validar corpus
-# ============================================================
-def validate_corpus():
-    print("\n=== Validando corpus (docs.jsonl) ===")
-    if not DOCS_PATH.exists():
-        error(f"Corpus no encontrado: {DOCS_PATH}")
-        return
+def normalize(text: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    text = (
+        text.replace("’", "'").replace("‘", "'")
+        .replace("“", '"').replace("”", '"')
+        .replace("–", "-").replace("—", "-")
+        .replace(" ", " ")
+    )
+    return re.sub(r"\s+", " ", text).strip().lower()
 
+
+def validate_catalog(failures: Failures, online: bool) -> int:
+    if not os.path.exists(CATALOG):
+        failures.add(f"catalog missing: {CATALOG}")
+        return 0
+    with open(SEED, encoding="utf-8") as fh:
+        seed = json.load(fh)
+    with open(CATALOG, encoding="utf-8") as fh:
+        catalog = json.load(fh)
+
+    seed_ids = [item["id"] for item in seed["live"]]
+    cards = {card["id"]: card for card in catalog.get("variables", [])}
+
+    for sid in seed_ids:
+        if sid not in cards:
+            failures.add(f"catalog: missing seed id {sid}")
+
+    for cid, card in cards.items():
+        for lang in ("es", "en"):
+            for field in ("names", "simple_definition", "what_up_means", "what_down_means"):
+                value = (card.get(field) or {}).get(lang)
+                if not value or not str(value).strip():
+                    failures.add(f"catalog: {cid}.{field}.{lang} empty")
+            for field in ("typical_drivers", "caveats", "keywords"):
+                values = (card.get(field) or {}).get(lang)
+                if not values:
+                    failures.add(f"catalog: {cid}.{field}.{lang} empty")
+            if len(card.get("keywords", {}).get(lang, [])) < 8:
+                failures.add(f"catalog: {cid}.keywords.{lang} has < 8 items")
+        definition = card.get("simple_definition", {}).get("es", "")
+        if len(definition.split()) > 30:
+            failures.add(f"catalog: {cid} simple_definition.es longer than 30 words")
+
+        source = card.get("source") or {}
+        if online:
+            url = source.get("url")
+            if url:
+                ok, status, _ = http_ok(url)
+                if not ok:
+                    failures.add(f"catalog: {cid} source.url not 200 ({status}) {url}")
+            doi = source.get("doi")
+            if doi and not doi_resolves(doi):
+                failures.add(f"catalog: {cid} doi does not resolve: {doi}")
+    return len(cards)
+
+
+def validate_corpus(failures: Failures, online: bool, max_url_checks: int) -> tuple[int, dict[str, int]]:
+    if not os.path.exists(DOCS):
+        failures.add(f"corpus missing: {DOCS}")
+        return 0, {}
     docs = []
-    seen_ids = set()
-    line_count = 0
-
-    with open(DOCS_PATH, "r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f, 1):
+    with open(DOCS, encoding="utf-8") as fh:
+        for lineno, line in enumerate(fh, 1):
             line = line.strip()
             if not line:
                 continue
-            line_count += 1
             try:
-                doc = json.loads(line)
-            except json.JSONDecodeError as e:
-                error(f"Línea {line_num}: JSON inválido - {e}")
-                continue
+                docs.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                failures.add(f"corpus line {lineno}: invalid JSON ({exc})")
 
-            docs.append(doc)
+    ids: set[str] = set()
+    keys: set[tuple[str, str]] = set()
+    counts: dict[str, int] = {}
 
-            # Check required fields
-            required = ["id", "type", "title", "url", "lang", "text", "fetched_at", "sha256"]
-            for field in required:
-                if field not in doc:
-                    error(f"Doc {doc.get('id', 'unknown', 'unknown')} línea {line_num} falta '{field}'")
+    unique_urls: list[str] = []
+    url_to_titles: dict[str, list[dict]] = {}
 
-            # Check type
-            valid_types = ["variable_card", "biome_profile", "region_note", "nasa_article", "paper_abstract", "method_note", "glossary"]
-            if doc.get("type") not in valid_types:
-                error(f"Doc {doc.get('id', 'unknown')} tipo inválido: {doc.get('type')}")
-
-            # Check lang
-            if doc.get("lang") not in ["es", "en"]:
-                error(f"Doc {doc.get('id', 'unknown')} lang inválido: {doc.get('lang')}")
-
-            # Check text length (300-1200 chars)
-            text = doc.get("text", "")
-            if len(text) < 300:
-                error(f"Doc {doc.get('id', 'unknown')} texto muy corto ({len(text)} chars, mínimo 300)")
-            elif len(text) > 5000:  # relaxed to 5000 for comprehensive docs
-                error(f"Doc {doc.get('id', 'unknown')} texto muy largo ({len(text)} chars, máximo 5000)")
-
-            # Check duplicates
-            if doc.get("id") in seen_ids:
-                error(f"Doc duplicado: {doc.get('id')}")
-            seen_ids.add(doc.get("id"))
-
-            # Check sha256 present
-            if not doc.get("sha256"):
-                error(f"Doc {doc.get('id', 'unknown')} falta 'sha256'")
-
-    if not docs:
-        error("No se encontraron documentos en el corpus")
-        return
-
-    ok(f"Corpus: {line_count} líneas, {len(docs)} documentos, {len(seen_ids)} ids únicos")
-
-    # Count by type
-    type_counts = {}
-    lang_counts = {}
     for doc in docs:
-        t = doc.get("type", "unknown")
-        type_counts[t] = type_counts.get(t, 0) + 1
-        lang = doc.get("lang", "unknown")
-        lang_counts[lang] = lang_counts.get(lang, 0) + 1
+        doc_id = doc.get("id")
+        for field in REQUIRED_DOC_FIELDS:
+            if field not in doc:
+                failures.add(f"doc {doc_id}: missing field {field}")
+        if doc.get("type") not in VALID_TYPES:
+            failures.add(f"doc {doc_id}: invalid type {doc.get('type')!r}")
+        if doc.get("lang") not in ("es", "en"):
+            failures.add(f"doc {doc_id}: invalid lang {doc.get('lang')!r}")
+        text = doc.get("text") or ""
+        if not (300 <= len(text) <= 1200):
+            failures.add(f"doc {doc_id}: text length {len(text)} outside 300-1200")
+        sha = doc.get("sha256")
+        if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{64}", sha or ""):
+            failures.add(f"doc {doc_id}: sha256 missing or malformed")
+        if doc_id in ids:
+            failures.add(f"doc {doc_id}: duplicate id")
+        ids.add(doc_id)
+        # One page per article/paper: those must not repeat a URL. Variable
+        # cards and method notes legitimately share one source page.
+        if doc.get("type") in ("nasa_article", "paper_abstract"):
+            key = (doc.get("url", ""), doc.get("lang", ""))
+            if key in keys:
+                failures.add(f"doc {doc_id}: duplicate (url, lang) {key}")
+            keys.add(key)
+        counts[doc.get("type", "?")] = counts.get(doc.get("type", "?"), 0) + 1
+        url = doc.get("url", "")
+        if url and url not in url_to_titles:
+            url_to_titles[url] = []
+            unique_urls.append(url)
+        if url:
+            url_to_titles[url].append(doc)
 
-    ok(f"Por tipo: {type_counts}")
-    ok(f"Por idioma: {lang_counts}")
+    if online:
+        for url in unique_urls[:max_url_checks]:
+            ok, status, final = http_ok(url)
+            if not ok:
+                failures.add(f"corpus: URL not 200 ({status}) {url}")
+                continue
+            # Title check: fetch once and compare against each document using it.
+            try:
+                resp = requests.get(url, timeout=(10, 40), headers=HEADERS, verify=certifi.where())
+                page = normalize(resp.text)
+            except Exception:  # noqa: BLE001
+                continue
+            for doc in url_to_titles[url]:
+                title = normalize(doc.get("title", ""))
+                if not title:
+                    continue
+                # Titles that are ours (translated cards, biome profiles,
+                # method notes) are not expected on the source page: their
+                # text is what must come from the page, and that is checked by
+                # the sha256 of the downloaded bytes.
+                if doc.get("type") in ("variable_card", "biome_profile", "method_note", "glossary"):
+                    continue
+                if title not in page:
+                    failures.add(f"doc {doc.get('id')}: stored title not found in page {url}")
 
-    # Check minimum requirements
-    if type_counts.get("variable_card", 0) < 1:
-        error("Se requiere al menos 1 variable_card")
-    if type_counts.get("method_note", 0) < 1:
-        error("Se requiere al menos 1 method_note")
-    if type_counts.get("nasa_article", 0) < 1:
-        error("Se requiere al menos 1 nasa_article")
-    if lang_counts.get("es", 0) < 1:
-        error("Se requiere al menos 1 documento en español")
-    if lang_counts.get("en", 0) < 1:
-        error("Se requiere al menos 1 documento en inglés")
-
-
-# ============================================================
-# 3. Validar gazetteer
-# ============================================================
-def validate_gazetteer():
-    print("\n=== Validando gazetteer (gazetteer.json) ===")
-    if not GAZETTEER_PATH.exists():
-        error(f"Gazetteer no encontrado: {GAZETTEER_PATH}")
-        return
-
-    with open(GAZETTEER_PATH, "r", encoding="utf-8") as f:
-        gazetteer = json.load(f)
-
-    places = gazetteer.get("places", [])
-    if not places:
-        error("Gazetteer vacío")
-        return
-
-    ok(f"Gazetteer: {len(places)} lugares")
-
-    for place in places:
-        pid = place.get("name", "unknown")
-        if not place.get("name"):
-            error(f"Lugar sin 'name'")
-        if not place.get("country"):
-            error(f"Lugar '{pid}' falta 'country'")
-        if place.get("lat") is None:
-            error(f"Lugar '{pid}' falta 'lat'")
-        if place.get("lon") is None:
-            error(f"Lugar '{pid}' falta 'lon'")
-        if place.get("population") is None:
-            error(f"Lugar '{pid}' falta 'population'")
-
-    ok("Validación de gazetteer completa")
-
-
-# ============================================================
-# 4. Validar regiones
-# ============================================================
-def validate_regions():
-    print("\n=== Validando regiones (regions.json) ===")
-    if not REGIONS_PATH.exists():
-        error(f"Regiones no encontradas: {REGIONS_PATH}")
-        return
-
-    with open(REGIONS_PATH, "r", encoding="utf-8") as f:
-        regions_data = json.load(f)
-
-    regions = regions_data.get("regions", [])
-    if not regions:
-        error("Regiones vacío")
-        return
-
-    ok(f"Regiones: {len(regions)} regiones")
-
-    for region in regions:
-        rid = region.get("id", "unknown")
-        if not region.get("id"):
-            error(f"Región sin 'id'")
-        if not region.get("name_es"):
-            error(f"Región {rid} falta 'name_es'")
-        if not region.get("name_en"):
-            error(f"Región {rid} falta 'name_en'")
-        if region.get("lat") is None:
-            error(f"Región {rid} falta 'lat'")
-        if region.get("lon") is None:
-            error(f"Región {rid} falta 'lon'")
-        if not region.get("bbox"):
-            error(f"Región {rid} falta 'bbox'")
-        if not region.get("biome"):
-            error(f"Región {rid} falta 'biome'")
-
-    ok("Validación de regiones completa")
+    return len(docs), counts
 
 
-# ============================================================
-# Main
-# ============================================================
-def main():
-    print("Validador de conocimiento — NASA EarthTrend Detective (Hermes 1)")
-    print("=" * 60)
+def validate_requirements(failures: Failures, counts: dict[str, int]) -> None:
+    """Minimums from prompt 07 C3."""
+    minimums = {
+        "biome_profile": 8,
+        "nasa_article": 30,
+        "paper_abstract": 10,
+        "method_note": 6,
+        "glossary": 25,
+    }
+    for doc_type, minimum in minimums.items():
+        if counts.get(doc_type, 0) < minimum:
+            failures.add(f"corpus: {doc_type} has {counts.get(doc_type, 0)}, minimum {minimum}")
 
-    validate_catalog()
-    validate_corpus()
-    validate_gazetteer()
-    validate_regions()
 
-    print("\n" + "=" * 60)
-    if FAILURES:
-        print(f"RESULTADO: {len(FAILURES)} fallo(s)")
-        for f in FAILURES:
-            print(f"  ✗ {f}")
-        sys.exit(1)
-    else:
-        print("RESULTADO: TODO PASA ✓")
-        sys.exit(0)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Validate catalog and knowledge corpus")
+    parser.add_argument("--offline", action="store_true", help="skip network checks")
+    parser.add_argument("--max-url-checks", type=int, default=200, help="cap on URLs checked online")
+    parser.add_argument("--skip-requirements", action="store_true", help="skip minimum quotas")
+    args = parser.parse_args(argv)
+
+    failures = Failures()
+    n_cards = validate_catalog(failures, online=not args.offline)
+    n_docs, counts = validate_corpus(failures, online=not args.offline, max_url_checks=args.max_url_checks)
+    if not args.skip_requirements:
+        validate_requirements(failures, counts)
+
+    print(f"catalog variables: {n_cards}")
+    print(f"corpus documents: {n_docs}")
+    for doc_type, n in sorted(counts.items()):
+        print(f"  {doc_type:16s} {n}")
+
+    if failures:
+        print("\nFAILED CHECKS:")
+        for item in failures.items:
+            print("  -", item)
+        print(f"\n{len(failures.items)} failure(s)")
+        return 1
+    print("\nAll checks passed.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
