@@ -1,8 +1,12 @@
-# Modulo estadístico para detección de tendencias en series temporales
-from .trend_engine import (
-    deseasonalize_monthly,
-    calculate_linear_trend,
-    mann_kendall_test,
-    theil_sen_slope,
-    analyze_earth_science_trend
+# SI-assisted: Antigravity 2 (Gemini 3.8 Flash)
+from src.stats.trend_engine import (
+    analyze_series,
+    analyze_grid,
+    compare
 )
+
+__all__ = [
+    "analyze_series",
+    "analyze_grid",
+    "compare"
+]
