@@ -14,9 +14,11 @@ and still return the documentary candidates.
 
 from __future__ import annotations
 
+import json
 import math
 from typing import Any, Callable
 
+from .config import SETTINGS
 from .gazetteer import _load as _gazetteer_places
 from .koppen import InsufficientClimatology, from_monthly_series
 from .rag import retrieve
@@ -27,6 +29,8 @@ PRECIP_VAR = "PRECTOTCORR"
 
 BIG_CITY_POPULATION = 1_000_000
 BIG_CITY_KM = 50.0
+# Regions are published as centre points, not polygons, so "coastal" is approximate.
+COASTAL_KM = 60.0
 
 
 def _etl_get_series() -> Callable[..., dict[str, Any]] | None:
@@ -97,18 +101,79 @@ def _gazetteer_facts(lat: float, lon: float) -> dict[str, Any]:
     }
 
 
-def _polar_or_coastal(lat: float, lon: float, *, climate_code: str | None) -> dict[str, Any]:
-    """Deterministic flags. Coastal needs the regions catalogue; polar is |lat|."""
-    flags: dict[str, Any] = {"polar": abs(lat) >= 66.56, "coastal": None}
-    try:
-        from .regions import is_coastal  # type: ignore
+def _coastal_region(lat: float, lon: float) -> dict[str, Any] | None:
+    """Nearest region whose biome is `coast`, and how far it is.
 
-        flags["coastal"] = is_coastal(lat, lon)
-    except Exception:
-        flags["coastal"] = None
+    `data/catalog/regions.json` (Hermes 1) has named regions with a centre point,
+    not polygons, so this is a documented approximation: a point within
+    COASTAL_KM of a coast region's centre inherits the flag. We report the
+    distance so the UI can show what the claim rests on.
+    """
+    path = SETTINGS.catalog_dir / "regions.json"
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    rows = payload.get("regions") if isinstance(payload, dict) else payload
+    best: dict[str, Any] | None = None
+    for row in rows or []:
+        if str(row.get("biome") or "") != "coast":
+            continue
+        try:
+            km = haversine_km(lat, lon, float(row["lat"]), float(row["lon"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if best is None or km < best["km"]:
+            name = row.get("names") or {}
+            best = {"region": name.get("en") or name.get("es") or row.get("id"), "km": round(km, 1)}
+    return best
+
+
+def _polar_or_coastal(lat: float, lon: float, *, climate_code: str | None) -> dict[str, Any]:
+    """Deterministic flags. Polar comes from latitude; coastal from the regions file."""
+    flags: dict[str, Any] = {"polar": abs(lat) >= 66.56, "coastal": None}
+    coast = _coastal_region(lat, lon)
+    if coast is not None:
+        # True only when a coast region's centre is close. False would claim "not
+        # coastal", which we cannot know from 11 centre points.
+        flags["coastal"] = coast["km"] <= COASTAL_KM or None
+        flags["coastal_evidence"] = coast
     if climate_code:
         flags["polar_climate"] = climate_code.startswith("E")
     return flags
+
+
+def _climate_caveats(
+    climate: dict[str, Any], lat: float, lon: float, temp_series: dict[str, Any]
+) -> list[dict[str, str]]:
+    """Say out loud where the classification may not describe the place.
+
+    Measured on 2026-11-14: POWER's cell for Cusco (-13.53, -71.97) is 3 739.76 m
+    high with a warmest month of 9.1 °C, so it classifies ET, while the city at
+    ~3 350 m is not tundra. The code is right for the cell; the caveat is what
+    keeps the app from presenting it as a fact about the city.
+    """
+    notes: list[dict[str, str]] = []
+    resolution = ((temp_series.get("provenance") or {}).get("native_resolution")) or "0.5° x 0.625°"
+    notes.append({
+        "code": "CELL_RESOLUTION",
+        "es": f"El clima se calcula con la celda de POWER de {resolution}, no con el punto exacto. "
+              "En relieve abrupto la celda puede caer en una ladera o cima distinta de la ciudad.",
+        "en": f"The climate is computed from POWER's {resolution} cell, not from the exact point. "
+              "In steep terrain the cell may sit on a different slope or summit than the city.",
+    })
+    code = str(climate.get("code") or "")
+    if code.startswith("E") and abs(lat) < 60:
+        notes.append({
+            "code": "POLAR_CODE_AT_LOW_LATITUDE",
+            "es": "La celda clasifica como polar; a esta latitud eso suele indicar altitud, "
+                  "no un clima polar real. Compruébalo con la elevación de la celda.",
+            "en": "The cell classifies as polar; at this latitude that usually means altitude, "
+                  "not a true polar climate. Check it against the cell elevation.",
+        })
+    return notes
 
 
 def _biome_query(climate: dict[str, Any] | None, flags: dict[str, Any], lang: str) -> str:
@@ -121,6 +186,8 @@ def _biome_query(climate: dict[str, Any] | None, flags: dict[str, Any], lang: st
                           "D": "cold continental", "E": "polar ice"}[climate["group"]])
     if flags.get("polar"):
         parts.append("polar" if lang == "en" else "polar")
+    if flags.get("coastal"):
+        parts.append("coast estuary" if lang == "en" else "costa estuario")
     if flags.get("big_city_nearby"):
         parts.append("big city air quality" if lang == "en" else "gran ciudad aire")
     return " ".join(p for p in parts if p)
@@ -180,6 +247,7 @@ def scout(lat: float, lon: float, *, lang: str = "es") -> dict[str, Any]:
                 "provenance": {"temp": temp_series.get("provenance"), "precip": precip_series.get("provenance")},
             }
             profile["climate"] = climate
+            profile["climate"]["caveats"] = _climate_caveats(climate, lat_f, lon_f, temp_series)
             profile["etl"]["available"] = True
         except InsufficientClimatology as exc:
             profile["etl"]["reason"] = f"INSUFFICIENT_CLIMATOLOGY: {exc}"

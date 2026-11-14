@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from typing import Any
 
 from .config import SETTINGS
@@ -277,13 +278,46 @@ def _system_prompt() -> str | None:
     return None
 
 
-def _user_message(question: str, cards: list[dict[str, Any]]) -> str:
-    """Exactly the shape Hermes 2 writes into data/lora/*.jsonl (§10)."""
+def _catalog_line(variable_id: str, lang: str) -> str:
+    """One CANDIDATES line in the exact shape the LoRA dataset was built with.
+
+    ``data/lora/train.jsonl`` writes ``- T2M: Temperatura del aire a 2 m (°C) -
+    Cuánto calor hace...``. Training and inference must match, so the planner
+    rebuilds that line from the published catalogue instead of the short corpus title.
+    """
+    card = _catalog_card(variable_id)
+    if not card:
+        return f"- {variable_id}: {variable_id}"
+    names = card.get("names") or {}
+    name = names.get(lang) or names.get("en") or names.get("es") or variable_id
+    unit = card.get("unit") or ""
+    definition = (card.get("simple_definition") or {})
+    definition = definition.get(lang) or definition.get("en") or ""
+    head = f"- {variable_id}: {name}" + (f" ({unit})" if unit else "")
+    return f"{head} - {definition}" if definition else head
+
+
+@lru_cache(maxsize=1)
+def _catalog_cards_by_id() -> dict[str, dict[str, Any]]:
+    from .corpus import load_catalog_cards
+
+    return {str(card["id"]): card for card, _available in load_catalog_cards() if card.get("id")}
+
+
+def _catalog_card(variable_id: str) -> dict[str, Any] | None:
+    return _catalog_cards_by_id().get(variable_id)
+
+
+def _user_message(question: str, cards: list[dict[str, Any]], *, lang: str = "es") -> str:
+    """Exactly the shape data/lora/*.jsonl uses (§10)."""
     lines = [f"QUESTION: {question}", "CANDIDATES:"]
+    seen: set[str] = set()
     for card in cards:
-        long_name = card.get("title") or ""
-        vid = (card.get("variables") or ["?"])[0]
-        lines.append(f"- {vid}: {long_name}")
+        vid = (card.get("variables") or [""])[0]
+        if not vid or vid in seen:
+            continue
+        seen.add(vid)
+        lines.append(_catalog_line(vid, lang))
     return "\n".join(lines)
 
 
@@ -354,6 +388,42 @@ def validate_plan(raw: Any, *, question: str, candidates: set[str], lang: str) -
     return plan, None
 
 
+def _local_lora(question: str, lang: str, cards: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Call the locally trained adapter through ``src/ml/serve.py`` (Antigravity 2).
+
+    RONDA_2 §9.2.5: ``PLANNER_MODEL=local-lora`` means "use the adapter this
+    machine trained", not "use an Ollama tag called local-lora". If the serving
+    module or the adapter is not there yet we return None and the caller falls
+    back to rules with a note; we never fake a lora answer.
+    """
+    system = _system_prompt()
+    if system is None:
+        return None
+    try:
+        from src.ml.serve import generate  # type: ignore
+    except Exception:
+        return None
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": _user_message(question, cards, lang=lang)},
+    ]
+    try:
+        raw = generate(messages)
+    except Exception as exc:  # model not loaded, CUDA busy, adapter missing
+        return _rules_plan(question, lang, cards, mode="rules") | {
+            "note": f"local_lora_unavailable: {type(exc).__name__}: {exc}"[:160]
+        }
+    candidates = {(c.get("variables") or [None])[0] for c in cards}
+    candidates = {c for c in candidates if c}
+    plan, reason = validate_plan(raw, question=question, candidates=candidates, lang=lang)
+    if plan is None:
+        fallback = _rules_plan(question, lang, cards, mode="rules")
+        fallback["note"] = f"lora_rejected: {reason}"[:160]
+        return fallback
+    plan["mode"] = "lora"
+    return plan
+
+
 def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: str) -> dict[str, Any]:
     """Ask PLANNER_MODEL, validate, retry once, then fall back to rules."""
     candidates = {(c.get("variables") or [None])[0] for c in cards}
@@ -368,8 +438,7 @@ def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: st
 
     messages = [
         {"role": "system", "content": system},
-        {"role": "user", "content": _user_message(question, cards)},
-        {"role": "user", "content": f"Reply with this JSON only: {PLAN_SCHEMA_HINT}"},
+        {"role": "user", "content": _user_message(question, cards, lang=lang)},
     ]
     last_reason = None
     for attempt in range(2):
@@ -392,6 +461,11 @@ def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: st
     return plan
 
 
+def _planner_model_is_local_lora() -> bool:
+    """`PLANNER_MODEL=local-lora` selects the adapter, not an Ollama tag."""
+    return (SETTINGS.planner_model or "").strip().lower() in ("local-lora", "local_lora", "lora")
+
+
 def plan(question: str, *, lang: str = "es") -> dict[str, Any]:
     """Turn a student's question into an InvestigationPlan (contract §10)."""
     language = _lang(question, lang)
@@ -408,7 +482,14 @@ def plan(question: str, *, lang: str = "es") -> dict[str, Any]:
         return _empty_plan("no_match", language, "rules", reason="no candidate variables retrieved")
 
     if SETTINGS.ai_mode == "full" and SETTINGS.planner_model:
-        return _llm_plan(question, language, cards, mode="lora")
+        if _planner_model_is_local_lora():
+            result = _local_lora(question, language, cards)
+            if result is not None:
+                return result
+            fallback = _rules_plan(question, language, cards)
+            fallback["note"] = "local_lora_unavailable: src/ml/serve.py or adapter not ready"
+            return fallback
+        return _llm_plan(question, language, cards, mode="llm")
 
     return _rules_plan(question, language, cards)
 

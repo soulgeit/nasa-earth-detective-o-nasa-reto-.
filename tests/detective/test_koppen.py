@@ -90,3 +90,22 @@ def test_result_carries_its_criteria_and_citation():
 def test_language_names_differ():
     result = constant(30, 5)
     assert result["names"]["es"] != result["names"]["en"]
+
+
+# --- RONDA_2 §6.3: resolution caveat, measured with the real ETL -------------
+
+def test_highland_point_may_be_a_neighbouring_cell():
+    """A 0.5° x 0.625° cell is coarse: a mountain city can land on a ridge cell.
+
+    Measured 2026-11-14 with the live ETL: POWER's cell for Cusco (-13.53, -71.97)
+    has geometry elevation 3739.76 m and a warmest month of 9.1 °C, while the city
+    sits at ~3350 m. The classification below is therefore correct *for the cell*
+    and wrong for the city — which is why scout() must report the caveat instead of
+    presenting the Köppen code as a fact about the place.
+    """
+    t = {m: (7.3 if m in (6, 7) else 8.5) for m in range(1, 13)}
+    t[7] = 9.1
+    p = {m: 58 for m in range(1, 13)}
+    result = from_monthly_series(t, p)
+    assert result["code"] == "ET"
+    assert result["diagnostics"]["t_hot"] < 10
