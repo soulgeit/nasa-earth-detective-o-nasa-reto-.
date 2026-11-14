@@ -52,3 +52,37 @@ Rama@commit: feature/data-pipeline
 - Cobertura espacial: Resolución de 0.5° x 0.625° en MERRA-2.
 - Límites de caja regional: cajas mayores a 10°x10° se rechazan con código `BBOX_TOO_LARGE`.
 - Frecuencia de peticiones: respetando límite de ~30 req/min con reintentos y caché local de 30 días.
+
+---
+
+## D4 — GISTEMP v4 & NSIDC Sea Ice Index v4 — LISTO (14-nov-2026 14:40)
+Rama@commit: feature/data-pipeline
+
+### Qué quedó:
+1. **Conector NASA GISTEMP v4 (`src/etl/gistemp.py`)**:
+   - Descarga directa de la tabla de medias mensuales globales de temperatura (Land-Ocean Temperature Index, 1880 a 2026) desde `https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv`.
+   - Caché persistente con SHA-256 en `data/cache/gistemp/` y fallback automático a fixture real offline (`tests/fixtures/real/gistemp_glb_monthly.csv`).
+   - Normalización bajo contrato `timeseries/2` con `unit: "°C"`, `variable_id: "GISTEMP_TANOM"`, y agregación `area_mean_coslat`.
+2. **Conector NSIDC Sea Ice Index v4 (`src/etl/nsidc_seaice.py`)**:
+   - Descarga y compilación de series de extensión mensual de hielo marino satelital (DMSP SSM/I-SSMIS / Nimbus-7 SMMR) desde NOAA/NSIDC (`https://noaadata.apps.nsidc.org/NOAA/G02135/`).
+   - Soporte para Ártico (`SEAICE_EXTENT_N`) y Antártico (`SEAICE_EXTENT_S`) con `unit: "10^6 km²"`, 1979 a 2026 (564 meses).
+   - Fixtures reales preservados en `tests/fixtures/real/` para pruebas unitarias sin conexión.
+3. **Integración en Registro (`src/etl/registry.py`)**:
+   - `get_series("GISTEMP_TANOM")` y `get_series("SEAICE_EXTENT_{N,S}")` integrados y enrutados.
+4. **Validador de Datasets (`scripts/validate_datasets.py`)**:
+   - Función `validate_dataset(dict)` expuesta para validación programática en memoria y CLI.
+5. **Pruebas (`tests/etl/test_additional_sources.py`)**:
+   - 10/10 pruebas pasando en verde (`pytest tests/etl -q`).
+
+### Evidencia:
+- Validación directa:
+  ```powershell
+  python -c "from src.etl.registry import get_series; from scripts.validate_datasets import validate_dataset; print([(v, len(validate_dataset(get_series(v)))==0) for v in ['GISTEMP_TANOM', 'SEAICE_EXTENT_N', 'SEAICE_EXTENT_S']])"
+  # [('GISTEMP_TANOM', True), ('SEAICE_EXTENT_N', True), ('SEAICE_EXTENT_S', True)]
+  ```
+- Test suite:
+  ```
+  tests/etl/test_additional_sources.py ...
+  tests/etl/test_power.py .......
+  10 passed in 15.39s
+  ```

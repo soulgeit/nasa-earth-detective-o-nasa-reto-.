@@ -17,6 +17,8 @@ from src.etl.power import (
     get_power_grid,
 )
 from src.etl.giovanni import parse_giovanni_csv
+from src.etl.gistemp import get_gistemp_series
+from src.etl.nsidc_seaice import get_nsidc_series
 
 
 def _load_catalog() -> Dict[str, dict]:
@@ -78,10 +80,21 @@ def get_series(
         connector_param = var_meta.get("connector_param", variable_id)
 
     # Años de inicio y fin
-    start_year = int(start.split("-")[0]) if (start and len(start) >= 4) else 1981
+    if variable_id in ("GISTEMP_TANOM", "GISTEMP", "GLOBAL_TEMP_ANOMALY"):
+        start_year = int(start.split("-")[0]) if (start and len(start) >= 4) else 1880
+    elif "SEAICE" in variable_id:
+        start_year = int(start.split("-")[0]) if (start and len(start) >= 4) else 1979
+    else:
+        start_year = int(start.split("-")[0]) if (start and len(start) >= 4) else 1981
     end_year = int(end.split("-")[0]) if (end and len(end) >= 4) else 2025
 
-    if connector == "power":
+    if connector == "gistemp" or variable_id in ("GISTEMP_TANOM", "GISTEMP", "GLOBAL_TEMP_ANOMALY"):
+        return get_gistemp_series(variable_id, start_year=start_year, end_year=end_year)
+
+    elif connector == "nsidc" or "SEAICE" in variable_id:
+        return get_nsidc_series(variable_id, start_year=start_year, end_year=end_year)
+
+    elif connector == "power":
         if bbox is not None:
             return get_power_regional_series(
                 connector_param, bbox, start_year=start_year, end_year=end_year
@@ -144,5 +157,7 @@ __all__ = [
     "get_series",
     "get_grid",
     "parse_giovanni_csv",
+    "get_gistemp_series",
+    "get_nsidc_series",
     "DataUnavailable"
 ]
