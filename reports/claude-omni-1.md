@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-1 — 2026-11-14 18:35 hora de Perú
-Rama@commit: feature/ui (pendiente de hash tras commit) · empujado: sí
+Rama@commit: feature/ui@3d4e765 · empujado: sí
 VERIFICADO: Tareas Ronda 2 (1, 2, 3, 4) → python scripts/take_real_screenshots.py → 6 capturas reales en docs/media/ a 1600x900 sin devFixture
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en interfaz
