@@ -61,7 +61,7 @@ Necesito de otros:
 - Claude Omni 3 (`feature/api`): montaje de `/api/trendmap` y `/api/compare`.
 
 ## U4 — LISTO  (2026-11-14 14:15 UTC-5)
-Rama@commit: feature/ui (pendiente de hash tras commit)
+Rama@commit: feature/ui@a3c0999
 Qué quedó:
 - **Caja «Pregúntale al detective»**:
   - Entrada de lenguaje natural conectada a `/api/ai/plan`.
