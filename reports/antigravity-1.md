@@ -1,13 +1,13 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-1 — 2026-11-14 18:00 hora de Perú
-Rama@commit: feature/data-pipeline@b59b7cb · empujado: sí
-VERIFICADO: precalentamiento de caché de demostración → `python -m src.etl.preheat` → 7/7 casos en caché (Lima, Piura, Svalbard, Ártico, Antártico, GISTEMP, Piura Grid)
-VERIFICADO: pruebas ETL y precalentamiento → `pytest tests/etl -q` → 47 passed, 9 skipped in 8.1s
-ESCRITO: parser Giovanni preparado en `src/etl/giovanni.py` (esperando CSVs reales de GES DISC)
-ROTO / NO HECHO: pendientes CSV reales de Giovanni en `data/raw/giovanni/` (GPM y MODIS u OMI)
-Siguiente paso: procesar y validar los CSV de Giovanni tan pronto aparezcan en `data/raw/giovanni/`
-Necesito de: humano: depositar los 2 CSV de Giovanni en `data/raw/giovanni/` (ej. GPM_IMERG_PRECIP y MODIS_NDVI / OMI_NO2)
-Avisos para otros carriles: shims `get_power_point_series` y `get_power_regional_series` se mantienen temporales hasta que `tests/test_system.py` migre a `get_series`
+## ESTADO — antigravity-1 — 2026-11-14 18:45 hora de Perú
+Rama@commit: feature/data-pipeline@64f7714 · empujado: sí
+VERIFICADO: D5 Giovanni parser con CSVs reales de GES DISC → `pytest tests/etl/test_giovanni.py` → 7 passed in 0.1s
+VERIFICADO: validación de CSVs en data/raw/giovanni/ → `validate_document()` → 2 archivos reales (557 meses c/u, mm/day y °C), 0 errores
+VERIFICADO: precalentamiento de caché de demostración → `python -m src.etl.preheat` → 7/7 casos en caché local (1980–2026)
+ROTO / NO HECHO: ninguno en carril ETL
+Siguiente paso: apoyar a Hermes 2 / Antigravity 2 con sweep de rejillas o soporte de atlas si se requiere
+Necesito de: arquitecto: migrar `tests/test_system.py` a `get_series` para eliminar definitivamente los shims obsoletos
+Avisos para otros carriles: `parse_giovanni_csv` soporta 100% el formato oficial GES DISC con metadatos de cabecera y URL de reproducción
 <!-- ESTADO:FIN -->
 
 # Antigravity 1 — Datos NASA reales
