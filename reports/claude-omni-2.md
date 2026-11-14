@@ -1,12 +1,12 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-2 — 2026-11-14 18:40 (hora de Perú)
-Rama@commit: feature/wizard@3b6731c · empujado: sí
+Rama@commit: feature/wizard@d4d8d33 · empujado: sí
 VERIFICADO: T1 citas por variable → POST /api/ai/explain con /api/analyze real (T2M Lima) → mode extractive, numbers_ok true, 2 citas correctas, 0 aerosoles
 VERIFICADO: T2 no_match → plan("¿la selva pierde vegetación?") → intent no_match, missing ["NDVI / vegetación (MODIS)"], alternatives GWETTOP/EVLAND
 VERIFICADO: T3 gazetteer → geocode("Cuzco") → Cusco (PE); "Peru" → []; 4 ms/consulta con 8.109 ciudades
 VERIFICADO: T3 scout → scout(-12.05,-77.03) → Köppen BWh, Lima a 0,8 km, 3 candidatas con URL
 VERIFICADO: T3 wizard.py borrado; T4 system_prompt idéntico a data/lora/train.jsonl
-VERIFICADO: pytest tests/detective -q → 117 passed
+VERIFICADO: pytest tests/detective -q → 117 passed · pytest (repo completo) → 217 passed, 9 skipped, 0 failed
 ESCRITO (sin ejecutar de punta a punta): T4 PLANNER_MODEL=local-lora; probado el camino de respaldo, no hay adaptador entrenado todavía
 ROTO / NO HECHO: «Síntesis asistida por IA» sigue en src/ui/i18n.js (carril de Claude Omni 1); no lo toqué
 Siguiente paso: esperar el adaptador de Antigravity 2 y conectar src/ml/serve.py::generate
