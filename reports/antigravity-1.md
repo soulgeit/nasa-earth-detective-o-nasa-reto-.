@@ -1,3 +1,15 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — antigravity-1 — 2026-11-14 18:00 hora de Perú
+Rama@commit: feature/data-pipeline@b59b7cb · empujado: sí
+VERIFICADO: precalentamiento de caché de demostración → `python -m src.etl.preheat` → 7/7 casos en caché (Lima, Piura, Svalbard, Ártico, Antártico, GISTEMP, Piura Grid)
+VERIFICADO: pruebas ETL y precalentamiento → `pytest tests/etl -q` → 47 passed, 9 skipped in 8.1s
+ESCRITO: parser Giovanni preparado en `src/etl/giovanni.py` (esperando CSVs reales de GES DISC)
+ROTO / NO HECHO: pendientes CSV reales de Giovanni en `data/raw/giovanni/` (GPM y MODIS u OMI)
+Siguiente paso: procesar y validar los CSV de Giovanni tan pronto aparezcan en `data/raw/giovanni/`
+Necesito de: humano: depositar los 2 CSV de Giovanni en `data/raw/giovanni/` (ej. GPM_IMERG_PRECIP y MODIS_NDVI / OMI_NO2)
+Avisos para otros carriles: shims `get_power_point_series` y `get_power_regional_series` se mantienen temporales hasta que `tests/test_system.py` migre a `get_series`
+<!-- ESTADO:FIN -->
+
 # Antigravity 1 — Datos NASA reales
 
 Rama `feature/data-pipeline` · Carpetas `src/etl/`, `tests/etl/`, `scripts/validate_datasets.py`
