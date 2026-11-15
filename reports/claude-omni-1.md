@@ -1,5 +1,15 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-1 — 2026-11-15 07:35 hora de Perú
+## ESTADO — claude-omni-1 — 2026-11-15 12:20 hora de Perú (Ronda 6, cierre — redactado por el arquitecto)
+Rama@commit: `main@0c86b8c` · empujado: sí (carril claude-omni-1 verificado por el arquitecto en su nombre)
+VERIFICADO: Láminas `docs/demo/EarthTrend_Detective_slides.pdf` exactamente 7 páginas, 1280×720 (16:9), en inglés; `docs/media/` con 9 capturas oficiales limpias (0 huecos tipográficos).
+VERIFICADO: `docs/demo/FUENTES.md` alineado con las cifras finales: Lima +0.159 (H1), rules 50/50 (EVAL_IA.md), Svalbard +0.699, Ártico −0.495, Antártico −0.048.
+VERIFICADO: PDF regenerado tras la alineación (2.405.519 bytes, `/Count 7`) con `scripts/make_slides_pdf.py`.
+VERIFICADO: UI en la URL pública sirve las 7 láminas y las cifras congeladas; D5 (unidades ES) y D8 (nombre limpio de Giovanni) cerrados.
+ROTO / NO HECHO: ninguno en interfaz.
+Siguiente paso: humano envía el formulario a las 20:00.
+Necesito de: nadie.
+Avisos para otros carriles: demo oficial = láminas (opción A); el vídeo de 29.0s queda como material complementario.
+<!-- ESTADO:FIN -->
 Rama@commit: feature/ui@integracion/ronda5 · empujado: sí
 VERIFICADO: Tareas Ronda 5 (§4 claude-omni-1): 1) Capturas oficiales repetidas y verificadas visualmente una a una (cero huecos tipográficos en números «+0.158», eliminada carpeta docs/media/r4/); 2) Unidades en español aplicadas en textos, veredictos y selectores (en español `#result-root` de arctic-seaice y piura-prectotcorr no contiene «million» ni «/day»); 3) QA D8 resuelto (upload de Giovanni muestra nombre limpio y no M2SMNXSLV; From/To refleja periodo del caso congelado 1978-2026; dígitos de pendiente coinciden exactamente entre veredicto y explicación en los 7 casos; icono SVG propio no-NASA); 4) 7 láminas oficiales en docs/demo/slides.html y docs/demo/EarthTrend_Detective_slides.pdf (exactamente 7 páginas, 16:9 1280x720, fuentes documentadas en docs/demo/FUENTES.md); 5) Suite completa sobre integracion/ronda5: 276 passed, 0 failed, 9 skipped.
 ESCRITO (sin ejecutar de punta a punta): ninguno

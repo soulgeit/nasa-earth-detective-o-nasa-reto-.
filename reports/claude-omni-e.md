@@ -1,5 +1,14 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-e — 2026-11-15 07:45 hora de Perú
+## ESTADO — claude-omni-e — 2026-11-15 12:20 hora de Perú (Ronda 6, cierre — redactado por el arquitecto)
+Rama@commit: `main@0c86b8c` · empujado: sí (carril claude-omni-e verificado por el arquitecto en su nombre)
+VERIFICADO: Informe 3 de QA final completo en `reports/qa/informe-3.md`: 7/7 casos en la URL pública con veredicto y pendiente correctos (incl. +0.159 tras H1), 0 errores de consola, cero scroll horizontal a 390 px, idioma ES traducido sin colar inglés.
+VERIFICADO: Producción completa en Railway en vivo: `/api/health` 200 `status ok`; smoke_api 17/17 passed, 0 failed; análisis de Lima renderizado con periodo 1981/2025; sin «None and None» (D12); D13 cerrado.
+VERIFICADO: D1–D16 todos cerrados (tabla en informe-3 §3): D14 (masie_web→0), D15 (Hermes 1→0), D16 (tildes→0), D1 (suite 289 passed), D2 (−9999 eliminado), D5/D8 (ES y Giovanni limpios).
+ROTO / NO HECHO: ninguno. La puerta de calidad está abierta y la entrega es apta.
+Siguiente paso: humano envía el formulario a las 20:00.
+Necesito de: humano: «Submit for Judging».
+Avisos para otros carriles: nada pendiente en QA; informe-3 re-verifica D1–D16 sobre `main` final y ambas URLs públicas.
+<!-- ESTADO:FIN -->
 Rama@commit: feature/qa@5b61009 · empujado: sí (commit 5b61009 en origin/feature/qa)
 VERIFICADO: Informe 2 de QA completo antes de la hora límite (09:00). 10 recorridos repetidos en EN/ES a 1440 y 390 px con Playwright sobre integracion/ronda5 + 68 capturas examinadas individualmente (regla 29). De los 11 defectos del informe 1: 9 cerrados (D1, D2, D3, D4, D6, D7, D9, D10, D11) y 2 abiertos (D5: unidades en español; D8: ID crudo Giovanni; ambos asignados a claude-omni-1 a las 08:30). Se añaden 5 defectos nuevos: D12 («between None and None» en modo comparar), D13 (inputs Desde/Hasta no reflejan periodo del caso congelado), D14 (3 URLs con error DNS masie_web, 1 URL 404, 1 URL 403 en VALIDACION_ESTADISTICA.md §5), D15 (12 fichas de docs.jsonl con publisher «Hermes 1») y D16 (tildes en casos). Respaldo estático probado bajo subcarpeta (http://127.0.0.1:8799/nasa-earth-detective-o-nasa-reto-./): 7 de 7 casos abren con su veredicto, pendiente y unidad, con 0 errores de consola.
 ESCRITO (sin ejecutar de punta a punta): ninguno
