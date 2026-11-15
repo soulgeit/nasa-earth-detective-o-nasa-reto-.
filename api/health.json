@@ -1,0 +1,9 @@
+{
+ "status": "static",
+ "version": "static-1",
+ "ai_mode": "off",
+ "sources_up": {
+  "etl": false,
+  "stats": false
+ }
+}
