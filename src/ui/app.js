@@ -1258,13 +1258,9 @@ function formatMarkdownMini(text) {
     .replace(/>/g, '&gt;')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/
-
-/g, '<br><br>')
-    .replace(/
-• /g, '<br>• ')
-    .replace(/
-/g, '<br>');
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n• /g, '<br>• ')
+    .replace(/\n/g, '<br>');
 }
 
 function renderChatReply(data) {
@@ -1273,7 +1269,7 @@ function renderChatReply(data) {
 
   const badge = $('#plan-meta-badge');
   if (badge) {
-    badge.textContent = 'Huiracocha IA';
+    badge.textContent = 'Huiracocha IA (LoRA & Chat)';
     badge.className = 'plan-badge plan-badge-lora';
   }
 

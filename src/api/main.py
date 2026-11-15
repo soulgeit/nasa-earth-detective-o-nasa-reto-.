@@ -489,6 +489,114 @@ def _detective_call(attr: str, producer) -> Any:
         raise ApiError("AI_UNAVAILABLE", hint=f"{attr}: {type(exc).__name__}: {exc}"[:300]) from exc
 
 
+@app.post("/api/ai/chat", tags=["ai"])
+async def ai_chat(request: Request) -> JSONResponse:
+    _limit(request)
+    body = await request.json()
+    message = str(body.get("message", "")).strip()
+    lang = validation.check_lang(body.get("lang", "es"))
+    context = body.get("context", {})
+    if not message:
+        raise ApiError("INVALID_REQUEST", message={"es": "Mensaje vacío", "en": "Empty message"})
+
+    reply = ""
+    plan_dict = None
+    action = None
+
+    # 1. Si la consulta busca investigar o analizar, ejecutamos el planificador LoRA / reglas
+    try:
+        fn_plan = modules.modules().detective_fn("plan")
+        if fn_plan:
+            plan_res = fn_plan(message, lang=lang)
+            if plan_res and plan_res.get("intent") in ("investigate", "compare", "define") and plan_res.get("variable_ids"):
+                plan_dict = plan_res
+                action = "analyze"
+    except Exception:
+        pass
+
+    # 2. Generar respuesta conversacional libre usando el modelo base (LoRA disable_adapter)
+    try:
+        from src.ml import serve as serving
+        if hasattr(serving, "chat_with_instruct"):
+            system_msg = (
+                "Eres Huiracocha IA, asistente científico inteligente de EarthTrend Detective para datos satelitales de la NASA. "
+                "Responde en español de forma amable, pedagógica y precisa. Si el usuario te saluda o pregunta quién eres o qué haces, "
+                "salúdalo cordialmente y explícale que puedes ayudarle a investigar tendencias climáticas históricas (temperatura, lluvia, "
+                "radiación solar, humedad) en cualquier región de la Tierra utilizando datos de satélites de la NASA."
+                if lang == "es" else
+                "You are Huiracocha AI, an intelligent Earth science assistant for NASA satellite observation data. "
+                "Reply politely and helpfully. Explain how you help investigate historical climate trends."
+            )
+            chat_messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": message},
+            ]
+            reply = serving.chat_with_instruct(chat_messages, max_new_tokens=220, temperature=0.7)
+    except Exception:
+        pass
+
+    # 3. Fallback conversacional determinista si el modelo pesado aún está cargando
+    if not reply:
+        norm = message.lower()
+        if any(w in norm for w in ["hola", "ola", "buenos dias", "buenas tardes", "buenas noches", "hello", "hi"]):
+            reply = (
+                "¡Hola! Soy **Huiracocha IA**, tu asistente para investigar observaciones satelitales de la NASA. "
+                "Puedo ayudarte a analizar cómo ha cambiado la temperatura, la lluvia, la humedad o la radiación solar "
+                "en cualquier ciudad o región del planeta desde 1981 hasta 2025.\n\n"
+                "¿Qué lugar o variable climática te gustaría explorar hoy?"
+                if lang == "es" else
+                "Hello! I am **Huiracocha AI**, your assistant to explore NASA satellite observations. "
+                "I can help you analyze changes in temperature, rainfall, humidity, or solar radiation anywhere on Earth. "
+                "Which place or variable would you like to investigate?"
+            )
+        elif plan_dict:
+            var_name = (plan_dict.get("variable_ids") or ["la variable"])[0]
+            place = plan_dict.get("place") or "la zona seleccionada"
+            reply = (
+                f"He analizado tu consulta sobre **{place}**. He preparado un plan de investigación para "
+                f"analizar **{var_name}** con mediciones satelitales oficiales de la NASA. "
+                f"Presiona el botón de abajo para cargar los datos en el mapa interactivo."
+                if lang == "es" else
+                f"I analyzed your request about **{place}**. I prepared an investigation plan for **{var_name}** "
+                f"using NASA satellite data. Click the button below to load the data on the map."
+            )
+        else:
+            reply = (
+                "Entendido. Puedes pedirme analizar el clima de una región (por ejemplo: "
+                "*'¿Cómo ha cambiado la temperatura en Lima?'* o *'¿Llueve más en Piura?'*) "
+                "y prepararé los datos oficiales de la NASA para graficarlos en el mapa."
+                if lang == "es" else
+                "I understand your query. You can ask me to analyze climate trends for a region and I'll fetch NASA data."
+            )
+
+    suggestions = [
+        "¿Cómo ha variado la temperatura en Piura?",
+        "¿Hay menos lluvia en Cusco?",
+        "¿Qué es la radiación solar incidente?",
+    ] if lang == "es" else [
+        "How has temperature changed in Piura?",
+        "Is it raining less in Cusco?",
+        "What is solar downward irradiance?",
+    ]
+
+    sources = [
+        {"title": "NASA POWER Agroclimatology & Meteorology", "publisher": "NASA Langley Research Center", "url": "https://power.larc.nasa.gov/"},
+        {"title": "NASA GISTEMP Surface Temperature Analysis", "publisher": "NASA Goddard Institute for Space Studies", "url": "https://data.giss.nasa.gov/gistemp/"},
+    ]
+
+    return JSONResponse(
+        {
+            "reply": reply,
+            "sources": sources,
+            "suggestions": suggestions,
+            "plan": plan_dict,
+            "action": action,
+            "context": context,
+        },
+        headers=_data_headers(),
+    )
+
+
 @app.post("/api/ai/plan", tags=["ai"])
 def ai_plan(request: Request, question: str = Query(..., min_length=3, max_length=500), lang: str = Query("es")) -> JSONResponse:
     _limit(request)

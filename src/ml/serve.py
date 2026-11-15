@@ -71,7 +71,7 @@ def load_lora_planner(
 
     import torch
     from peft import PeftModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     base_path = resolve_model_path(base_model_id)
 
@@ -80,21 +80,34 @@ def load_lora_planner(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    print(f"[LoRA Serve] Cargando modelo base 4-bit...")
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=load_in_4bit,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-        bnb_4bit_use_double_quant=True,
-    ) if load_in_4bit and torch.cuda.is_available() else None
+    has_cuda = torch.cuda.is_available()
+    print(f"[LoRA Serve] Cargando modelo base (CUDA={has_cuda})...")
 
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_path,
-        quantization_config=bnb_config,
-        device_map="auto" if torch.cuda.is_available() else "cpu",
-        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-        trust_remote_code=True,
-    )
+    if has_cuda and load_in_4bit:
+        from transformers import BitsAndBytesConfig
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+        )
+        base_model = AutoModelForCausalLM.from_pretrained(
+            base_path,
+            quantization_config=bnb_config,
+            device_map="auto",
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+        )
+    else:
+        # Modo CPU (ej. servidor Railway Hobby 8GB RAM):
+        # bfloat16 o float32 sin bitsandbytes
+        dtype = torch.bfloat16 if hasattr(torch, "bfloat16") else torch.float32
+        base_model = AutoModelForCausalLM.from_pretrained(
+            base_path,
+            device_map="cpu",
+            torch_dtype=dtype,
+            trust_remote_code=True,
+        )
 
     print(f"[LoRA Serve] Adjuntando adaptador PEFT LoRA desde {adapter_dir}...")
     model = PeftModel.from_pretrained(base_model, str(adapter_dir))
@@ -178,6 +191,40 @@ def plan_with_lora(
 
     plan_dict["mode"] = "lora"
     return plan_dict
+
+
+def chat_with_instruct(
+    messages: List[Dict[str, str]],
+    max_new_tokens: int = 250,
+    temperature: float = 0.7,
+    adapter_path: Optional[str] = None,
+    base_model_id: str = "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+) -> str:
+    """
+    Inferencia conversacional libre usando el modelo base SmolLM2-1.7B-Instruct.
+    Desactiva temporalmente el adaptador LoRA con model.disable_adapter() para que
+    el modelo pueda razonar, explicar y conversar fluidamente en lenguaje natural.
+    """
+    model, tokenizer = load_lora_planner(adapter_path=adapter_path, base_model_id=base_model_id)
+    import torch
+
+    prompt_str = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    input_ids = tokenizer.encode(prompt_str, return_tensors="pt").to(model.device)
+
+    with torch.no_grad():
+        with model.disable_adapter():
+            output_ids = model.generate(
+                input_ids,
+                max_new_tokens=max_new_tokens,
+                do_sample=temperature > 0.0,
+                temperature=temperature if temperature > 0.0 else None,
+                top_p=0.9 if temperature > 0.0 else None,
+                pad_token_id=tokenizer.pad_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+            )
+
+    gen_tokens = output_ids[0][input_ids.shape[1] :]
+    return tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
 
 
 def main():
