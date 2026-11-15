@@ -1,15 +1,53 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-1 — 2026-11-14 18:35 hora de Perú
-Rama@commit: feature/ui@3d4e765 · empujado: sí
-VERIFICADO: Tareas Ronda 2 (1, 2, 3, 4) → python scripts/take_real_screenshots.py → 6 capturas reales en docs/media/ a 1600x900 sin devFixture
+## ESTADO — claude-omni-1 — 2026-11-14 20:55 hora de Perú
+Rama@commit: feature/ui@9c61e1d · empujado: no
+VERIFICADO: Tareas Ronda 3 (1, 2, 3, 4) completas. `python -m pytest -q` → 1 failed, 223 passed, 9 skipped (el único fallo es de backend en `test_published_nasa_benchmarks` asignado a antigravity-1/2); `python scripts/smoke_api.py http://127.0.0.1:8000` → 10 passed, 0 failed; `python scripts/take_real_screenshots.py` → 6 capturas oficiales en `docs/media/` a 1600x900 generadas con backend en vivo y en estricto inglés (Regla 16).
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en interfaz
-Siguiente paso: asumir pendientes de feature/catalog (§9.1 de RONDA_2.md)
-Necesito de: Hermes 2: data/cases/index.json para poblar casos congelados; Claude Omni 3: despliegue público en hosting
-Avisos para otros carriles: /api/trendmap devuelve variable_id="VAR" por defecto en vez del parámetro solicitado; la UI ya lo mitiga usando el nombre de catálogo
+Siguiente paso: coordinar con claude-omni-3 para despliegue público en hosting y verificar variables sin coordenadas en producción
+Necesito de: Claude Omni 3: despliegue público en hosting (Railway/Fly)
+Avisos para otros carriles: UI soporta variables globales/polares sin coordenadas en mapa; citas de evidencia formateadas como `cit.n` y `título — editor` enlazado; modo extractivo rotulado sin mención a IA generativa.
 <!-- ESTADO:FIN -->
 
 # Reportes de Claude Omni 1 (Interfaz)
+
+## RONDA 3 — TAREAS COMPLETADAS (2026-11-14 20:55 UTC-5)
+Rama@commit: feature/ui@9c61e1d
+Qué quedó:
+1. **Citas y Modo IA (Tarea 1)**:
+   - Citas numeradas con `[cit.n]` y formateadas como `título — editor` con enlace a `cit.url`.
+   - Erradicado cualquier `(NASA)` estático hardcodeado.
+   - Rótulo de modo dinámico: `mode: 'extractive'` muestra «Excerpts from cited sources (no generative AI)»; solo muestra «AI-assisted» con `mode: 'full'`.
+2. **Inglés por defecto, Casos Congelados y Atlas (Tarea 2)**:
+   - Idioma inicial por defecto estrictamente en inglés cumpliendo Regla 16 (`window.__etd.setLang('en')`).
+   - Conexión con `/api/cases` para cargar casos congelados.
+   - Soporte para visualización de mapas regionales y globales `/api/atlas/{id}` y rejilla de tendencias con FDR $q=0.10$.
+3. **Panel TESTS_DISAGREE (Tarea 3)**:
+   - Cuando el veredicto es `TESTS_DISAGREE`, la UI despliega un panel explicativo detallando qué pruebas coinciden y cuáles discrepan:
+     * Mann-Kendall mensual (autocorrelación corregida)
+     * Mann-Kendall anual
+     * Regresión OLS t-test
+     * Intervalo de confianza Theil-Sen al 95 %
+   - Indicador de años adicionales requeridos para confirmación según el modelo de detectabilidad (Weatherhead et al. 1998).
+4. **Variables sin punto en mapa y Subida de CSV Giovanni (Tarea 4)**:
+   - Soporte para variables globales y polares (`GISTEMP_TANOM`, `SEAICE_EXTENT_N`, `SEAICE_EXTENT_S`) sin exigir clic o coordenadas en el mapa Leaflet.
+   - Subida interactiva de CSV de Giovanni (`/api/analyze/upload`) probada de punta a punta con `data/raw/giovanni/T2M__amazonia.csv`, mostrando insignia roja de archivo subido y estadísticas reales calculadas por el motor.
+   - Script `scripts/take_real_screenshots.py` ejecutado de punta a punta contra `http://127.0.0.1:8000/`, actualizando las 6 capturas oficiales a 1600x900 en `docs/media/` en inglés:
+     1. `main_screen.png`: Vista principal en inglés con basemap Blue Marble y selector de 15 variables.
+     2. `verdict_view.png`: Análisis real de Lima T2M con abanico de Sen a la altura de los datos (18–22 °C) y desglose de veredicto.
+     3. `trendmap_spatial.png`: Atlas / TrendMap con celdas significativas al $q=0.10$ FDR.
+     4. `compare_mode.png`: Modo comparar Lima vs Svalbard con ejes Y sincronizados (-23 a +24 °C).
+     5. `ai_detective_evidence.png`: Pregúntale al Detective con confirmación de plan y citas extractivas con editor enlazado.
+     6. `not_significant_case.png`: Análisis de CSV real de Giovanni subido mostrando advertencias de detectabilidad y discrepancias de pruebas.
+
+Evidencia:
+```bash
+$ python scripts/smoke_api.py http://127.0.0.1:8000
+10 passed — 0 skipped — 0 failed
+
+$ python scripts/take_real_screenshots.py
+All 6 real screenshots successfully updated in docs/media/!
+```
 
 ## RONDA 2 — TAREAS COMPLETADAS (2026-11-14 18:35 UTC-5)
 Rama@commit: feature/ui
