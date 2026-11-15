@@ -66,3 +66,24 @@ def test_plan_with_lora_missing_adapter_raises_error():
     with pytest.raises(FileNotFoundError) as exc_info:
         plan_with_lora("pregunta test", adapter_path="models/directorio_inexistente_de_prueba")
     assert "No existe adaptador LoRA entrenado" in str(exc_info.value)
+
+
+def _has_cuda_gpu() -> bool:
+    try:
+        import torch
+        return bool(torch.cuda.is_available())
+    except Exception:
+        return False
+
+
+@pytest.mark.skipif(not _has_cuda_gpu(), reason="Requiere GPU con CUDA para inferir con el adaptador LoRA real (Regla 22)")
+def test_plan_with_lora_real_adapter_on_gpu():
+    """Regla 22: Inferencia con el adaptador LoRA real canónico en GPU."""
+    adapter_path = "models/etd-planner-lora"
+    question = "¿Cómo está variando la temperatura en Lima?"
+    plan = plan_with_lora(question, adapter_path=adapter_path, lang="es")
+    assert isinstance(plan, dict)
+    assert plan.get("mode") == "lora"
+    assert "intent" in plan
+    assert "variable_ids" in plan
+
