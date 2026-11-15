@@ -79,3 +79,77 @@ non-zero on any failure.
 Generated with AI assistance: templates and generator were produced by Hermes 2
 (Claude Sonnet 5.5) and are declared in `docs/AI_USE_LOG.md`. The data itself is
 program output, not a model's answers.
+
+---
+
+## Measured defects (Ronda 4 audit, 2026-11-15)
+
+Both defects below were found in review. They are measured, not estimated, with the
+command shown in each section. The JSONL files are **not** rewritten: the canonical
+adapter was trained on them, so changing them would make the published evaluation
+irreproducible (rule 21).
+
+### 1. Range templates with empty years
+
+Some questions promise an explicit date range but carry no years, e.g.
+`"... in Bogotá between  and ?"` (double space where the years should be).
+The plan is still valid, but the question is not a faithful rendering: it cannot be
+answered as written.
+
+| split | rows | `between  and` / `entre  y` (literal double space) | any `between`/`entre` with no 4-digit year |
+|---|---|---|---|
+| train | 4323 | 92 (2,1 %) | 174 (4,0 %) |
+| val | 814 | 70 (8,6 %) | 97 (11,9 %) |
+| test | 632 | 51 (8,1 %) | 63 (10,0 %) |
+
+The literal `entre  y` / `between  and` archetype is the strict reading: it is
+92 rows in train, not the 132 quoted in review. The wider reading (any range
+connector without a year anywhere in the question) gives 174 in train, 97 in val and
+63 in test. **Neither reproduces 132**, so the review figure is reported here with
+both readings instead of a third unexplained number.
+
+Cause: `scripts/build_lora_dataset.py` only fills `{year0}` when
+`rng.random() < 0.15`; the remaining 85 % of range templates render with empty
+placeholders.
+
+Reproduce:
+```
+python -X utf8 -c "import json,re; rows=[json.loads(l) for l in open('data/lora/train.jsonl',encoding='utf-8') if l.strip()]; q=lambda r: r['messages'][1]['content'].split('CANDIDATES')[0]; print(sum(1 for r in rows if re.search(r'(entre\s{2,}y|between\s{2,}and)', q(r))))"
+```
+
+### 2. `out_of_scope` examples carry a variable
+
+Every `out_of_scope` row (440 train / 83 val / 71 test) has a non-empty
+`variable_ids`, and the same value in `meta.gold`. An out-of-scope question should
+name no variable at all: `"¿Cuál es el sentido de la vida?"` is answered with
+`variable_ids: ["SEAICE_EXTENT_S"]`.
+
+| split | rows | `out_of_scope` | of those, with `variable_ids` | `no_match` | of those, with `variable_ids` |
+|---|---|---|---|---|---|
+| train | 4323 | 440 | **440 (100 %)** | 220 | 0 |
+| val | 814 | 83 | **83 (100 %)** | 47 | 0 |
+| test | 632 | 71 | **71 (100 %)** | 32 | 0 |
+
+`investigate`/`compare` never lack a variable (0 of 3268 / 601 / 466), and
+`no_match` is correct: the generator already strips the variable for `no_match`.
+
+Cause, line 815 of `scripts/build_lora_dataset.py`:
+
+```python
+plan = make_plan(intent, vid if intent != "no_match" else None, ...)
+```
+
+`out_of_scope` should be in that condition:
+
+```python
+plan = make_plan(intent, None if intent in ("no_match", "out_of_scope") else vid, ...)
+```
+
+Impact: the model is taught to attach an earth-science variable to off-topic
+questions. `reports/lora/predictions.jsonl` row 1 shows it at inference time
+(the review of 2026-11-14 §2.7 reports the same). Rule 19 keeps `planned` variables
+out of the candidates, but this defect is about `out_of_scope`, not availability.
+
+Regenerating is a one-command fix (`python scripts/build_lora_dataset.py`), but the
+1.7B adapter was trained on the current files; a retrain is needed to benefit from
+it. Out of scope for the freeze (rule 18).

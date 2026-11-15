@@ -43,6 +43,31 @@ COPY = {
                       "(Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, asi que el "
                       "veredicto es SUGGESTIVE, no demostrado.",
     },
+    "arctic-seaice": {
+        "title_en": "Arctic sea ice extent, 1978-2026",
+        "title_es": "Extension del hielo marino del Artico, 1978-2026",
+        "finding_en": "Arctic sea ice extent fell about 0.50 million km2 per decade "
+                      "(Theil-Sen, 1978-2026), 2.38 million km2 in total (-4.4%). Both tests agree: "
+                      "SIGNIFICANT_STRONG. Two months (1987-12 and 1988-01) are missing in the source "
+                      "and are reported as missing, not as zero.",
+        "finding_es": "La extension del hielo marino del Artico bajo unos 0,50 millones de km2 por "
+                      "decada (Theil-Sen, 1978-2026), 2,38 millones de km2 en total (-4,4%). Ambas "
+                      "pruebas coinciden: SIGNIFICANT_STRONG. Faltan dos meses en la fuente "
+                      "(1987-12 y 1988-01) y se informan como faltantes, no como cero.",
+    },
+    "antarctic-seaice": {
+        "title_en": "Antarctic sea ice extent, 1978-2026",
+        "title_es": "Extension del hielo marino del Antartico, 1978-2026",
+        "finding_en": "Antarctic sea ice extent fell about 0.05 million km2 per decade (Theil-Sen), "
+                      "0.23 million km2 in total (-0.4%). The trend is NOT_SIGNIFICANT: with "
+                      "autocorrelation corrected, p = 0.63, so no change can be stated. It would take "
+                      "about 133 years of data to detect a trend this small.",
+        "finding_es": "La extension del hielo marino del Antartico bajo unos 0,05 millones de km2 por "
+                      "decada (Theil-Sen), 0,23 millones de km2 en total (-0,4%). La tendencia es "
+                      "NOT_SIGNIFICANT: corregida la autocorrelacion, p = 0,63, asi que no se puede "
+                      "afirmar un cambio. Harian falta unos 133 anos de datos para detectar una "
+                      "tendencia tan pequena.",
+    },
     "amazonia-t2m": {
         "title_en": "Amazon basin: air temperature 1980-2026 (user CSV)",
         "title_es": "Cuenca amazonica: temperatura del aire 1980-2026 (CSV del usuario)",

@@ -17,18 +17,20 @@
   "en": "Antarctic sea ice"
  },
  "titles": {
-  "es": "TODO_HUMANO",
-  "en": "TODO_HUMANO"
+  "en": "Antarctic sea ice extent, 1978-2026",
+  "es": "Extension del hielo marino del Antartico, 1978-2026"
  },
  "story": {
-  "es": [
-   "TODO_HUMANO"
-  ],
   "en": [
-   "TODO_HUMANO"
+   "Antarctic sea ice extent fell about 0.05 million km2 per decade (Theil-Sen), 0.23 million km2 in total (-0.4%). The trend is NOT_SIGNIFICANT: with autocorrelation corrected, p = 0.63, so no change can be stated. It would take about 133 years of data to detect a trend this small.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La extension del hielo marino del Antartico bajo unos 0,05 millones de km2 por decada (Theil-Sen), 0,23 millones de km2 en total (-0,4%). La tendencia es NOT_SIGNIFICANT: corregida la autocorrelacion, p = 0,63, asi que no se puede afirmar un cambio. Harian falta unos 133 anos de datos para detectar una tendencia tan pequena.",
+   "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T04:16:47Z",
+ "frozen_at": "2026-11-15T04:45:31Z",
  "verdict_code": "NOT_SIGNIFICANT",
  "provenance": {
   "kind": "nasa_file",
@@ -36,12 +38,12 @@
   "underlying": "NSIDC-0051, NSIDC-0051,NSIDC-0081, NSIDC-0803",
   "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
   "request_urls_pattern": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_{MM}_extent_v4.0.csv",
-  "retrieved_at": "2026-11-15T04:16:50Z",
+  "retrieved_at": "2026-11-15T04:45:32Z",
   "sha256": "298b650b323683d91ded11e5530af014bb54603ff22b890e49dbce59540699b3",
   "native_resolution": "hemispheric monthly index",
   "citation": "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135",
   "files_fetched": 12,
-  "files_retrieved_at": "2026-11-15T04:16:49Z",
+  "files_retrieved_at": "2026-11-14T18:59:38Z",
   "n_missing": 2,
   "source_splice": [
    "NSIDC-0051",
