@@ -47,6 +47,9 @@ class Document:
     date: str | None = None
     variables: list[str] = field(default_factory=list)
     biomes: list[str] = field(default_factory=list)
+    # City / region ids this document is about ("lima", "huancayo", ...). Filled by
+    # the knowledge fragments (RONDA_7); empty for the legacy corpus.
+    places: list[str] = field(default_factory=list)
     license: str | None = None
     derived_from: str | None = None
     # A document whose text is our own summary, not a literal quotation of the page.
@@ -65,6 +68,8 @@ class Document:
             parts.append(" ".join(self.variables))
         if self.biomes:
             parts.append(" ".join(self.biomes))
+        if self.places:
+            parts.append(" ".join(self.places))
         return "\n".join(p for p in parts if p)
 
     def to_public(self, score: float) -> dict[str, Any]:
@@ -78,6 +83,7 @@ class Document:
             "date": self.date,
             "publisher": self.publisher,
             "variables": list(self.variables),
+            "places": list(self.places),
             # RONDA_4 rule 19: a planned product is documented but never analysable.
             "available": self.available,
             "is_quotation": self.is_quotation,
@@ -118,10 +124,73 @@ def _doc_from_jsonl(row: dict[str, Any], *, source: Path) -> Document:
         date=row.get("date"),
         variables=list(row.get("variables") or []),
         biomes=list(row.get("biomes") or []),
+        places=[str(p) for p in (row.get("places") or []) if p],
         license=row.get("license"),
         is_quotation=bool(row.get("is_quotation", True)),
         summary_by=row.get("summary_by"),
     )
+
+
+# --- knowledge fragments (RONDA_7) ------------------------------------------
+# One file per lane, so several agents can feed the corpus at the same time
+# without ever editing the same file:
+#
+#     data/knowledge/regions/<city>.jsonl     what official sources say about a city
+#     data/knowledge/facts/<city>.jsonl       trends computed by our own engine
+#     data/knowledge/resources/<slug>.jsonl   data portals, methods, tutorials
+#
+# ``docs.jsonl`` stays strict (a bad row there is a bug and must fail loudly).
+# Fragments are loaded defensively: a malformed row is skipped and recorded in
+# ``FRAGMENT_ERRORS`` so one lane's typo can never take the detective down in
+# production. ``scripts/validate_fragments.py`` is the strict gate before a push.
+FRAGMENT_DIRS = ("regions", "facts", "resources")
+FRAGMENT_ERRORS: list[str] = []
+
+
+def fragment_files() -> list[Path]:
+    """Every fragment file, in a deterministic order."""
+    files: list[Path] = []
+    for name in FRAGMENT_DIRS:
+        folder = SETTINGS.knowledge_dir / name
+        if folder.is_dir():
+            files.extend(sorted(p for p in folder.glob("*.jsonl") if not p.name.startswith("_")))
+    return files
+
+
+def _load_fragments() -> tuple[list[Document], set[str]]:
+    """(documents, ids they supersede). Never raises."""
+    docs: list[Document] = []
+    superseded: set[str] = set()
+    errors: list[str] = []
+    for path in fragment_files():
+        label = f"{path.parent.name}/{path.name}"
+        try:
+            lines = path.read_text(encoding="utf-8-sig").splitlines()
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(f"{label}: unreadable ({type(exc).__name__})")
+            continue
+        for lineno, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+                if not isinstance(row, dict):
+                    raise ValueError("row is not a JSON object")
+                doc = _doc_from_jsonl(row, source=path)
+                if doc.lang not in ("es", "en"):
+                    raise ValueError(f"unsupported lang {doc.lang!r}")
+                if doc.type == "variable_card":
+                    raise ValueError("variable cards belong to the catalogue, not to a fragment")
+            except (ValueError, TypeError, KeyError) as exc:
+                errors.append(f"{label}:{lineno}: {exc}")
+                continue
+            docs.append(doc)
+            for old in row.get("supersedes") or []:
+                if str(old) != doc.id:
+                    superseded.add(str(old))
+    FRAGMENT_ERRORS[:] = errors
+    return docs, superseded
 
 
 def _pick(field_value: Any, lang: str) -> str:
@@ -221,6 +290,14 @@ def load_corpus(langs: Iterable[str] = ("es", "en")) -> list[Document]:
             doc = _doc_from_jsonl(row, source=knowledge)
             if doc.lang in ("es", "en"):
                 docs.append(doc)
+
+    # RONDA_7: one fragment file per lane. A fragment may *supersede* an older
+    # document (a better source for the same fact) without anyone editing the
+    # file that document lives in.
+    fragment_docs, superseded = _load_fragments()
+    docs.extend(fragment_docs)
+    if superseded:
+        docs = [doc for doc in docs if doc.id not in superseded]
 
     # Hermes 1's docs.jsonl now carries a verified card per variable per language.
     # A card derived from data/catalog/variables.json would be a second, poorer copy

@@ -14,15 +14,18 @@ at all, the student still gets an honest, sourced answer with zero invented numb
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from .config import SETTINGS
 from .guard import GuardResult, run_guard
 from .llm import AIUnavailable, chat
 from .rag import retrieve
+from .text_norm import fold
 
 VALID_LEVELS = ("school", "highschool", "university")
 MAX_PASSAGES = 5
+MAX_REGIONAL = 2  # regional documents cited next to the variable card
 
 _LEVEL_HINT = {
     "school": "Explain for a 12-year-old: short sentences, no jargon.",
@@ -123,16 +126,26 @@ def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES)
         if sum(1 for _d, r in chosen if r == "variable") >= 1:
             break
 
-    # 2) A regional article, only from the requested language and the same region.
+    # 2) What is known about this very place: up to two regional documents that
+    #    name the place AND carry the analysed variable, the requested language
+    #    first. The place is matched as a whole word on accent-free text: as a
+    #    plain substring "Ica" matched "Africa" and "America" (RONDA_7).
     if region_name:
-        region_key = region_name.lower().split(",")[0].strip()
-        for doc in retrieve(region_name, lang=lang, k=8, types=["nasa_article", "region_note"]):
-            if region_key not in (doc.get("title") or "").lower():
+        region_key = fold(region_name.split(",")[0]).strip()
+        pattern = re.compile(r"(?<!\w)" + re.escape(region_key) + r"(?!\w)") if region_key else None
+        regional = retrieve(region_name, lang=lang, k=24, types=["nasa_article", "region_note", "paper_abstract"])
+        regional.sort(key=lambda d: 0 if d.get("lang") == lang else 1)
+        taken = 0
+        for doc in regional:
+            if pattern is None or taken >= MAX_REGIONAL:
+                break
+            names_place = pattern.search(fold(doc.get("title") or "")) or region_key in (doc.get("places") or [])
+            if not names_place:
                 continue
             if variable_id and variable_id not in (doc.get("variables") or []):
                 continue
             if _take(doc, "context"):
-                break
+                taken += 1
 
     # 3) A method note in the requested language fits any variable.
     for doc in retrieve("trend significance Mann-Kendall", lang=lang, k=6, types=["method_note"]):
