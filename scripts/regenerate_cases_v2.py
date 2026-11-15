@@ -40,6 +40,14 @@ CASES: list[dict[str, Any]] = [
      "name_es": "Hielo marino del Ártico", "name_en": "Arctic sea ice", "region_kind": "named"},
     {"id": "antarctic-seaice", "variable": "SEAICE_EXTENT_S",
      "name_es": "Hielo marino del Antártico", "name_en": "Antarctic sea ice", "region_kind": "named"},
+    # Ronda 3: los dos CSV reales exportados de Giovanni (MERRA-2 via GES DISC),
+    # misma caja y periodo. La procedencia lleva la "URL to Reproduce Results".
+    {"id": "amazonia-t2m", "variable": "T2M", "region_kind": "named",
+     "giovanni_csv": "data/raw/giovanni/T2M__amazonia.csv",
+     "name_es": "Amazonía (cuenca baja del Amazonas)", "name_en": "Amazon (lower Amazon basin)"},
+    {"id": "amazonia-prectotcorr", "variable": "PRECTOTCORR", "region_kind": "named",
+     "giovanni_csv": "data/raw/giovanni/PRECTOTCORR__amazonia.csv",
+     "name_es": "Amazonía (cuenca baja del Amazonas)", "name_en": "Amazon (lower Amazon basin)"},
 ]
 
 
@@ -67,13 +75,22 @@ def build_one(case: dict[str, Any]) -> dict[str, Any]:
     from src.stats.trend_engine import analyze_series
 
     card = load_card(case["variable"])
-    kwargs: dict[str, Any] = {}
-    if case["variable"] in HEMISPHERIC:
-        pass
-    else:
-        kwargs["lat"], kwargs["lon"] = case["lat"], case["lon"]
+    if case.get("giovanni_csv"):
+        # Fuente: CSV real exportado de Giovanni. Se lee tal cual; el parser
+        # convierte el relleno de la cabecera en null y declara user_upload.
+        from src.etl.registry import parse_giovanni_csv
 
-    ts = get_series(case["variable"], **kwargs)
+        path = os.path.join(ROOT, case["giovanni_csv"])
+        with open(path, encoding="utf-8") as fh:
+            ts = parse_giovanni_csv(fh.read(), case["variable"])
+        ts["region"]["name"] = case["name_en"]
+    else:
+        kwargs: dict[str, Any] = {}
+        if case["variable"] in HEMISPHERIC:
+            pass
+        else:
+            kwargs["lat"], kwargs["lon"] = case["lat"], case["lon"]
+        ts = get_series(case["variable"], **kwargs)
     analysis = analyze_series(
         ts,
         ratio_scale=bool(card.get("ratio_scale", False)),

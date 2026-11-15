@@ -1,0 +1,59 @@
+{
+ "id": "amazonia-t2m",
+ "variable_id": "T2M",
+ "variable_name": {
+  "es": "Temperatura del aire a 2 m",
+  "en": "Air temperature at 2 m"
+ },
+ "region": {
+  "kind": "bbox",
+  "name": "Amazon (lower Amazon basin)",
+  "lat": 1.275,
+  "lon": -70.42,
+  "bbox": [
+   -71.0,
+   0.85,
+   -69.84,
+   1.7
+  ]
+ },
+ "names": {
+  "es": "Amazonía (cuenca baja del Amazonas)",
+  "en": "Amazon (lower Amazon basin)"
+ },
+ "titles": {
+  "en": "Amazon basin: air temperature 1980-2026 (user CSV)",
+  "es": "Cuenca amazonica: temperatura del aire 1980-2026 (CSV del usuario)"
+ },
+ "story": {
+  "en": [
+   "Air temperature rose about 0.19 °C per decade (Theil-Sen), 0.87 °C in total, from an uploaded NASA Giovanni export; both tests agree: SIGNIFICANT_STRONG.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La temperatura del aire subio unos 0,19 °C por decada (Theil-Sen), 0,87 °C en total, a partir de una exportacion de NASA Giovanni subida por el usuario; ambas pruebas coinciden: SIGNIFICANT_STRONG.",
+   "TODO_HUMANO: la narrativa la decide el humano."
+  ]
+ },
+ "frozen_at": "2026-11-15T00:52:20Z",
+ "verdict_code": "SIGNIFICANT_STRONG",
+ "provenance": {
+  "kind": "user_upload",
+  "source": "Giovanni (GES DISC) CSV export",
+  "underlying": "\"Time Series, Area-Averaged of 2-meter air temperature - daily mean monthly 0.5 x 0.625 (monthly)",
+  "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
+  "retrieved_at": "2026-11-15T00:52:21Z",
+  "sha256": "655ce00c1cd4404f9cdaeb1e2c79e56c18c43b1bbcb857882a5ce9e05e42bb10",
+  "native_resolution": null,
+  "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+  "header_metadata": [
+   "Title:,\"Time Series, Area-Averaged of 2-meter air temperature - daily mean monthly 0.5 x 0.625 (monthly)\"",
+   "User Start Date:,1980-01-01T00:00:00Z",
+   "User End Date:,2026-05-31T23:59:59Z",
+   "User Bounding Box:,\"-71,0.85,-69.84,1.7\"",
+   "Data Bounding Box:,\"-70.625,1,-70,1.5\"",
+   "URL to Reproduce Results:,\"https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71,0.85,-69.84,1.7&data=M2SMNXSLV_5_12_4_T2MMAX(units%3DC)%2CM2SMNXSLV_5_12_4_T2MMEAN(units%3DC)%2CM2SMNXSLV_5_12_4_T2MMIN(units%3DC)&portal=GIOVANNI&format=json\"",
+   "Fill Value (M2SMNXSLV_5_12_4_T2MMEAN):, 1000000000000000"
+  ]
+ }
+}
