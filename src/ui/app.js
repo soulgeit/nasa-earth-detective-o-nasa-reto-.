@@ -331,15 +331,56 @@ async function searchPlace(q, isB = false) {
 
 /* ---------------------------------------------------------------- catalog */
 
+const PLANNED_FALLBACK = [
+  { id: 'GPM_IMERG_PRECIP', names: { en: 'GPM IMERG precipitation', es: 'Precipitación GPM IMERG' } },
+  { id: 'GLDAS_SOILM_0_10', names: { en: 'Soil moisture 0-10 cm (GLDAS)', es: 'Humedad del suelo 0-10 cm (GLDAS)' } },
+  { id: 'GLDAS_EVAP', names: { en: 'Evapotranspiration (GLDAS)', es: 'Evapotranspiración (GLDAS)' } },
+  { id: 'GLDAS_RUNOFF', names: { en: 'Runoff (GLDAS)', es: 'Escorrentía (GLDAS)' } },
+  { id: 'AIRS_SURF_AIR_TEMP', names: { en: 'Surface air temperature (AIRS)', es: 'Temperatura superficial del aire (AIRS)' } },
+  { id: 'OMI_NO2_TROP', names: { en: 'Tropospheric nitrogen dioxide (OMI)', es: 'Dióxido de nitrógeno troposférico (OMI)' } },
+  { id: 'OMI_O3_TOTAL', names: { en: 'Total column ozone (OMI)', es: 'Ozono total en columna (OMI)' } },
+  { id: 'MODIS_NDVI', names: { en: 'NDVI vegetation index (MODIS)', es: 'Índice de vegetación NDVI (MODIS)' } },
+  { id: 'MODIS_LST_DAY', names: { en: 'Daytime land surface temperature (MODIS)', es: 'Temperatura diurna superficie terrestre (MODIS)' } },
+  { id: 'MODIS_AOD', names: { en: 'Aerosol optical depth (MODIS)', es: 'Espesor óptico de aerosoles (MODIS)' } },
+];
+
+function isPlannedVariable(varId) {
+  if (!varId) return false;
+  if (state.plannedCatalog && state.plannedCatalog.some(p => p.id === varId)) return true;
+  return PLANNED_FALLBACK.some(p => p.id === varId);
+}
+
 function renderCatalog() {
   const select = $('#variable-select');
   if (!select) return;
   select.innerHTML = '';
-  for (const v of state.catalog) {
+
+  // 1. Available variables (selectable)
+  const available = state.catalog.filter(v => v.available !== false);
+  const optgroupAvail = el('optgroup', { label: state.lang === 'es' ? 'Variables disponibles' : 'Available variables' });
+  for (const v of available) {
     const optName = v.names?.[state.lang] || v.names?.es || v.names?.en || v.power_longname || v.id;
     const opt = el('option', { value: v.id }, `${optName} (${v.unit || ''})`);
-    select.appendChild(opt);
+    optgroupAvail.appendChild(opt);
   }
+  select.appendChild(optgroupAvail);
+
+  // 2. Planned variables (Rule 19: cannot be chosen, disabled)
+  const plannedList = (state.plannedCatalog && state.plannedCatalog.length)
+    ? state.plannedCatalog
+    : PLANNED_FALLBACK;
+  const notLoadedLabel = t('detective.plan.not_loaded');
+  const optgroupPlanned = el('optgroup', {
+    label: state.lang === 'es' ? 'Planificadas (requieren CSV de Giovanni)' : 'Planned (require Giovanni CSV)'
+  });
+  for (const p of plannedList) {
+    const pName = p.names?.[state.lang] || p.names?.es || p.names?.en || p.id;
+    const opt = el('option', { value: p.id, disabled: true }, `${pName} — ${notLoadedLabel}`);
+    opt.setAttribute('title', notLoadedLabel);
+    optgroupPlanned.appendChild(opt);
+  }
+  select.appendChild(optgroupPlanned);
+
   onVariableChange();
 }
 
@@ -1119,6 +1160,40 @@ function renderPlan(plan) {
   const placeName = plan.place || (state.lang === 'es' ? 'el lugar seleccionado' : 'the selected place');
 
   $('#plan-intent-text').textContent = t('detective.plan.intent', { var: cleanVar, place: placeName });
+
+  // Planner attribution badge (LoRA fine-tuned model vs rules)
+  const isLora = plan.planner === 'lora' || plan.mode === 'lora';
+  const badge = $('#plan-meta-badge');
+  if (badge) {
+    badge.textContent = isLora ? t('detective.plan.by_lora') : t('detective.plan.by_rules');
+    badge.className = `plan-badge ${isLora ? 'plan-badge-lora' : 'plan-badge-rules'}`;
+  }
+
+  // Fallback note if any
+  const noteEl = $('#plan-note-text');
+  if (noteEl) {
+    if (plan.note) {
+      noteEl.textContent = plan.note;
+      noteEl.hidden = false;
+    } else {
+      noteEl.textContent = '';
+      noteEl.hidden = true;
+    }
+  }
+
+  // Rule 19: If plan picked a planned variable, it cannot be run directly
+  const confirmBtn = $('#plan-confirm-btn');
+  if (confirmBtn) {
+    if (isPlannedVariable(varId)) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = t('detective.plan.not_loaded');
+      confirmBtn.setAttribute('title', 'This variable requires uploading its Giovanni CSV');
+    } else {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = t('detective.plan.run');
+      confirmBtn.removeAttribute('title');
+    }
+  }
 }
 
 async function confirmPlan() {
@@ -1505,7 +1580,11 @@ function boot() {
     .catch((err) => showError(err))
     .finally(() => {
       apiGet(`/api/catalog/variables?lang=${state.lang}`)
-        .then((d) => { state.catalog = (d && d.variables) || []; renderCatalog(); })
+        .then((d) => {
+          state.catalog = (d && d.variables) || [];
+          if (d && Array.isArray(d.planned)) state.plannedCatalog = d.planned;
+          renderCatalog();
+        })
         .catch((err) => showError(err));
       loadCases();
     });

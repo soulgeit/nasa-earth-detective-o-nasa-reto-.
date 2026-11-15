@@ -1,12 +1,12 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-1 — 2026-11-14 20:55 hora de Perú
-Rama@commit: feature/ui@a30c76c · empujado: sí
-VERIFICADO: Tareas Ronda 3 (1, 2, 3, 4) completas. `python -m pytest -q` → 1 failed, 223 passed, 9 skipped (el único fallo es de backend en `test_published_nasa_benchmarks` asignado a antigravity-1/2); `python scripts/smoke_api.py http://127.0.0.1:8000` → 10 passed, 0 failed; `python scripts/take_real_screenshots.py` → 6 capturas oficiales en `docs/media/` a 1600x900 generadas con backend en vivo y en estricto inglés (Regla 16).
+## ESTADO — claude-omni-1 — 2026-11-15 02:40 hora de Perú
+Rama@commit: feature/ui@integracion-r4 · empujado: no
+VERIFICADO: Tareas Ronda 4 (§4 claude-omni-1): 1) Comprobación en navegador (inglés) con 9 capturas en docs/media/r4/; 2) Atribución "Planned by: rules / fine-tuned model (LoRA)" + nota de fallback + variables planned en optgroup disabled con "Not loaded yet — upload its Giovanni CSV" (Regla 19); 3) Móvil 390px probado con Playwright: 0 px de scroll horizontal (scrollWidth == clientWidth == 390), mapa 367x230px y gráfica utilizables; 4) Script take_real_screenshots.py actualizado a 8 capturas oficiales a 1600x900.
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en interfaz
-Siguiente paso: coordinar con claude-omni-3 para despliegue público en hosting y verificar variables sin coordenadas en producción
+Siguiente paso: commit y push a origin/feature/ui en cuanto el clasificador de terminal lo permita; coordinar con claude-omni-3 para despliegue
 Necesito de: Claude Omni 3: despliegue público en hosting (Railway/Fly)
-Avisos para otros carriles: UI soporta variables globales/polares sin coordenadas en mapa; citas de evidencia formateadas como `cit.n` y `título — editor` enlazado; modo extractivo rotulado sin mención a IA generativa.
+Avisos para otros carriles: UI implementa Regla 19 estricta (variables planned en optgroup disabled no elegibles); la tarjeta del planificador muestra insignia "Planned by: fine-tuned model (LoRA)" o "Planned by: rules" y nota de respaldo; móvil a 390px sin desborde horizontal.
 <!-- ESTADO:FIN -->
 
 # Reportes de Claude Omni 1 (Interfaz)
@@ -207,3 +207,56 @@ Qué quedó:
   6. `docs/media/not_significant_case.png`: Caso con veredicto no significativo ("No trend detectable so far") y años faltantes para certeza.
 Evidencia:
 - Archivos verificados con `ls -lh docs/media/*.png` (resolución 1600x900 exacta).
+
+## RONDA 4 — TAREAS COMPLETADAS (2026-11-15 02:40 UTC-5)
+Rama@commit: feature/ui (con origin/main 55869e8 integrado)
+Qué quedó:
+1. **Comprobación en navegador en inglés de la Ronda 3 (Tarea 1, dom 02:00)**:
+   - Verificado con Playwright en `http://127.0.0.1:8000/` con datos reales de la API en vivo.
+   - Citas vinculadas con título y editor (`título — editor` con enlace a `cit.url`, sin `(NASA)` estático).
+   - Rótulo de modo extractivo: `Excerpts from cited sources (no generative AI)`.
+   - Panel de pruebas que discrepan (`TESTS_DISAGREE`) con Mann-Kendall, OLS t-test, IC al 95 % y años de detectabilidad faltantes.
+   - Galería con los 7 casos congelados funcionales.
+   - Atlas global con celdas de cuadrícula y significancia al $q=0.10$ FDR.
+   - Variables globales/polares (`GISTEMP_TANOM` y `SEAICE_EXTENT_N`) operativas sin requerir punto en mapa.
+   - Subida de CSV de Giovanni (`T2M__amazonia.csv`) procesada y analizada con procedencia oficial.
+   - 9 capturas individuales guardadas en `docs/media/r4/`.
+2. **Quién planificó y variables planned no elegibles (Tarea 2, dom 04:00)**:
+   - Tarjeta de plan con insignia visible: `Planned by: fine-tuned model (LoRA)` o `Planned by: rules` (`detective.plan.by_lora` / `detective.plan.by_rules`).
+   - Soporte para nota de respaldo (`plan.note`) visible cuando el modelo delega en reglas.
+   - **Regla 19 estricta**: las 10 variables planned (`GPM_IMERG_PRECIP`, `MODIS_NDVI`, etc.) se muestran en el `<select>` dentro de un `<optgroup>` etiquetado como `Planned (require Giovanni CSV)`, con cada opción `disabled` y sufijo *"Not loaded yet — upload its Giovanni CSV"*. Es imposible seleccionarlas.
+   - Si un plan del detective devuelve una variable planned, el botón de confirmar se deshabilita y muestra el mensaje indicando que requiere subir su CSV de Giovanni.
+3. **Móvil a 390px utilizable y sin desplazamiento horizontal (Tarea 3, dom 04:00)**:
+   - Probado en viewport de iPhone (390×844 px) con Playwright.
+   - **0 píxeles de scroll horizontal**: `scrollWidth == clientWidth == 390` tanto en pantalla inicial como con resultados de análisis completos renderizados.
+   - Mapa Leaflet a 230 px utilizable y visible; gráfica Chart.js a 240 px adaptada y legible.
+   - Desglose de hallazgos en una columna (`grid-template-columns: 1fr`).
+   - Pestañas de modo distribuidas en flex en ancho completo; botones de encabezado ordenados.
+   - Capturas en móvil: `docs/media/r4/mobile_390_initial.png`, `docs/media/r4/mobile_390_overview.png`, `docs/media/r4/mobile_390_chart.png`.
+4. **Capturas oficiales actualizadas (Tarea 4)**:
+   - `scripts/take_real_screenshots.py` actualizado para capturar 8 pantallas oficiales a 1600×900 en inglés en `docs/media/`, incluyendo `plan_attribution.png` y `cases_gallery.png`.
+
+Evidencia:
+```bash
+$ python scripts/verify_r4_ui.py
+=== DESKTOP 1600x900 (Tareas 1 y 2) ===
+[PASS] T2 planned disabled count >= 10 :: found 10 disabled opts
+[PASS] T2 planned has not-loaded label :: GPM IMERG precipitation — Not loaded yet — upload its Giovanni CSV
+[PASS] T2 Planned by attribution present :: 'Planned by: rules'
+[PASS] T1 citations linked :: 2 links
+[PASS] T1 no fixed (NASA) label
+[PASS] T1 extractive label present :: badge='Excerpts from cited sources (no generative AI)'
+[PASS] T1 tests disagree panel visible
+[PASS] T1 gallery has 7 cases :: found 7
+[PASS] T1 atlas rendered
+[PASS] T1 GISTEMP_TANOM no coordinates required
+[PASS] T1 SEAICE_EXTENT_N no coordinates required
+[PASS] T1 CSV upload analyzed
+
+=== MOBILE VIEWPORT 390x844 (Tarea 3) ===
+[PASS] T3 mobile initial no horizontal scroll :: scrollWidth=390, clientWidth=390, diff=0
+[PASS] T3 mobile map usable :: 367x230px
+[PASS] T3 mobile results no horizontal scroll :: scrollWidth=390, clientWidth=390, diff=0
+[PASS] T3 mobile chart usable
+Total: 16/16 verificaciones en PASS
+```
