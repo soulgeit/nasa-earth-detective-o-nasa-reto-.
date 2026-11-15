@@ -1,16 +1,13 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-14 19:55 hora de Perú
-Rama@commit: integracion/ronda3 → main · empujado: sí
-VERIFICADO: fusión de las 7 ramas feature/* → sin conflictos → `python -m pytest -q` → 223 passed, 1 failed, 9 skipped
-VERIFICADO: API integrada → `python scripts/smoke_api.py http://127.0.0.1:8791` → 10 passed · 0 skipped · 0 failed
-VERIFICADO: `/api/analyze` T2M Lima → `SIGNIFICANT`, `tests_agree: false`; `/api/cases` 200 con 5 casos; `/api/atlas/T2M` 759 celdas; explicación extractiva con 2 citas de temperatura
-VERIFICADO: los 2 CSV de `data/raw/giovanni/` son exportaciones auténticas de Giovanni (MERRA-2), 557 meses cada una
-ROTO / NO HECHO: `test_published_nasa_benchmarks` en rojo: el hielo marino lleva −9999 en 1987-12 y 1988-01 (sale así de `get_series`); mínimos cuadrados del Ártico +25,7 por década
-ROTO / NO HECHO: LoRA sin evidencia (no existe `reports/lora/`; en el PC1 no hay proceso de entrenamiento); sin URL pública; casos congelados con el veredicto anterior
-ROTO / NO HECHO: `validate_knowledge.py` no reejecutado por mí; `/api/analyze` pide coordenadas a GISTEMP y hielo marino; `/api/trendmap` devuelve `variable_id: "VAR"`
-Siguiente paso: ventana de integración del sábado 22:00 con `bash scripts/estado.sh`
-Necesito de: humano: inicio de sesión del hosting, decidir en qué PC se entrena el LoRA, más CSV de Giovanni de otros instrumentos, decisiones de PLAN §7
-Avisos para otros carriles: reglas 12-18 y tareas con hora límite en `docs/RONDA_3.md`; propuesta de variables `planned` aprobada con condiciones
+## ESTADO — cfable (arquitecto) — 2026-11-14 23:55 hora de Perú
+Rama@commit: `main` (solo `docs/RONDA_4.md`); la fusión de las dos ramas del LoRA está en local (`integracion/ronda4`), sin empujar · empujado: solo el documento
+VERIFICADO: `main@55eba0b` + `feature/data-pipeline@c53d937` + `feature/stats@22b2cb5` fusionadas en local → `python -m pytest -q` → 234 passed, 4 failed, 9 skipped
+VERIFICADO: adaptador LoRA real → sha256 `70314779…341c` coincide con `reports/lora/train_meta.json`; 192 tensores, las 96 matrices B distintas de cero; por `AI_MODE=full PLANNER_MODEL=local-lora` responde `planner: "lora"` en 2,3 s (PC1, RTX 4070 SUPER)
+VERIFICADO: 50 preguntas de referencia → `python -m src.detective.rag.eval_plan` → reglas 47/50; con `--planner local-lora` → LoRA 31/50 (15 de sus 19 fallos son variables `planned`)
+ROTO / NO HECHO: 4 rojas (2 del detective por las `planned`, 2 que daban por hecho que no había adaptador); casos de hielo marino con −9999; sin URL pública; sin `docs/SUBMISSION.md`, `src/ml/MODEL_CARD.md`, `LICENSE` ni demo
+Siguiente paso: empujar la integración cuando el humano diga «integra»; desplegar en Railway cuando inicie sesión en el PC1
+Necesito de: humano: «integra», `railway login` en el PC1 y las decisiones de `docs/RONDA_4.md` §6
+Avisos para otros carriles: manda `docs/RONDA_4.md` (reglas 19-25, tareas con hora límite, tres agentes nuevos); nadie toca `models/`, `reports/lora/` ni `tests/ml/` hasta que la integración esté en `main`
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
