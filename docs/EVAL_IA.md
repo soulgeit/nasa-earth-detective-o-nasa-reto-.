@@ -12,17 +12,17 @@ Fuente / Source: `data/knowledge/golden_questions.jsonl` (Hermes 1, 50 preguntas
 
 | Backend | Precision@1 | Precision@3 | MRR | Preguntas / Questions (k=6) |
 |---|---|---|---|---|
-| bm25 | 0.980 | 1.000 | 0.990 | 50 |
+| bm25 | 1.000 | 1.000 | 1.000 | 50 |
 | vectors | — | — | — | 0 |
-| fusion | 0.980 | 1.000 | 0.990 | 50 |
+| fusion | 1.000 | 1.000 | 1.000 | 50 |
 
-Medido el 14-nov-2026 a las 21:40 (hora de Perú) con `python -m src.detective.rag.eval`,
-corpus de 166 documentos. `vectors` queda fuera de la media: no había servicio de
-embeddings en esta máquina (Ollama apagado). / `vectors` drops out of the means when
-no embedding service is available (contract §11).
+Medido el 15-nov-2026 con `python -m src.detective.rag.eval`, corpus de 168
+documentos. `vectors` queda fuera de la media: no había servicio de embeddings en
+esta máquina (Ollama apagado). / `vectors` drops out of the means when no embedding
+service is available (contract §11).
 
-El único fallo en P@1 lo recupera P@3: "Is dust from the Sechura Desert travelling
-farther now?" (esperado AOD_55).
+Sin fallos: 50/50 en primera posición. La última que fallaba (polvo del desierto de
+Sechura) era un defecto del léxico, no de la recuperación; ver §4-bis.
 <!-- TABLA_R2_FIN -->
 
 ### Qué se midió y con qué
@@ -116,13 +116,13 @@ Rule 19 applied: a `planned` variable is never a candidate, for the rules or the
 
 | Planner | Variable accuracy | Questions | Machine | Median time |
 |---|---|---|---|---|
-| rules | 49/50 = 0.980 | 50 | any (no model) | 3.6 s |
+| rules | 50/50 = 1.000 | 50 | any (no model) | 2.6 s |
 | LoRA | 40/50 = 0.800 | 50 | RTX 4070 SUPER, 4-bit | 2.2 s |
 | LoRA | 37/50 = 0.740 | 50 | GTX 1650 SUPER, CPU float32 | 13.7 s |
 
 The LoRA result depends on the machine (2.2 s on the RTX 4070 SUPER vs 13.7 s on CPU),
 so **both the GPU and the CPU measurement are reported**: 40/50 on GPU, 37/50 on CPU.
-The rules, which run anywhere, score 49/50 and are the product default.
+The rules, which run anywhere, score 50/50 and are the product default.
 
 Before rule 19 the LoRA scored 31/50; filtering `planned` products out of the
 candidates recovered 9 questions on GPU and 6 on CPU. **None of its remaining
@@ -132,15 +132,16 @@ misses is a `planned` variable**: it confuses neighbouring variables
 Both LoRA numbers are always reported together with its 200-case evaluation
 (rule 20): on the 200 test cases drawn from the training generator, the adapter
 reaches 84.5 % exact-variable accuracy against 15.5 % for the rules; on the 50
-hand-written reference questions the order reverses (40/50 vs 49/50). The test set
+hand-written reference questions the order reverses (40/50 vs 50/50). The test set
 comes from the same generator as the training data, which is why it is always shown
 next to the hand-written set and never on its own.
 
-Rules failure (1):
-
-| Question | Lang | Intent | Got | Expected |
-|---|---|---|---|---|
-| Is dust from the Sechura Desert travelling farther now? | en | `investigate` | `GWETTOP` | `AOD_55` |
+Rules failures: **none** (50/50). The last one — desert dust attributed to soil
+moisture instead of aerosol optical depth — was a lexicon bug: "turning into desert"
+was splitting into loose words, so "desert" alone meant soil moisture. Words that are
+too generic on their own are now excluded from loose matching
+(`_PHRASE_ONLY_WORDS` in `src/detective/lexicon.py`), and multi-word aliases are also
+matched as phrases. Retrieval went from P@1 0.980 to **1.000** with the same change.
 
 LoRA failures on GPU (10), from `reports/_arquitecto.md`:
 
@@ -169,7 +170,7 @@ GPU in 4-bit, so it is not deployed to the public server. Every plan the model
 produces is re-verified by the rules (variable available, place resolvable), so a
 model mistake in the place or the variable id cannot reach the user.
 
-The numbers above are the reason: 49/50 rules vs 40/50 LoRA on the hand-written
+The numbers above are the reason: 50/50 rules vs 40/50 LoRA on the hand-written
 questions. The LoRA is shown as what it is — a working fine-tune with published
 results — not as the default planner.
 <!-- TABLA_PLAN_FIN -->
