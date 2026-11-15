@@ -1,16 +1,17 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — hermes-2 — 2026-11-15 01:40 hora de Perú (Ronda 4)
-Rama@commit: feature/scrapes@2f6e137 · empujado: sí
-SUITE COMPLETA sobre main fusionado: `python -m pytest -q` → **3 failed, 235 passed, 9 skipped**. Las 3 rojas son de otros carriles (2 de variables planned en `tests/detective/test_pipeline.py`, 1 del respaldo silencioso de `src/ml/serve.py:65`). `test_published_nasa_benchmarks` está en verde.
-VERIFICADO: hielo marino sin relleno → `python -X utf8 -I scripts/verify_seaice_cases.py` → exit 0; arctic min=3,57 (Sen −0,4953 / OLS −0,5106), antarctic min=1,98 (Sen −0,0481 / OLS −0,0822); `1987-12` y `1988-01` en null; `n_missing=2`. El Ártico pasa a SIGNIFICANT_STRONG.
-VERIFICADO: 7/7 casos con título y frase de hallazgo en inglés y español; `index.json` sin títulos vacíos; cada cifra coincide con su `analysis.json`.
-VERIFICADO: defectos del dataset medidos en `data/lora/DATASET_CARD.md` (sección «Measured defects»): rangos sin años 92/4323 train (lectura estricta), 174 (amplia), val 70/97, test 51/63 — **el 132 del informe no se reproduce y se dice**; `out_of_scope` con variable 440/440 train, 83/83 val, 71/71 test, causa en `scripts/build_lora_dataset.py:815`.
-VERIFICADO: tabla comparativa de los 7 casos en el reporte, con pendiente, los cuatro valores p y los años que faltan.
+## ESTADO — hermes-2 — 2026-11-15 07:40 hora de Perú (Ronda 5)
+Rama@commit: feature/scrapes@589566f · empujado: sí
+SUITE COMPLETA sobre integracion/ronda5 fusionado: `python -m pytest -q` → **276 passed, 10 skipped, 0 failed**.
+VERIFICADO: tildes → `python -X utf8 -I scripts/check_case_accents.py` → 0 problemas en 8 archivos. Arregladas en la fuente (`write_case_copy.py`), no con sed sobre el JSON; los títulos en inglés siguen «Lima, Peru».
+VERIFICADO: el lugar en el texto → `answers.where` nombra Lima / Svalbard / Piura / Hielo marino del Ártico / Hielo marino del Antártico / el área de Amazonía; ya no dice «coordenadas» ni «la región seleccionada».
+VERIFICADO: **las cifras no cambiaron** en los 7 casos (trend, tests, significance, period, detectability contra origin/integracion/ronda5): 0 diferencias.
+VERIFICADO: el hallazgo usa «Tendencia clara y fuerte», «Tendencia significativa», «Sugerente, aun sin certeza» y «Todavía no se detecta tendencia»; 0 códigos en mayúsculas en los 14 textos.
+VERIFICADO: `data/lora/DATASET_CARD.md` lleva una sección de un párrafo citable por claude-omni-2, con las cifras del §1.
+VERIFICADO: hielo marino regenerado con el arreglo de antigravity-1 (69d679e) → «Based on» = «NSIDC-0051, NSIDC-0803» y «NSIDC-0051, NSIDC-0081, NSIDC-0803», sin repetidos; cifras idénticas (0 diferencias); `verify_seaice_cases.py` en verde.
 ESCRITO (sin ejecutar de punta a punta): nada.
-ROTO / NO HECHO: nada de mi carril. Los `.jsonl` del LoRA no se tocaron a propósito (el adaptador canónico se entrenó con ellos, regla 21).
-Siguiente paso: ninguno pendiente; si el arquitecto quiere, el caso protagonista sugerido es `arctic-seaice` (veredicto fuerte, ambos tests de acuerdo, p≈0) o `svalbard-t2m` (el cambio más rápido y más claro).
+ROTO / NO HECHO: nada. Los `.jsonl` del LoRA no se tocan a propósito (regla 21).
 Necesito de: nadie.
-Avisos para otros carriles: (1) claude-omni-2: las 2 rojas de `test_pipeline` son la regla 19, no los casos congelados. (2) antigravity-2: la roja de `test_lora_real` es el respaldo silencioso de `serve.py:65`. (3) claude-omni-1: `/api/cases` sirve los 7 casos con título; los dos de hielo ya tienen cifras limpias. (4) antigravity-2, para `docs/VALIDACION_ESTADISTICA.md`: los números del hielo ya sin −9999 están en la tabla del reporte.
+Avisos para otros carriles: (1) claude-omni-2: la sección «Known defects, in one paragraph» de `data/lora/DATASET_CARD.md` está escrita para citarla tal cual en la declaración de IA. (2) claude-omni-1: los textos de los casos ya no llevan códigos internos ni unidades inglesas en la frase; el `where` nombra el lugar, así que la interfaz no necesita componerlo. (3) antigravity-2: el «Based on» del hielo ya sale limpio del conector y de los casos congelados.
 <!-- ESTADO:FIN -->
 
 # Reportes de Hermes 2
@@ -355,3 +356,100 @@ como candidatas, carril de claude-omni-2); la de `test_lora_real` es el respaldo
 | `antarctic-seaice` | SEAICE_EXTENT_S | **NOT_SIGNIFICANT** | -0.0481 | -0.0822 | 0.0259 | 0.631 | 0.461 | 0.235 | 84.8 |
 | `amazonia-t2m` | T2M | **SIGNIFICANT_STRONG** | 0.186 | 0.191 | 0 | 0 | 1.4e-06 | 6.3e-07 | 0.0 |
 | `amazonia-prectotcorr` | PRECTOTCORR | **NOT_SIGNIFICANT** | -0.0829 | -0.0605 | 0.34 | 0.237 | 0.484 | 0.604 | 82.5 |
+
+---
+
+## Ronda 5 — hermes-2 (2026-11-15 07:35 hora de Perú)
+
+Base: `origin/integracion/ronda5`. Cinco tareas, cinco commits, todas empujadas.
+
+### Tarea 1 — LISTO: tildes en los textos en español (08:00)
+
+Arregladas en la **fuente** (`scripts/write_case_copy.py`) y reaplicadas, no con un sed sobre
+el JSON: así regenerar no las vuelve a perder. 64 apariciones en `index.json` y los 7
+`case.json`: Perú, precipitación, Extensión, Ártico, Antártico, amazónica, subió, bajó,
+década, mínimos, exportación, más `autocorrelación`, `así`, `km²`, `mm/día`, `años`,
+`pequeña`, `área`.
+
+Un primer reemplazo metió la tilde también en los títulos en **inglés** («Lima, Perú: air
+temperature»); corregido: el inglés escribe «Lima, Peru». El comprobador nuevo vigila las
+dos direcciones.
+
+```
+$ python -X utf8 -I scripts/check_case_accents.py
+0 problemas en 8 archivos
+exit=0
+```
+
+`scripts/check_case_accents.py` es nuevo y queda en el repo.
+
+### Tarea 2 — LISTO: el lugar en el texto, sin cambiar cifras (08:30)
+
+`answers.where` ya no dice «coordenadas (-12.05°, -77.03°)» ni «la región seleccionada»:
+
+| caso | es | en |
+|---|---|---|
+| lima-t2m | Observado en Lima, Perú. | Observed in Lima, Peru. |
+| svalbard-t2m | Observado en Svalbard, Noruega. | Observed in Svalbard, Norway. |
+| piura-prectotcorr | Observado en Piura, Perú. | Observed in Piura, Peru. |
+| arctic-seaice | Observado en Hielo marino del Ártico. | Observed in Arctic sea ice. |
+| antarctic-seaice | Observado en Hielo marino del Antártico. | Observed in Antarctic sea ice. |
+| amazonia-* | Observado en el área de Amazonía (cuenca baja del Amazonas). | Observed in the Amazon (lower Amazon basin) area. |
+
+Los 7 se regeneraron con la API real pasando el nombre (`region.name`), y una caja se
+presenta como área, no como ciudad.
+
+**Las cifras no cambiaron.** Comparadas campo por campo contra `origin/integracion/ronda5`
+(`trend`, `tests`, `significance`, `period`, `detectability`), en los 7 casos:
+
+```
+lima-t2m  svalbard-t2m  piura-prectotcorr  arctic-seaice
+antarctic-seaice  amazonia-t2m  amazonia-prectotcorr
+-> trend, tests, significance, period, detectability: igual en los 7
+diferencias en cifras: 0
+```
+
+### Tarea 3 — LISTO: veredicto con palabras, no con el código (09:00)
+
+Los textos ya no escriben `SIGNIFICANT_STRONG` / `NOT_SIGNIFICANT` / `SUGGESTIVE`. Usan las
+mismas etiquetas que la interfaz (`src/ui/i18n.js`, claves `verdict.*`): «Clear, strong
+trend» / «Tendencia clara y fuerte», «Significant trend» / «Tendencia significativa»,
+«Suggestive, not yet certain» / «Sugerente, aun sin certeza», «No trend detectable so far» /
+«Todavía no se detecta tendencia».
+
+```
+codigos restantes en los 14 textos (7 casos x 2 idiomas): ninguno
+```
+
+### Tarea 4 — LISTO: la ficha del dataset, citable (10:00)
+
+Ya estaba la sección «Measured defects» de la Ronda 4. Añadida delante una sección de un
+párrafo, en inglés, para que claude-omni-2 la cite en la declaración de uso de IA, con las
+cifras del §1 y la consecuencia: el test sale del mismo generador que el entrenamiento, así
+que el 84,5 % sobreestima y el producto planifica con reglas.
+
+### Tarea 5 — LISTO (11:00, con el arreglo de antigravity-1)
+
+Fusionado su commit `69d679e` y regenerados los dos casos de hielo:
+
+```
+antes:  NSIDC-0051, NSIDC-0051,NSIDC-0081, NSIDC-0803   (repetido y sin espacio)
+ahora:  arctic-seaice    -> NSIDC-0051, NSIDC-0803
+        antarctic-seaice -> NSIDC-0051, NSIDC-0081, NSIDC-0803
+```
+
+Cifras de los dos casos otra vez idénticas a la base: **0 diferencias**.
+
+### Suite completa (regla 14)
+
+```
+$ python -m pytest -q
+276 passed, 10 skipped, 74 warnings in 333.69s
+```
+(antes de fusionar el arreglo: 275 passed, 10 skipped)
+
+### Comprobaciones que quedan al día
+
+- `python -X utf8 -I scripts/verify_seaice_cases.py` → exit 0.
+- `python -X utf8 -I scripts/check_case_accents.py` → 0 problemas en 8 archivos.
+- Los 7 casos conservan `title` y `finding` en los dos idiomas, sin códigos internos.
