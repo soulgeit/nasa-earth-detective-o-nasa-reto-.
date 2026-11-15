@@ -1,14 +1,14 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """
-Validador de datasets del ETL (contrato v2 §3).
+Validador de datasets del ETL (contrato v2 §3, regla 12).
 
 Uso:
     python scripts/validate_datasets.py <ruta.json> [<ruta.json> ...]
 
 Comprueba: esquema `timeseries/2`, `provenance.kind` permitido, `sha256`
-presente, fechas YYYY-MM crecientes sin duplicados, ningun -999, >= 120 meses.
-Sale con codigo != 0 si algun archivo falla. Sin argumentos, valida todos los
-JSON de `data/catalog/` que declaren `timeseries/2` (hoy: ninguno).
+presente, fechas YYYY-MM crecientes sin duplicados, ningún centinela de relleno
+(-999, -9999, etc.), rangos físicos por variable (Regla 12), >= 120 meses.
+Sale con codigo != 0 si algun archivo falla.
 """
 
 import json

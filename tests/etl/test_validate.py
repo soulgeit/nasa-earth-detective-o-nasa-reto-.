@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """Tests del validador de datasets (esquema timeseries/2)."""
 
 import json
@@ -54,7 +54,27 @@ def test_missing_sha256():
 def test_minus_999_rejected():
     doc = good_doc()
     doc["data"][5]["value"] = -999
-    assert any("-999" in e for e in validate_document(doc))
+    assert any("relleno" in e or "-999" in e for e in validate_document(doc))
+
+
+def test_sentinel_fill_and_physical_range_rejected():
+    # 1. -9999 rechazado
+    doc_fill = good_doc()
+    doc_fill["data"][5]["value"] = -9999.0
+    errs_fill = validate_document(doc_fill)
+    assert any("-9999" in e for e in errs_fill)
+
+    # 2. Hielo marino con valor negativo o fuera de rango físico (0 - 30)
+    doc_ice = good_doc(variable_id="SEAICE_EXTENT_N")
+    doc_ice["data"][2]["value"] = -0.5
+    errs_ice = validate_document(doc_ice)
+    assert any("fuera del rango físico" in e for e in errs_ice)
+
+    # 3. Temperatura fuera de rango físico (-90 a 65)
+    doc_temp = good_doc(variable_id="T2M")
+    doc_temp["data"][3]["value"] = 120.0
+    errs_temp = validate_document(doc_temp)
+    assert any("fuera del rango físico" in e for e in errs_temp)
 
 
 def test_duplicate_and_unordered_dates():

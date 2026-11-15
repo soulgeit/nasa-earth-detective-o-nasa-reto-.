@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """
 Conector NSIDC Sea Ice Index v4 (extension mensual, hemisferios norte y sur).
 
@@ -60,23 +60,65 @@ def _fetch_csv(url: str) -> tuple[str, dict]:
 
 
 def parse_csv(text: str) -> list[dict]:
-    """Parsea un fichero mensual de NSIDC -> [{'date','value','area','source'}]."""
+    """Parsea un fichero mensual de NSIDC o serie consolidada -> [{'date','value','area','source'}]."""
     rows = []
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
         clean = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
-        try:
-            year = int(clean["year"])
-            month = int(clean["mo"])
-            extent = float(clean["extent"])
-        except (KeyError, TypeError, ValueError):
-            continue
+        year = None
+        month = None
+        date = None
+        if "date" in clean and clean["date"]:
+            date_str = clean["date"]
+            if len(date_str) >= 7 and date_str[4] == "-":
+                date = date_str[:7]
+                try:
+                    year = int(date[:4])
+                    month = int(date[5:7])
+                except ValueError:
+                    pass
+        if date is None:
+            try:
+                year = int(clean["year"])
+                month = int(clean["mo"])
+                date = f"{year:04d}-{month:02d}"
+            except (KeyError, TypeError, ValueError):
+                continue
+
+        raw_extent = clean.get("extent")
+        if raw_extent is None or raw_extent == "":
+            raw_extent = clean.get("extent_million_sq_km")
+
+        extent_val = None
+        if raw_extent not in (None, "", "nan", "null"):
+            try:
+                parsed_ext = float(raw_extent)
+                # Regla 12: -9999, -999 o valores negativos caen fuera del rango físico (extensión >= 0)
+                if parsed_ext >= 0 and parsed_ext not in (-9999.0, -999.0, -9999, -999) and parsed_ext > -900:
+                    extent_val = parsed_ext
+            except ValueError:
+                extent_val = None
+
+        raw_area = clean.get("area")
+        area_val = None
+        if raw_area not in (None, "", "nan", "null"):
+            try:
+                parsed_area = float(raw_area)
+                if parsed_area >= 0 and parsed_area not in (-9999.0, -999.0, -9999, -999) and parsed_area > -900:
+                    area_val = parsed_area
+            except ValueError:
+                area_val = None
+
+        src = clean.get("source_dataset")
+        if src in ("-9999", "-999", "", "nan", "null"):
+            src = None
+
         rows.append(
             {
-                "date": f"{year:04d}-{month:02d}",
-                "value": extent,
-                "area": float(clean.get("area") or "nan"),
-                "source": clean.get("source_dataset"),
+                "date": date,
+                "value": extent_val,
+                "area": area_val,
+                "source": src,
             }
         )
     return rows
@@ -114,7 +156,10 @@ def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=N
     if len(dates) < 12:
         raise DataUnavailable("OUT_OF_COVERAGE", f"solo {len(dates)} meses entre {start} y {end}")
 
-    sources = sorted({merged[d]["source"] for d in dates if merged[d]["source"]})
+    sources = sorted({merged[d]["source"] for d in dates if merged[d]["source"] and merged[d]["source"] not in ("-9999", "-999")})
+    data = [{"date": d, "value": merged[d]["value"]} for d in dates]
+    n_missing = sum(1 for pt in data if pt["value"] is None)
+
     provenance = {
         "kind": "nasa_file",
         "source": "NSIDC Sea Ice Index v4",
@@ -127,6 +172,7 @@ def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=N
         "citation": CITATION,
         "files_fetched": len(hashes),
         "files_retrieved_at": retrieved[0] if retrieved else None,
+        "n_missing": n_missing,
     }
     if len(sources) > 1:
         provenance["source_splice"] = sources
@@ -146,6 +192,6 @@ def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=N
             "bbox": None,
         },
         "aggregation": "point",
-        "data": [{"date": d, "value": merged[d]["value"]} for d in dates],
+        "data": data,
         "provenance": provenance,
     }

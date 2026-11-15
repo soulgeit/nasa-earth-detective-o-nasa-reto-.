@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Gemini 3.8 Flash); adaptado por Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """
 Pruebas unitarias para conectores adicionales: NASA GISTEMP v4 y NSIDC Sea Ice Index v4.
 Verifica cumplimiento estricto del esquema timeseries/2 y reglas de integridad.
@@ -85,3 +85,48 @@ def test_registry_dispatch_gistemp_and_nsidc():
     s_ant = get_series("SEAICE_EXTENT_S", start="1980-01", end="2020-12")
     assert s_ant["variable_id"] == "SEAICE_EXTENT_S"
     assert s_ant["data"][0]["date"] == "1980-01"
+
+
+def test_nsidc_parse_csv_fill_values_and_satellite_gap():
+    """Valida que parse_csv enmascara -9999 y que el hueco satelital (1987-12, 1988-01) resulta en None."""
+    from pathlib import Path
+    from src.etl.nsidc_seaice import parse_csv
+
+    fixture_path = Path(__file__).resolve().parent.parent / "fixtures" / "real" / "nsidc_seaice_N_monthly_all.csv"
+    assert fixture_path.exists(), f"Fixture no encontrado: {fixture_path}"
+
+    text = fixture_path.read_text(encoding="utf-8")
+    rows = parse_csv(text)
+    assert len(rows) > 120
+
+    # 1. Ningún valor numérico puede ser negativo (regla 12)
+    for r in rows:
+        val = r["value"]
+        if val is not None:
+            assert val >= 0, f"Valor de hielo marino negativo detectado en {r['date']}: {val}"
+
+    # 2. Los meses del hueco satelital (1987-12 y 1988-01) deben tener value is None
+    by_date = {r["date"]: r["value"] for r in rows}
+    assert "1987-12" in by_date
+    assert by_date["1987-12"] is None, f"1987-12 debió ser None, obtuvo {by_date['1987-12']}"
+    assert "1988-01" in by_date
+    assert by_date["1988-01"] is None, f"1988-01 debió ser None, obtuvo {by_date['1988-01']}"
+
+    # 3. Comprobar formato crudo con -9999 explícito
+    raw_sample = (
+        "year, mo,source_dataset, region, extent,   area\n"
+        "1987, 11,    NSIDC-0051,      N,  11.22,   9.80\n"
+        "1987, 12,         -9999,      N, -9999.00, -9999.00\n"
+        "1988, 01,         -9999,      N, -9999.00, -9999.00\n"
+        "1988, 02,    NSIDC-0051,      N,  15.58,  13.20\n"
+    )
+    parsed_sample = parse_csv(raw_sample)
+    assert len(parsed_sample) == 4
+    sample_by_date = {r["date"]: r for r in parsed_sample}
+    assert sample_by_date["1987-11"]["value"] == 11.22
+    assert sample_by_date["1987-12"]["value"] is None
+    assert sample_by_date["1987-12"]["area"] is None
+    assert sample_by_date["1987-12"]["source"] is None
+    assert sample_by_date["1988-01"]["value"] is None
+    assert sample_by_date["1988-02"]["value"] == 15.58
+

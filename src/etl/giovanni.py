@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5 / Gemini 3.8 Flash)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """
 Parser de CSV exportado de Giovanni (GES DISC) -> TimeSeries v2 (`user_upload`).
 
@@ -240,6 +240,7 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
             "sha256": sha,
             "native_resolution": None,
             "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+            "n_missing": sum(1 for pt in data if pt.get("value") is None),
             "header_metadata": [line.strip() for line in meta_lines if line.strip()],
         },
     }
