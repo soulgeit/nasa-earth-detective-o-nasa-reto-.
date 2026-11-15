@@ -17,33 +17,35 @@
   "en": "Arctic sea ice"
  },
  "titles": {
-  "es": "TODO_HUMANO",
-  "en": "TODO_HUMANO"
+  "en": "Arctic sea ice extent, 1978-2026",
+  "es": "Extension del hielo marino del Artico, 1978-2026"
  },
  "story": {
-  "es": [
-   "TODO_HUMANO"
-  ],
   "en": [
-   "TODO_HUMANO"
+   "Arctic sea ice extent fell about 0.50 million km2 per decade (Theil-Sen, 1978-2026), 2.38 million km2 in total (-4.4%). Both tests agree: SIGNIFICANT_STRONG. Two months (1987-12 and 1988-01) are missing in the source and are reported as missing, not as zero.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La extension del hielo marino del Artico bajo unos 0,50 millones de km2 por decada (Theil-Sen, 1978-2026), 2,38 millones de km2 en total (-4,4%). Ambas pruebas coinciden: SIGNIFICANT_STRONG. Faltan dos meses en la fuente (1987-12 y 1988-01) y se informan como faltantes, no como cero.",
+   "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T00:49:44Z",
- "verdict_code": "SIGNIFICANT",
+ "frozen_at": "2026-11-15T04:45:29Z",
+ "verdict_code": "SIGNIFICANT_STRONG",
  "provenance": {
   "kind": "nasa_file",
   "source": "NSIDC Sea Ice Index v4",
-  "underlying": "-9999, NSIDC-0051, NSIDC-0803",
+  "underlying": "NSIDC-0051, NSIDC-0803",
   "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
   "request_urls_pattern": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_{MM}_extent_v4.0.csv",
-  "retrieved_at": "2026-11-15T00:49:47Z",
+  "retrieved_at": "2026-11-15T04:45:30Z",
   "sha256": "cb3d213ef53d28429f6dc9969d63ae3b4aa70dbce8c76e0fddfafe325f22ac9f",
   "native_resolution": "hemispheric monthly index",
   "citation": "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135",
   "files_fetched": 12,
   "files_retrieved_at": "2026-11-14T18:59:37Z",
+  "n_missing": 2,
   "source_splice": [
-   "-9999",
    "NSIDC-0051",
    "NSIDC-0803"
   ],

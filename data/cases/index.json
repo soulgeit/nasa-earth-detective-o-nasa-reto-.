@@ -138,8 +138,8 @@
     "lon": null,
     "bbox": null
    },
-   "verdict_code": "SIGNIFICANT",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "verdict_code": "SIGNIFICANT_STRONG",
+   "frozen_at": "2026-11-15T04:45:29Z",
    "paths": {
     "series": "data/cases/arctic-seaice/series.json",
     "analysis": "data/cases/arctic-seaice/analysis.json",
@@ -149,7 +149,15 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T00:49:47Z"
+    "retrieved_at": "2026-11-15T04:45:30Z"
+   },
+   "title": {
+    "en": "Arctic sea ice extent, 1978-2026",
+    "es": "Extension del hielo marino del Artico, 1978-2026"
+   },
+   "finding": {
+    "en": "Arctic sea ice extent fell about 0.50 million km2 per decade (Theil-Sen, 1978-2026), 2.38 million km2 in total (-4.4%). Both tests agree: SIGNIFICANT_STRONG. Two months (1987-12 and 1988-01) are missing in the source and are reported as missing, not as zero.",
+    "es": "La extension del hielo marino del Artico bajo unos 0,50 millones de km2 por decada (Theil-Sen, 1978-2026), 2,38 millones de km2 en total (-4,4%). Ambas pruebas coinciden: SIGNIFICANT_STRONG. Faltan dos meses en la fuente (1987-12 y 1988-01) y se informan como faltantes, no como cero."
    }
   },
   {
@@ -171,7 +179,7 @@
     "bbox": null
    },
    "verdict_code": "NOT_SIGNIFICANT",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "frozen_at": "2026-11-15T04:45:31Z",
    "paths": {
     "series": "data/cases/antarctic-seaice/series.json",
     "analysis": "data/cases/antarctic-seaice/analysis.json",
@@ -181,7 +189,15 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T00:49:47Z"
+    "retrieved_at": "2026-11-15T04:45:32Z"
+   },
+   "title": {
+    "en": "Antarctic sea ice extent, 1978-2026",
+    "es": "Extension del hielo marino del Antartico, 1978-2026"
+   },
+   "finding": {
+    "en": "Antarctic sea ice extent fell about 0.05 million km2 per decade (Theil-Sen), 0.23 million km2 in total (-0.4%). The trend is NOT_SIGNIFICANT: with autocorrelation corrected, p = 0.63, so no change can be stated. It would take about 133 years of data to detect a trend this small.",
+    "es": "La extension del hielo marino del Antartico bajo unos 0,05 millones de km2 por decada (Theil-Sen), 0,23 millones de km2 en total (-0,4%). La tendencia es NOT_SIGNIFICANT: corregida la autocorrelacion, p = 0,63, asi que no se puede afirmar un cambio. Harian falta unos 133 anos de datos para detectar una tendencia tan pequena."
    }
   },
   {
