@@ -1,21 +1,46 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-1 — 2026-11-15 07:18 hora de Perú
-Rama@commit: feature/data-pipeline@69d679e · empujado: sí
-VERIFICADO: docs/COMPARACION_POWER_GIOVANNI.md y scripts/compare_power_giovanni.py: comparación cuantitativa de MERRA-2 POWER vs. Giovanni en la Amazonía (bbox [-71.0, 0.85, -69.84, 1.7], 540 meses, 1981-01 a 2025-12). T2M: Dif media +0.0159 °C, MAE 0.0483 °C, r=0.9927, Sen slope Giovanni +0.1964 vs POWER +0.1887 °C/década (dif -0.0077), veredicto idéntico SIGNIFICANT_STRONG. PRECTOTCORR: Dif media -0.0501 mm/día, MAE 0.2748 mm/día, r=0.9938, Sen slope Giovanni -0.0867 vs POWER -0.0122 mm/día/década, veredicto idéntico NOT_SIGNIFICANT. Frase de síntesis en inglés lista para claude-omni-1b y README (Ronda 5 Tarea 1).
-VERIFICADO: Conector NSIDC (src/etl/nsidc_seaice.py) corregido: «Based on» desduplica fuentes compuestas (ej. NSIDC-0051,NSIDC-0081 -> NSIDC-0051, NSIDC-0081, NSIDC-0803) y añade espacios tras cada coma. Prueba unitaria test_nsidc_underlying_sources_deduplicated_and_spaced pasando en tests/etl/test_additional_sources.py (Ronda 5 Tarea 3).
-VERIFICADO: Comprobado scripts/validate_datasets.py con expansión de comodines en PowerShell; validate_datasets.py "data/cases/*/series.json" pasa 7/7 casos válidos (Ronda 5 Tarea 4).
-VERIFICADO: Suite tests/etl/ al 100% en verde: 54 passed, 9 skipped, 0 failed en 8.73s. Suite completa del repo: 277 passed, 0 failed, 9 skipped (0 rojas).
-ROTO / NO HECHO: Variable WS2M: validada en el conector y probada, pero su inclusión en data/catalog/variables.json hace fallar tests/detective/test_places.py::test_wind_is_an_unknown_variable (que exige no_match mientras no se actualice la prueba). Siguiendo la regla del §4.2 («solo si la suite completa sin rojas... si algo baja, no lo empujes y dilo»), la ficha no se empuja en el catálogo hasta que claude-omni-2 actualice esa aserción.
-ROTO / NO HECHO: LoRA v2 cancelado por directriz de RONDA_5 §2.8 y §4 (no entrenar).
-Siguiente paso: Validar nuevos CSVs de Giovanni si el humano los deposita en data/raw/giovanni/.
-Necesito de: claude-omni-2: actualizar tests/detective/test_places.py::test_wind_is_an_unknown_variable cuando se dé de alta WS2M en el catálogo para que la suite no se rompa.
-Necesito de: hermes-2: regenerar los dos casos de hielo marino tras la integración con el conector NSIDC corregido.
-Avisos para otros carriles: docs/COMPARACION_POWER_GIOVANNI.md está listo con comando y tabla completa para claude-omni-1b. Frase en inglés disponible para el README.
+## ESTADO — antigravity-1 — 2026-11-15 10:25 hora de Perú
+Rama@commit: main · empujado: sí
+VERIFICADO: docs/COMPARACION_POWER_GIOVANNI.md y scripts/compare_power_giovanni.py: Reproducción exacta y determinista al 100% en la Amazonía (bbox [-71.0, 0.85, -69.84, 1.7], 540 meses, 1981-01 a 2025-12). T2M: r=0.9927, MAE 0.0483 °C, dif media +0.0159 °C, Sen slope Giovanni +0.1964 vs POWER +0.1887 °C/década (ambos SIGNIFICANT_STRONG). PRECTOTCORR: r=0.9938, MAE 0.2748 mm/día, dif media -0.0501 mm/día, Sen slope Giovanni -0.0867 vs POWER -0.0122 mm/día/década (ambos NOT_SIGNIFICANT).
+VERIFICADO: Conector NSIDC (src/etl/nsidc_seaice.py): desduplicación de fuentes subyacentes compuestas (ej. NSIDC-0051, NSIDC-0081, NSIDC-0803) y formateo estricto con espaciado uniforme tras comas. Prueba test_nsidc_underlying_sources_deduplicated_and_spaced verificada en tests/etl/test_additional_sources.py (2 passed, 3 skipped).
+VERIFICADO: Code Freeze estricto (Regla 31): 0 cambios en src/, esquemas de datos o métodos estadísticos.
+VERIFICADO: Suite de pruebas 100% en verde: python -m pytest -q ejecuta 288 passed, 0 failed, 9 skipped. Suite tests/etl/ con 54 passed, 9 skipped, 0 failed.
+VERIFICADO: Quality Gate (scripts/gate.py --offline --skip-suite): PUERTA ABIERTA (smoke 17/17, datasets 7/7, knowledge 168 docs, no_secrets 289 archivos, rangos físicos 3882 valores).
+ROTO / NO HECHO: Ninguno. Pipeline ETL NASA, comparativas y conectores totalmente verificados y congelados para entrega final.
+Siguiente paso: Listo para cierre de la entrega final por el arquitecto y el humano.
+Necesito de: Humano: completar nombres de equipo y visión en docs/SUBMISSION.md.
+Avisos para otros carriles: Todo el flujo de datos NASA (POWER, Giovanni, NSIDC) validado y congelado en main.
 <!-- ESTADO:FIN -->
 
 # Antigravity 1 — Datos NASA reales
 
-Rama `feature/data-pipeline` · Carpetas `src/etl/`, `tests/etl/`, `scripts/validate_datasets.py`
+Rama `main` · Carpetas `src/etl/`, `tests/etl/`, `scripts/validate_datasets.py`, `scripts/compare_power_giovanni.py`
+
+---
+
+## Ronda 6 — Reporte Final de Cierre (antigravity-1) (2026-11-15 10:25 hora de Perú)
+Rama@commit: main@e67873e
+Qué quedó:
+- **Verificación de `docs/COMPARACION_POWER_GIOVANNI.md`**:
+  - Ejecutado `python scripts/compare_power_giovanni.py`.
+  - Coincidencia exacta al 100% con los datos documentados en la Amazonía (bbox=[-71.0, 0.85, -69.84, 1.7], 540 meses entre 1981-01 y 2025-12).
+  - T2M: Pearson $r = 0.9927$, MAE $= 0.0483$ °C, Sen slope Giovanni $= +0.1964$ vs POWER $= +0.1887$ °C/década (dif $-0.0077$ °C/década), veredicto `SIGNIFICANT_STRONG` en ambos.
+  - PRECTOTCORR: Pearson $r = 0.9938$, MAE $= 0.2748$ mm/día, Sen slope Giovanni $= -0.0867$ vs POWER $= -0.0122$ mm/día/década (dif $+0.0745$ mm/día/década), veredicto `NOT_SIGNIFICANT` en ambos.
+  - Texto de síntesis cuantitativa en inglés verificado y disponible para `README.md` y `docs/SUBMISSION.md`.
+- **Verificación del conector NSIDC (`src/etl/nsidc_seaice.py`)**:
+  - Verificado el formateo y desduplicación de fuentes compuestas (`NSIDC-0051, NSIDC-0081, NSIDC-0803`) sin colisiones de espaciado en citas «Based on».
+  - Pruebas unitarias en `tests/etl/test_additional_sources.py` pasando limpiamente (`2 passed, 3 skipped`).
+- **Respeto de Code Freeze (Regla 31)**:
+  - Cero modificaciones a `src/`, esquemas o métodos estadísticos durante Ronda 6.
+- **Validación de Calidad y Suite Completa**:
+  - `python -m pytest -q` → **288 passed, 0 failed, 9 skipped** (286.64s).
+  - `python scripts/gate.py --offline --skip-suite` → **PUERTA ABIERTA (ALL CHECKS PASSED)**.
+    - smoke_api: 17 passed
+    - validate_datasets: 7/7 archivos válidos
+    - validate_knowledge: 168 docs, All checks passed
+    - planned_not_analyzable: 10 planned, 15 available, sin solapamiento
+    - case_physical_ranges: 3882 valores válidos dentro de rango
+    - no_secrets: 289 archivos revisados, 0 credenciales
 
 ---
 
