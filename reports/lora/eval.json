@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-11-14 21:53:27",
+  "test_dataset": "data/lora/test.jsonl",
+  "test_samples_evaluated": 2,
+  "base_model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+  "adapter_path": "models/etd-planner-lora",
+  "device": "NVIDIA GeForce GTX 1650 SUPER",
+  "metrics": {
+    "rules": {
+      "valid_json_pct": 100.0,
+      "valid_schema_pct": 100.0,
+      "intent_accuracy_pct": 50.0,
+      "variable_exact_match_pct": 0.0,
+      "place_match_pct": 50.0,
+      "hypothesis_accuracy_pct": 100.0
+    },
+    "base_model": {
+      "valid_json_pct": 50.0,
+      "valid_schema_pct": 0.0,
+      "intent_accuracy_pct": 0.0,
+      "variable_exact_match_pct": 0.0,
+      "place_match_pct": 100.0,
+      "hypothesis_accuracy_pct": 0.0
+    },
+    "lora": {
+      "valid_json_pct": 100.0,
+      "valid_schema_pct": 100.0,
+      "intent_accuracy_pct": 100.0,
+      "variable_exact_match_pct": 100.0,
+      "place_match_pct": 100.0,
+      "hypothesis_accuracy_pct": 100.0
+    }
+  }
+}

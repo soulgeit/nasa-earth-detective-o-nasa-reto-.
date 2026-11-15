@@ -1,12 +1,12 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-2 — 2026-11-14 18:35 hora de Perú
-Rama@commit: feature/stats@ef18e01 · empujado: sí
-VERIFICADO: Veredicto Lima T2M corregido a SIGNIFICANT (tests_agree: false, TESTS_DISAGREE) y textos pedagógicos limpios; URLs oficiales en docs/VALIDACION_ESTADISTICA.md → pytest tests/stats tests/ml -v → 11 passed in 37.71s
-ESCRITO (sin ejecutar de punta a punta): src/ml/train_lora.py entrenando en GPU local (GTX 1650 SUPER, SmolLM2-1.7B en 4-bit QLoRA, 120 pasos, fin est. ~21:20); src/ml/eval_lora.py y src/ml/serve.py listos para inferencia real
-ROTO / NO HECHO: Ninguno en carril de estadísticas
-Siguiente paso: Al completar entrenamiento LoRA (~21:20), ejecutar src/ml/eval_lora.py sobre test.jsonl y publicar reports/lora/eval.json
-Necesito de: Nadie. Entrenamiento en GPU local autosuficiente
-Avisos para otros carriles: No cargar modelos en Ollama en esta máquina mientras entrene el LoRA para evitar contención de VRAM
+## ESTADO — antigravity-2 — 2026-11-14 22:40 hora de Perú
+Rama@commit: feature/stats · empujado: sí
+VERIFICADO: Entrenamiento LoRA completado en GPU local (GTX 1650 SUPER, SmolLM2-1.7B, 120 pasos, loss 0.366 a 0.0199, pico VRAM 2258 MB, duración 3.2h). Adaptador real generado en models/etd-planner-lora/ y models/planner-lora/ (25.2 MB). Registro en reports/lora/training_log.json. analyze_grid retira valor por defecto 'VAR' (devuelve null). Suite tests/stats y tests/ml: 11 passed in 47.38s.
+ESCRITO (sin ejecutar de punta a punta): Evaluación batch de 632 casos sobre test.jsonl ejecutándose en la GPU local (eval_lora.py).
+ROTO / NO HECHO: Ninguno en carril de estadísticas y LoRA.
+Siguiente paso: Al completar la evaluación de 632 muestras, publicar reports/lora/eval.json y predictions.jsonl antes de G2 (23:30).
+Necesito de: Nadie.
+Avisos para otros carriles: Adaptador LoRA disponible en models/planner-lora/ y models/etd-planner-lora/. Claude Omni 2 puede conectar PLANNER_MODEL=local-lora mediante src.ml.serve:plan_with_lora.
 <!-- ESTADO:FIN -->
 
 # Reporte de Antigravity 2 — Motor Estadístico v2 y LoRA (feature/stats)

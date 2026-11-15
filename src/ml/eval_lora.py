@@ -32,6 +32,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.detective.planner import _rules_plan, validate_plan
 
 
@@ -84,6 +85,8 @@ def evaluate_batch(
     root = Path(__file__).resolve().parent.parent.parent
     test_path = root / test_file
     adapter_dir = root / adapter_path
+    if not adapter_dir.exists() and (root / "models/planner-lora").exists():
+        adapter_dir = root / "models/planner-lora"
     eval_path = root / output_eval
     preds_path = root / output_preds
 
@@ -199,6 +202,8 @@ def evaluate_batch(
             "rules": {"text": json.dumps(r_plan), "plan": pred_r, "is_json": is_j_r, "is_schema": is_s_r},
             "base": {"text": gen_base_text, "plan": pred_b, "is_json": is_j_b, "is_schema": is_s_b},
         })
+        if (idx + 1) % 25 == 0 or (idx + 1) == n_cases:
+            print(f"[LoRA Eval] Fase 1 (Base): {idx + 1}/{n_cases} casos evaluados...")
 
     # Cargar LoRA sobre el modelo
     print(f"[LoRA Eval] Fase 2: Cargando adaptador LoRA {adapter_dir}...")
@@ -206,7 +211,7 @@ def evaluate_batch(
     lora_model.eval()
 
     print("[LoRA Eval] Fase 3: Evaluación de Modelo LoRA Fine-Tuned...")
-    for item in base_outputs:
+    for i_lora, item in enumerate(base_outputs):
         idx = item["idx"]
         case = test_cases[idx]
         gold_plan = item["gold"]
@@ -264,6 +269,9 @@ def evaluate_batch(
                 stats[m_name]["place"] += 1
             if p.get("hypothesis") == gold_plan.get("hypothesis"):
                 stats[m_name]["hypothesis"] += 1
+
+        if (i_lora + 1) % 25 == 0 or (i_lora + 1) == len(base_outputs):
+            print(f"[LoRA Eval] Fase 3 (LoRA): {i_lora + 1}/{len(base_outputs)} casos evaluados...")
 
     # Guardar predictions.jsonl
     with open(preds_path, "w", encoding="utf-8") as f:

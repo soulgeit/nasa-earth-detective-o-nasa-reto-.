@@ -659,7 +659,7 @@ def analyze_grid(grid: dict, *, alpha: float = 0.05, fdr_q: float = 0.10) -> dic
     if n_t < 12 or n_lat == 0 or n_lon == 0:
         return {
             "schema": "trendmap/2",
-            "variable_id": grid.get("variable_id", "VAR"),
+            "variable_id": grid.get("variable_id"),
             "unit_per_decade": f"{grid.get('unit', '')}/década",
             "bbox": [min(lons) if lons else 0, min(lats) if lats else 0, max(lons) if lons else 0, max(lats) if lats else 0],
             "lats": lats, "lons": lons,
@@ -760,7 +760,7 @@ def analyze_grid(grid: dict, *, alpha: float = 0.05, fdr_q: float = 0.10) -> dic
 
     return {
         "schema": "trendmap/2",
-        "variable_id": grid.get("variable_id", "VAR"),
+        "variable_id": grid.get("variable_id"),
         "unit_per_decade": f"{grid.get('unit', '')}/década",
         "bbox": [min(lons), min(lats), max(lons), max(lats)],
         "lats": lats,
