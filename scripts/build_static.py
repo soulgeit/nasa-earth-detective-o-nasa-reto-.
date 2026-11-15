@@ -100,6 +100,29 @@ def build_from_api(base: str) -> dict[str, int]:
     return counts
 
 
+def _normalize_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Aplana `region` a la raíz porque `openCase()` del UI lee `c.lat`/`c.lon`.
+
+    Es una copia de campos que ya están en el caso; no se inventa nada. El índice
+    real trae `region: {lat, lon, bbox, name}` y la interfaz busca los mismos
+    valores en la raíz: sin esto, la galería se ve pero el clic no abre el caso.
+    """
+    out = dict(case)
+    region = case.get("region") or {}
+    if out.get("lat") is None:
+        out["lat"] = region.get("lat")
+    if out.get("lon") is None:
+        out["lon"] = region.get("lon")
+    if out.get("bbox") is None:
+        out["bbox"] = region.get("bbox")
+    if not out.get("region_name"):
+        names = case.get("names") or {}
+        out["region_name"] = (
+            region.get("name") or names.get("en") or names.get("es") or case.get("id")
+        )
+    return out
+
+
 def build_from_cases() -> dict[str, int]:
     """Sin API: usa solo los archivos congelados de `data/cases` y `data/atlas`."""
     dist_api = DIST / "api"
@@ -113,11 +136,21 @@ def build_from_cases() -> dict[str, int]:
         raise SystemExit("data/cases/index.json not found (Hermes 2 lane); nothing to freeze")
     cases = json.loads(cases_index.read_text(encoding="utf-8"))
     cases = cases.get("cases", cases) if isinstance(cases, dict) else cases
+    cases = [_normalize_case(c) for c in cases]
     _write(dist_api, "cases", {"cases": cases})
     for case in cases:
-        if case.get("analysis"):
+        # `index.json` publica rutas (`paths.analysis`), no el análisis inline.
+        # Aceptamos las dos formas para no romper llamadas anteriores.
+        analysis = case.get("analysis")
+        if analysis is None:
+            rel = (case.get("paths") or {}).get("analysis")
+            if rel:
+                path = REPO_ROOT / rel
+                if path.exists():
+                    analysis = json.loads(path.read_text(encoding="utf-8"))
+        if analysis:
             case_id = case.get("id") or case.get("region_id")
-            _write(dist_api, f"analyze__{case_id}", case["analysis"])
+            _write(dist_api, f"analyze__{case_id}", analysis)
             counts["analyses"] += 1
     counts["cases"] = len(cases)
 
@@ -200,8 +233,8 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
       error: {
         code: code,
         message: {
-          es: 'Este respaldo estático solo incluye los casos congelados.',
-          en: 'This static backup only includes the frozen cases.'
+          es: 'El análisis en vivo necesita la aplicación completa. Este respaldo solo trae los casos congelados.',
+          en: 'Live analysis needs the full app. This backup only includes the frozen cases.'
         },
         hint: hint || ''
       }
@@ -216,6 +249,9 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
   }
 
   function samePosition(baked, params) {
+    // Variables hemisféricas/globales (GISTEMP, hielo marino) no llevan posición:
+    // con la variable correcta basta, igual que en la API real.
+    if (!baked || baked === 'null,null' || baked === 'null' || baked.indexOf('null') === 0) return true;
     var want = params.get('bbox');
     if (want) return baked === want.replace(/\s+/g, '');
     var lat = parseFloat(params.get('lat'));
@@ -268,6 +304,17 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
 
 def _bake_index(dist_api: Path) -> dict[str, Any]:
     """Construye el índice de rutas con la posición que las produjo."""
+    # `analysis/2` no repite `variable.id`; el índice de casos sí lo trae.
+    cases_path = dist_api / "cases.json"
+    case_variables: dict[str, str] = {}
+    if cases_path.exists():
+        payload = json.loads(cases_path.read_text(encoding="utf-8"))
+        for case in payload.get("cases", []) if isinstance(payload, dict) else []:
+            cid = case.get("id") or case.get("region_id")
+            vid = case.get("variable_id")
+            if cid and vid:
+                case_variables[str(cid)] = str(vid)
+
     index: dict[str, Any] = {}
     for path in sorted(dist_api.glob("*.json")):
         stem = path.stem
@@ -275,11 +322,18 @@ def _bake_index(dist_api: Path) -> dict[str, Any]:
         entry: dict[str, Any] = {"payload": payload}
         if stem.startswith("analyze__"):
             region = payload.get("region") or {}
-            if region.get("bbox"):
-                entry["position"] = ",".join(str(v) for v in region["bbox"])
+            lat, lon, bbox = region.get("lat"), region.get("lon"), region.get("bbox")
+            if bbox:
+                entry["position"] = ",".join(str(v) for v in bbox)
+            elif lat is not None and lon is not None:
+                entry["position"] = f"{lat},{lon}"
             else:
-                entry["position"] = f"{region.get('lat')},{region.get('lon')}"
-            entry["variable_id"] = (payload.get("variable") or {}).get("id")
+                # Variables hemisféricas/globales: sin posición, se sirven por variable.
+                entry["position"] = None
+            variable_id = (payload.get("variable") or {}).get("id")
+            if not variable_id:
+                variable_id = case_variables.get(stem[len("analyze__"):])
+            entry["variable_id"] = variable_id
         index[stem] = entry
     return index
 
