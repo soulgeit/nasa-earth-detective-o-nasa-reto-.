@@ -561,7 +561,7 @@ def report_endpoint(
 # tiene que vivir en la raíz, no bajo `/ui`. Los assets se sirven con caché; el
 # HTML, siempre revalidado, para que un despliegue nuevo se vea al recargar.
 
-_CACHE_HEADERS = {"Cache-Control": "public, max-age=3600"}
+_CACHE_HEADERS = {"Cache-Control": "no-cache, must-revalidate"}
 _HTML_HEADERS = {"Cache-Control": "no-cache"}
 
 
