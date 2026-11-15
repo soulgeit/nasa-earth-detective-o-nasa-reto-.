@@ -20,7 +20,7 @@ Cumple con `docs/RONDA_5.md` §4 (claude-omni-1, tarea 4): *«Cada cifra de una 
 ### Lámina 3 — La Solución en una Pantalla
 - **Captura real**: `docs/media/verdict_view.png` (resolución 1600×900, generada contra el backend en vivo con datos reales).
 - **Caso Lima T2M**:
-  * Tasa de cambio: `+0.158 °C/década` (`+0.1585 °C/década` sin redondear). Fuente: `data/cases/lima-t2m/analysis.json`.
+  * Tasa de cambio: `+0.159 °C/década` (`+0.1585 °C/década` sin redondear; la UI redondea el valor publicado a 3 decimales). Fuente: `data/cases/lima-t2m/analysis.json`.
   * Cambio acumulado: `+0.713 °C` a lo largo de 45 años (540 meses, 1981–2025). Fuente: `data/cases/lima-t2m/analysis.json`.
   * Escalera de evidencia: 4 de 5 (`Significant trend`). Fuente: `data/cases/lima-t2m/case.json`.
   * Detectabilidad: `13.3 años adicionales` estimados para certeza estadística definitiva (Weatherhead et al. 1998). Fuente: `data/cases/lima-t2m/analysis.json` (`detectability.more_years_needed`).
@@ -49,9 +49,9 @@ Cumple con `docs/RONDA_5.md` §4 (claude-omni-1, tarea 4): *«Cada cifra de una 
 
 ### Lámina 6 — Análisis Espacial y Asistente con IA Fundamentada
 - **Atlas Espacial de Tendencias (TrendMap)**: 759 celdas regionales analizadas con control de tasa de falsos descubrimientos (*False Discovery Rate*, FDR Benjamini-Hochberg $q = 0.10$). Fuente: `data/atlas/T2M.json` y `docs/media/trendmap_spatial.png`.
-- **Modo Comparación**: Lima, Perú (`+0.158 °C/década`) vs. Ártico Svalbard (`+0.699 °C/década`, amplificación polar 4×). Fuente: `data/cases/svalbard-t2m/analysis.json` y `docs/media/compare_mode.png`.
+- **Modo Comparación**: Lima, Perú (`+0.159 °C/década`) vs. Ártico Svalbard (`+0.699 °C/década`, amplificación polar 4×). Fuente: `data/cases/svalbard-t2m/analysis.json` y `docs/media/compare_mode.png`.
 - **Evaluación del Asistente Detective**:
-  * Planificador por reglas: `49/50` preguntas de referencia acertadas (`98.0 %`). Fuente: `docs/EVAL_IA.md` y `docs/RONDA_5.md` §1.
+  * Planificador por reglas: `50/50` preguntas de referencia acertadas (`100 %`). Fuente: `docs/EVAL_IA.md` y `docs/RONDA_5.md` §1.
   * Planificador LoRA afinado (`SmolLM2-1.7B` en 4 bits, RTX 4070 SUPER): `40/50` preguntas acertadas (`80.0 %`), latencia mediana de `2.2 s/pregunta`. Fuente: `docs/EVAL_IA.md` y `reports/_arquitecto.md`.
   * Corpus de conocimiento: `168 documentos` y fichas de la NASA verificadas con citas estrictamente extractivas. Fuente: `data/knowledge/docs.jsonl`.
 
