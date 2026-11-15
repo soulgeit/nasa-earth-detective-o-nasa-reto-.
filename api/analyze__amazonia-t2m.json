@@ -4238,8 +4238,8 @@
    "en": "Air temperature at 2 m is increasing across the analyzed period."
   },
   "where": {
-   "es": "Observado en Amazon (lower Amazon basin).",
-   "en": "Observed in Amazon (lower Amazon basin)."
+   "es": "Observado en el área de Amazonía (cuenca baja del Amazonas).",
+   "en": "Observed in the Amazon (lower Amazon basin) area."
   },
   "how_much": {
    "es": "Tasa estimada de +0.186 °C/década, con un cambio acumulado de +0.865 °C.",
@@ -4262,10 +4262,11 @@
   "source": "Giovanni (GES DISC) CSV export",
   "underlying": "\"Time Series, Area-Averaged of 2-meter air temperature - daily mean monthly 0.5 x 0.625 (monthly)",
   "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
-  "retrieved_at": "2026-11-15T00:52:21Z",
+  "retrieved_at": "2026-11-15T12:06:26Z",
   "sha256": "655ce00c1cd4404f9cdaeb1e2c79e56c18c43b1bbcb857882a5ce9e05e42bb10",
   "native_resolution": null,
   "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+  "n_missing": 0,
   "header_metadata": [
    "Title:,\"Time Series, Area-Averaged of 2-meter air temperature - daily mean monthly 0.5 x 0.625 (monthly)\"",
    "User Start Date:,1980-01-01T00:00:00Z",

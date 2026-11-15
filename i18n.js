@@ -387,7 +387,38 @@ function applyTranslations(root) {
   document.documentElement.lang = window.__etdLang || 'en';
 }
 
+const UNIT_MAP_ES = {
+  'million km²': 'millones de km²',
+  'million km2': 'millones de km²',
+  'mm/day': 'mm/día',
+  'MJ/m²/day': 'MJ/m²/día',
+  'MJ/m2/day': 'MJ/m²/día',
+  'fraction (0-1)': 'fracción (0-1)',
+  'dimensionless': 'adimensional',
+  '°C (anomaly vs 1951-1980)': '°C (anomalía respecto a 1951-1980)',
+};
+
+function formatUnit(unit, lang) {
+  if (!unit) return '';
+  const L = lang || window.__etdLang || 'en';
+  if (L === 'es') {
+    if (UNIT_MAP_ES[unit]) return UNIT_MAP_ES[unit];
+    let u = String(unit);
+    u = u.replace(/million km²/g, 'millones de km²')
+         .replace(/million km2/g, 'millones de km²')
+         .replace(/\bmillion\b/g, 'millones')
+         .replace(/mm\/day/g, 'mm/día')
+         .replace(/MJ\/m²\/day/g, 'MJ/m²/día')
+         .replace(/MJ\/m2\/day/g, 'MJ/m²/día')
+         .replace(/fraction \(0-1\)/g, 'fracción (0-1)')
+         .replace(/\bdimensionless\b/g, 'adimensional')
+         .replace(/°C \(anomaly vs 1951-1980\)/g, '°C (anomalía respecto a 1951-1980)');
+    return u;
+  }
+  return unit;
+}
+
 window.__etdLang = detectLang();
-window.__etdI18n = { STRINGS, t: translate, applyTranslations, detectLang };
+window.__etdI18n = { STRINGS, t: translate, applyTranslations, detectLang, UNIT_MAP_ES, formatUnit };
 
 })();
