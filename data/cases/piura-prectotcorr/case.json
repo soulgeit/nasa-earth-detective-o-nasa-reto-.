@@ -22,11 +22,11 @@
  },
  "story": {
   "en": [
-   "Precipitation shows a slight decrease of about 0.011 mm/day per decade (Theil-Sen); the tests disagree and Mann-Kendall gives p = 0.075, so the verdict is SUGGESTIVE, not proven.",
+   "Precipitation shows a slight decrease of about 0.011 mm/day per decade (Theil-Sen); the tests disagree and Mann-Kendall gives p = 0.075, so the verdict is suggestive, not yet certain.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La precipitación muestra un descenso leve de unos 0,011 mm/día por década (Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, así que el veredicto es SUGGESTIVE, no demostrado.",
+   "La precipitación muestra un descenso leve de unos 0,011 mm/día por década (Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, así que el veredicto es sugerente, aun sin certeza.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

@@ -27,11 +27,11 @@
  },
  "story": {
   "en": [
-   "Precipitation trend is about -0.083 mm/day per decade (Theil-Sen); with p = 0.34 neither test rejects 'no trend': NOT_SIGNIFICANT.",
+   "Precipitation trend is about -0.083 mm/day per decade (Theil-Sen); with p = 0.34 neither test rejects 'no trend': no trend detectable so far.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La tendencia de la precipitación es de unos -0,083 mm/día por década (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': NOT_SIGNIFICANT.",
+   "La tendencia de la precipitación es de unos -0,083 mm/día por década (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': no trend detectable so far.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

@@ -22,11 +22,11 @@
  },
  "story": {
   "en": [
-   "Air temperature rose about 0.70 °C per decade (Theil-Sen), 3.14 °C in total, and both tests agree: SIGNIFICANT_STRONG.",
+   "Air temperature rose about 0.70 °C per decade (Theil-Sen), 3.14 °C in total, and both tests agree: clear, strong trend.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La temperatura del aire subió unos 0,70 °C por década (Theil-Sen), 3,14 °C en total, y ambas pruebas coinciden: SIGNIFICANT_STRONG.",
+   "La temperatura del aire subió unos 0,70 °C por década (Theil-Sen), 3,14 °C en total, y ambas pruebas coinciden: tendencia clara y fuerte.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

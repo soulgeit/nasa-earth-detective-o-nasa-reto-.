@@ -27,11 +27,11 @@
  },
  "story": {
   "en": [
-   "Air temperature rose about 0.19 °C per decade (Theil-Sen), 0.87 °C in total, from an uploaded NASA Giovanni export; both tests agree: SIGNIFICANT_STRONG.",
+   "Air temperature rose about 0.19 °C per decade (Theil-Sen), 0.87 °C in total, from an uploaded NASA Giovanni export; both tests agree: clear, strong trend.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La temperatura del aire subió unos 0,19 °C por década (Theil-Sen), 0,87 °C en total, a partir de una exportación de NASA Giovanni subida por el usuario; ambas pruebas coinciden: SIGNIFICANT_STRONG.",
+   "La temperatura del aire subió unos 0,19 °C por década (Theil-Sen), 0,87 °C en total, a partir de una exportación de NASA Giovanni subida por el usuario; ambas pruebas coinciden: tendencia clara y fuerte.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

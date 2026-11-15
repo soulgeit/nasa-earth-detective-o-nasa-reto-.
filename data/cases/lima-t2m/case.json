@@ -22,11 +22,11 @@
  },
  "story": {
   "en": [
-   "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is SIGNIFICANT rather than strong.",
+   "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is a significant trend rather than a clear, strong one.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La temperatura del aire subió unos 0,16 °C por década (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de mínimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
+   "La temperatura del aire subió unos 0,16 °C por década (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de mínimos cuadrados discrepa, por eso el veredicto es tendencia significativa y no clara y fuerte.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
