@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-2 — 2026-11-14 22:40 hora de Perú
-Rama@commit: feature/stats · empujado: sí
+## ESTADO — antigravity-2 — 2026-11-14 22:42 hora de Perú
+Rama@commit: feature/stats@7a7c7fa · empujado: sí
 VERIFICADO: Entrenamiento LoRA completado en GPU local (GTX 1650 SUPER, SmolLM2-1.7B, 120 pasos, loss 0.366 a 0.0199, pico VRAM 2258 MB, duración 3.2h). Adaptador real generado en models/etd-planner-lora/ y models/planner-lora/ (25.2 MB). Registro en reports/lora/training_log.json. analyze_grid retira valor por defecto 'VAR' (devuelve null). Suite tests/stats y tests/ml: 11 passed in 47.38s.
 ESCRITO (sin ejecutar de punta a punta): Evaluación batch de 632 casos sobre test.jsonl ejecutándose en la GPU local (eval_lora.py).
 ROTO / NO HECHO: Ninguno en carril de estadísticas y LoRA.
