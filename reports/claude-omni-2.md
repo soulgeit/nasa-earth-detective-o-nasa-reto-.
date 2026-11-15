@@ -1,18 +1,19 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-2 — 2026-11-14 21:50 (hora de Perú)
-Rama@commit: feature/wizard@76e1966 · empujado: sí
-VERIFICADO: suite completa sobre main fusionado → `python -m pytest -q` → 229 passed, 1 failed, 9 skipped. La roja es test_published_nasa_benchmarks por el −9999 de NSIDC (§2.1, antigravity-1); no la toco (regla 9)
-VERIFICADO: T1 idioma → explain(lima, es) cita "Temperatura del aire a 2 m"; explain(lima, en) cita "Air temperature at 2 m"; ninguna mezcla
-VERIFICADO: T2 planned → catálogo sin sección `planned` hoy; lector implementado y probado con catálogo de prueba; nombra la variable y dice cómo cargarla
-VERIFICADO: T3 planner → POST /api/ai/plan → "planner": "rules"; local-lora llama a serve.plan_with_lora y degrada con note si falta el adaptador
-VERIFICADO: T4 evaluación → `python -m src.detective.rag.eval_plan` → 49/50 = 0.980; recuperación P@1 0.980, P@3 1.000, MRR 0.990
-VERIFICADO: tests/detective → 123 passed
-ESCRITO (sin ejecutar de punta a punta): camino local-lora real; no hay adaptador entrenado
-ROTO / NO HECHO: LoRA sin columna en EVAL_IA.md (no hay modelo); "AI-assisted synthesis" en src/ui/i18n.js sigue (carril de Claude Omni 1)
-Siguiente paso: cuando exista adaptador, `eval_plan --planner local-lora` y comprobar que supera a reglas
-Necesito de: Claude Omni 1 (UI): leer cit.n/title/publisher/url (ya no llega cit.id) y rotular extractivo vs IA
-Necesito de: Claude Omni 3 (API): nada pendiente; "planner" se serializa solo porque el endpoint devuelve el dict
-Avisos para otros carriles: el catálogo puede llevar ya la sección `planned`; el detective la lee sin cambios
+## ESTADO — claude-omni-2 — 2026-11-15 03:10 (hora de Perú)
+Rama@commit: feature/wizard@870cb34 · empujado: sí
+VERIFICADO: suite completa sobre main fusionado → `python -m pytest -q` → 261 passed, 1 failed, 9 skipped
+VERIFICADO: T1 regla 19 → las 2 rojas de test_pipeline.py en verde sin tocar la aserción; 6 preguntas planned + 50 de oro sin devolver ninguna `planned`
+VERIFICADO: T2 lugares → las 4 frases del §2.6: sin "sea"/"Has"/"los"/"the"; viento→no_match; "meaning of life"→out_of_scope
+VERIFICADO: T3 regla 22 → 4 pruebas del LoRA con plan_with_lora simulado (ausencia, válido, planned, lugar inventado)
+VERIFICADO: T4 evaluación → reglas 49/50 = 0.980 · LoRA 37/50 = 0.740 (inferencia real en CPU, GTX 1650), en docs/EVAL_IA.md con los 13 fallos
+VERIFICADO: tests/detective → 147 passed
+ESCRITO (sin ejecutar de punta a punta): nada pendiente en mi carril
+ROTO / NO HECHO: la única roja es de src/ml (`test_plan_with_lora_missing_adapter_raises_error`): serve.py no lanza error con adaptador inexistente si ya cargó un modelo (sustitución silenciosa §2.4). Falla en solitario; carril de antigravity-2
+Siguiente paso: esperar la integración de las 10:00 y repetir la evaluación si el adaptador v2 la sustituye
+Necesito de: antigravity-2: quitar el respaldo silencioso de src/ml/serve.py:65 (esa prueba vuelve a verde sola)
+Necesito de: antigravity-1: si el LoRA v2 sustituye al canónico, avisadme para re-ejecutar la tabla
+Avisos para otros carriles: /api/ai/plan devuelve siempre "planner": "lora"|"rules" y "note" si hubo respaldo; la UI debe mostrarlos
+Avisos: el LoRA tarda ~60 s en cargar y ~13,7 s por pregunta en CPU; no es apto para la URL pública (§5.2)
 <!-- ESTADO:FIN -->
 
 # claude-omni-2 — detective con IA (RAG, planificador, explicación con guardián)
