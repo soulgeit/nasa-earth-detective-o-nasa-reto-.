@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — antigravity-1 — 2026-11-15 00:05 hora de Perú
-Rama@commit: feature/data-pipeline@HEAD · empujado: sí
+Rama@commit: feature/data-pipeline@ab823a4 · empujado: sí
 VERIFICADO: Suite completa ejecutada: python -m pytest -q → 236 passed, 4 failed (heredadas de main en detective y ml), 9 skipped en 113.29s. Carril ETL en verde total: 52 passed, 9 skipped, 0 failed en tests/etl/ (8.16s).
 VERIFICADO: Variable de viento WS2M de NASA POWER soportada en el conector con respuesta real guardada en tests/fixtures/real/power_monthly_point_lima_ws2m.json (540 meses, 1981-01 a 2025-12, min 1.86 m/s, max 3.39 m/s, unidad m/s), rango físico registrado en src/etl/validate.py (0.0 a 150.0 m/s) y pruebas unitarias passing en test_power.py y test_validate.py (Ronda 4 Tarea 2).
 VERIFICADO: Variables de temperaturas extremas T2M_MAX y T2M_MIN con respuestas reales guardadas en tests/fixtures/real/ (power_monthly_point_lima_t2m_max.json y power_monthly_point_lima_t2m_min.json, 540 meses cada una), rangos físicos en src/etl/validate.py (T2M_MAX: -90.0 a 75.0 °C; T2M_MIN: -95.0 a 65.0 °C) y pruebas passing.
