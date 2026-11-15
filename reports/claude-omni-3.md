@@ -1,15 +1,16 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3 — 2026-11-15 01:30 (hora de Perú)
-Rama@commit: feature/api@55f5c28 (Ronda 4, fusionado origin/main 55869e8) · empujado: sí
-VERIFICADO: regla 19 → `pytest tests/api/test_contract.py -q` → planned publicadas aparte; analyze/series/report/trendmap → 409 VARIABLE_PLANNED en el idioma pedido
-VERIFICADO: `requirements.txt` con `==` (10 paquetes) e instalación en venv limpio (`cleanenv`, pip 25.0.1) → `smoke_api.py` → **15 passed · 0 skipped · 0 failed**
-VERIFICADO: 20 simultáneas → misma clave 366,9 req/s (máx 50 ms) · 20 claves distintas 2,9 req/s (mediana 3703 ms), 20/20 HTTP 200
-VERIFICADO: `scripts/gate.py` con 3 comprobaciones nuevas → planned OK, no_secrets OK (294 archivos, positivo y negativo probados), rangos FALLA por el −9999 de los casos de hielo (carril hermes-2)
-VERIFICADO (suite entera, regla 14) → `pytest -q` → **237 passed, 3 failed, 9 skipped**; las 3 rojas son ajenas (detective ×2, ml ×1)
-ROTO / NO HECHO: URL pública (Railway, la despliega el arquitecto); A6 pasa a claude-omni-3a
-Siguiente paso: esperar la URL para el smoke remoto a las 12:00, 16:00 y 19:00
-Necesito de: hermes-2 → regenerar los casos de hielo (mi gate los marca); arquitecto → desplegar en Railway
-Avisos para otros carriles: `/api/catalog/variables` devuelve ahora `{catalog, variables, planned}` y `catalog.n_available`/`n_planned`; nuevo código de error `VARIABLE_PLANNED` (HTTP 409)
+## ESTADO — claude-omni-3 — 2026-11-15 07:35 (hora de Perú)
+Rama@commit: feature/api@60b293b (Ronda 5, fusionado origin/integracion/ronda5) · empujado: sí
+VERIFICADO t2: `LICENSE` MIT + README «Licence and third-party notices» (POWER/GISTEMP/NSIDC/Giovanni, Leaflet BSD-2, Chart.js MIT, Google Fonts OFL 1.1, GIBS+OSM, y las licencias Python leídas del LICENSE de cada paquete)
+VERIFICADO t3: `GET /api/cases/{id}` documentada en CONTRATOS §7 y en el smoke → 200 `analysis/2` (lima-t2m, verdict SIGNIFICANT) y 404 `NOT_FOUND`
+VERIFICADO clon limpio (Windows, no hay Linux/WSL): clon de GitHub @60b293b → venv nuevo → `requirements.txt` → arranca → `requirements-dev.txt` → **`pytest -q` 275 passed, 0 failed, 10 skipped**; smoke **17/17**; `validate_datasets` 7/7; `validate_knowledge` OK; `gate.py` PUERTA ABIERTA (6/6)
+VERIFICADO suite en mi árbol (regla 14) → `pytest -q` → **275 passed, 0 failed, 10 skipped**
+ROTO / NO HECHO: t1 en **Linux o WSL imposible** (no instalados; decisión del humano, no la tomo yo). t4 **Docker imposible** (no instalado)
+Falta por hora: t5 gate en G3 10:00 y G4 18:00; smoke remoto 12:00, 16:00, 19:00. t6 (README final) solo si claude-omni-1b no commitea antes de las 10:00
+Hallazgo del entorno (no del repo): en este PC `python` del PATH es el alias de Microsoft Store y no ejecuta; el README ya lo advierte tras mi cambio. Es lo que haría fallar un clon limpio en Windows
+Revisión §5: los 3 cambios del arquitecto en mi carril NO contradicen el contrato
+Necesito de: humano → Linux/WSL y Docker si quiere t1 y t4 cerradas; nadie más en mi carril
+Avisos para otros carriles: el smoke ahora comprueba `GET /api/cases/{id}`; «catalog availability flags» contaba `planned` mal y ya lee la lista real (15 disponibles + 10 planned)
 <!-- ESTADO:FIN -->
 
 # Claude Omni 3 — API v2 y despliegue
@@ -659,3 +660,110 @@ solo con la suite entera sin rojas).
 - **URL pública**: la despliega el arquitecto desde el PC1 en Railway. En cuanto
   exista, `smoke_api.py` contra ella a las 12:00, 16:00 y 19:00.
 - El respaldo estático (A6) ya no es mío: pasó a claude-omni-3a.
+
+---
+
+## Ronda 5 — clon limpio, LICENSE y contrato (15-nov-2026, 07:35 hora de Perú)
+
+Rama@commit: feature/api · fusionado `origin/integracion/ronda5` (base de la ronda) sin conflicto.
+
+### Revisión de los tres cambios del arquitecto en mi carril (§5)
+
+**No contradicen el contrato.** Los revisé uno por uno:
+
+1. **`GET /api/cases/{id}`** devuelve `{case, analysis}` con el `analysis.json`
+   guardado y **no recalcula**. Si el archivo falta o no es `analysis/2`, responde
+   con un error del contrato en vez de sustituirlo por otro análisis: eso es
+   justo lo que la regla de oro pide. Verificado en vivo: `lima-t2m` → 200 con
+   `analysis/2` y `SIGNIFICANT`; `no-such-case` → 404 `NOT_FOUND`.
+2. **El cargador lee la clave `planned` del catálogo.** Era un fallo real mío:
+   mis pruebas de la regla 19 inyectaban una tarjeta fabricada y pasaban aunque
+   la API en vivo publicara 0 `planned` (exactamente lo que la regla 28 prohíbe).
+   Ahora publica **15 disponibles + 10 planned** y `MODIS_NDVI` da 409 en vez de
+   404. Lo compruebo contra el archivo real en el smoke.
+3. **Mensaje en inglés de `VARIABLE_PLANNED`** con el nombre en inglés. Correcto:
+   usaba `names.es` primero y en inglés salía el nombre en español.
+
+### Tarea 2 — `LICENSE` (antes de las 08:00)
+
+`LICENSE` con MIT, «Copyright (c) 2026 EarthTrend Detective team».
+
+En el README, apartado **«Licence and third-party notices»** con las fuentes de
+datos y su cita (POWER, GISTEMP v4, NSIDC Sea Ice Index v4, Giovanni/GES DISC),
+las librerías de la interfaz (Leaflet BSD-2-Clause, Chart.js MIT, Schibsted
+Grotesk y Source Serif 4 bajo OFL 1.1), las teselas (NASA GIBS dominio público,
+OpenStreetMap ODbL, ambas atribuidas en el mapa) y las de Python.
+
+**Las licencias de los paquetes no las puse de memoria**: leí el `LICENSE` que
+trae cada paquete instalado. Resultado: FastAPI MIT; Starlette, Uvicorn, NumPy y
+SciPy **BSD-3-Clause** (había puesto BSD-3 solo en NumPy y SciPy); pymannkendall
+MIT. Leaflet y Chart.js, verificados en su repositorio.
+
+### Tarea 3 — `GET /api/cases/{id}` en el contrato y en el smoke (antes de las 09:00)
+
+- Documentada en `docs/CONTRATOS.md` §7.
+- Dos comprobaciones nuevas en `smoke_api.py`: 200 con `analysis/2` para un caso
+  real, 404 `NOT_FOUND` para un id inventado.
+
+**De paso corregí un fallo mío en el smoke**: «catalog availability flags»
+calculaba `planned = len(variables) - available`, que da 0 porque las planned ya
+no están en esa lista. Ahora lee la lista `planned` real y dice 15 + 10.
+
+### Tarea 1 — clon limpio (08:00)
+
+**Linux o WSL: imposible en este equipo.** `wsl --status` responde «no está
+instalado» y no hay distros. Instalarlo pide administrador y reinicio, y la
+decisión no es mía. Queda en ROTO / NO HECHO.
+
+Hice el clon limpio **en Windows**, que es lo único que este equipo permite, y
+seguí el README al pie de la letra:
+
+```
+git clone … && git checkout feature/api        -> 60b293b
+python -m venv .venv                           -> Python 3.12.14
+pip install -r requirements.txt                -> 6 paquetes, versiones fijadas
+python -m uvicorn src.api.main:app --port 8791 -> health 200,
+                                                  etl=True stats=True detective=True
+pip install -r requirements-dev.txt            -> pytest 9.2.0, httpx 0.28.1
+python -m pytest -q                            -> 275 passed, 10 skipped (5:51)
+python scripts/smoke_api.py http://127.0.0.1:8791 -> 17 passed · 0 skipped · 0 failed
+python scripts/validate_datasets.py data/cases/*/series.json -> 7/7 válidos
+python scripts/validate_knowledge.py           -> 15 disponibles + 10 planned,
+                                                  168 documentos, sin fallos
+python scripts/gate.py --base … --skip-suite --offline -> PUERTA ABIERTA (6/6)
+```
+
+Coincide con lo que midió el arquitecto en el PC1 (275 / 0 / 10).
+
+**Hallazgo del entorno, que sí merece constar**: en este PC `python` del `PATH`
+es el alias de Microsoft Store y no ejecuta nada. Alguien siguiendo el README en
+Windows se para en el primer comando con un mensaje que no explica nada («Python
+was not found»). Añadí al README el requisito de Python 3.12 y la nota del alias;
+es documentación, no código.
+
+### Tarea 4 — Docker (10:00)
+
+**Imposible en este equipo**: `docker` no está instalado. Queda en ROTO /
+NO HECHO. El `Dockerfile` sí copia `data/cases/` (lo verifiqué en la ronda 3), así
+que `/api/cases/lima-t2m` debería responder 200 dentro del contenedor, pero no
+tengo cómo demostrarlo aquí.
+
+### Suite completa (regla 14)
+
+```
+$ python -m pytest -q
+275 passed, 10 skipped in 351.14s
+```
+
+**Cero rojas.** No integro en `main` porque el arquitecto no me lo ha pedido
+(regla 30: el suplente solo actúa si el humano se lo pide).
+
+### Pendiente por hora
+
+- **10:00** — `gate.py` completo en G3.
+- **12:00, 16:00, 19:00** — smoke contra la URL pública (la del respaldo ya vive;
+  la aplicación completa espera a Railway).
+- **18:00** — `gate.py` en G4.
+- **Tarea 6** (README final, que era de claude-omni-1b): solo pasa a mí si a las
+  10:00 no hay commit suyo. A las 07:31 su rama no tenía nada nuevo desde ayer a
+  las 20:26.

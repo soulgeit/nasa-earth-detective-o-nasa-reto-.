@@ -193,10 +193,23 @@ def run(base: str, *, strict: bool) -> list[Check]:
     st, bd, ms_c, _ = _get(base, "/api/catalog/variables", {"lang": "en"})
     pl = _json(bd) or {}
     vlist = pl.get("variables") or []
-    with_flags = [v for v in vlist if "available" in v and "planned" in v]
-    ok = st == 200 and len(with_flags) == len(vlist) and len(vlist) > 0
-    avail = sum(1 for v in vlist if v.get("available"))
-    record("catalog availability flags", ok, f"HTTP {st} n={len(vlist)} available={avail} planned={len(vlist) - avail}", ms_c)
+    planned_list = pl.get("planned") or []
+    # Las `planned` viven en su propia lista: contarlas aqui como
+    # `len(vlist) - avail` daba 0 aunque el catalogo trajera 10.
+    with_flags = [v for v in vlist + planned_list if "available" in v and "planned" in v]
+    ok = (
+        st == 200
+        and len(with_flags) == len(vlist) + len(planned_list)
+        and len(vlist) > 0
+        and all(v.get("planned") is True for v in planned_list)
+        and all(v.get("available") is True for v in vlist)
+    )
+    record(
+        "catalog availability flags",
+        ok,
+        f"HTTP {st} available={len(vlist)} planned={len(planned_list)}",
+        ms_c,
+    )
 
     # 14. regla 19: las `planned` se publican aparte y no se analizan
     st, bd, ms_c, _ = _get(base, "/api/catalog/variables", {"lang": "en"})
@@ -216,7 +229,37 @@ def run(base: str, *, strict: bool) -> list[Check]:
         detail += f" | {pid} -> HTTP {st2} {code2}"
     record("planned not analyzable (rule 19)", ok, detail, ms_c)
 
-    # 15. UI en /
+    # 15. un caso congelado se abre sin recalcular (GET /api/cases/{id})
+    st, bd, ms_case, _ = _get(base, "/api/cases")
+    pl = _json(bd) or {}
+    cases = pl.get("cases") or []
+    case_id = next((c.get("id") for c in cases if c.get("id")), None)
+    if case_id is None:
+        record("case detail (frozen)", False, f"HTTP {st} sin casos congelados", ms_case)
+    else:
+        st1, bd1, ms1, _ = _get(base, f"/api/cases/{case_id}", timeout=120.0)
+        p1 = _json(bd1) or {}
+        analysis = p1.get("analysis") or {}
+        ok = st1 == 200 and analysis.get("schema") == "analysis/2"
+        n_obs = (analysis.get("period") or {}).get("n_obs")
+        verdict = (analysis.get("significance") or {}).get("verdict_code")
+        record(
+            "case detail (frozen)",
+            bool(ok),
+            f"HTTP {st1} id={case_id} schema={analysis.get('schema')} n_obs={n_obs} verdict={verdict}",
+            ms1,
+        )
+        st2, bd2, ms2, _ = _get(base, "/api/cases/no-such-case", timeout=60.0)
+        p2 = _json(bd2) or {}
+        code2 = (p2.get("error") or {}).get("code")
+        record(
+            "case detail unknown -> 404",
+            st2 == 404 and code2 == "NOT_FOUND",
+            f"HTTP {st2} code={code2}",
+            ms2,
+        )
+
+    # 16. UI en /
     status, body, ms, _ = _get(base, "/")
     record("UI /", status == 200 and len(body) > 0, f"HTTP {status} bytes={len(body)}", ms)
 
