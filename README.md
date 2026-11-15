@@ -128,11 +128,38 @@ requires declaring it. The per-file record is in
 number comes from the statistical engine and every place from the gazetteer or a
 map click.
 
-## Licence
+## Licence and third-party notices
 
-<<HUMANO: confirm the licence for code (proposal: MIT) and for our own data
-(proposal: CC BY 4.0). Third-party data keeps its own licence, see
-docs/REFERENCES.md. Add the LICENSE file once decided.>>
+Code: **MIT**, see [`LICENSE`](LICENSE). <<HUMANO: confirm MIT for the code and
+decide the licence for our own derived data (proposal: CC BY 4.0).>>
+
+**Our data is not ours to license.** Every series comes from a source with its
+own terms, and the application shows that source next to every figure:
+
+| Source | Terms and citation |
+|---|---|
+| [NASA POWER](https://power.larc.nasa.gov/) (MERRA-2, CERES/SRB) | Public domain. Cite: NASA Prediction Of Worldwide Energy Resources (POWER) project. |
+| [NASA GISTEMP v4](https://data.giss.nasa.gov/gistemp/) | Public domain. Cite: GISTEMP Team, *GISS Surface Temperature Analysis*, NASA GISS. |
+| [NSIDC Sea Ice Index v4](https://nsidc.org/data/g02135) | Cite: Fetterer et al., *Sea Ice Index*, NSIDC, with the DOI of the version used. |
+| Giovanni / GES DISC (GPM, MODIS, OMI, GLDAS, AIRS) | Public domain. Cite the mission and dataset named in the exported CSV header. |
+
+**Libraries and fonts bundled or loaded by the interface:**
+
+- [Leaflet](https://leafletjs.com/) 1.9.4 — BSD-2-Clause.
+- [Chart.js](https://www.chartjs.org/) 4.4.1 — MIT.
+- [Schibsted Grotesk](https://fonts.google.com/specimen/Schibsted+Grotesk) and
+  [Source Serif 4](https://fonts.google.com/specimen/Source+Serif+4) — SIL Open
+  Font License 1.1, served by Google Fonts.
+- Base map tiles: [NASA GIBS](https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs)
+  Blue Marble (public domain) with [OpenStreetMap](https://www.openstreetmap.org/copyright)
+  contributors (ODbL) as the fallback, each attributed on the map.
+- Python packages: see `requirements.txt`; each keeps its own licence
+  (FastAPI MIT; Starlette, Uvicorn, NumPy and SciPy BSD-3-Clause;
+  pymannkendall MIT). Read from the `LICENSE` file shipped in each
+  installed package, not from memory.
+
+NASA does not endorse this project, and no NASA branding is used beyond the
+factual citation of its data.
 
 ---
 
