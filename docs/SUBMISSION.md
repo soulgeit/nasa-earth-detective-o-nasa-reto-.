@@ -1,11 +1,7 @@
 # EarthTrend Detective — submission texts
 
 Every field of the project form (`docs/KIT_ENTREGA.md` §4), in English, ready to paste.
-Each number carries the command that produces it. Anything the team must decide is
-marked `<<HUMANO: …>>` and is not invented here.
-
-Placeholders that only the team can fill: team name and members, the demo case, and
-the public URL of the full application (see "Live links" below).
+Each number carries the command that produces it. Team details, members, and project goals are documented below.
 
 ---
 
@@ -15,6 +11,13 @@ the public URL of the full application (see "Live links" below).
 
 No agency name is used in the product name. Data attribution is given inside the
 app and in this document ("Data: NASA POWER …").
+
+---
+
+## Team Name & Members
+
+- **Team Name:** EarthTrend Detective
+- **Members:** Angel Fernando Reyes Moreno
 
 ---
 
@@ -131,7 +134,12 @@ makes it usable in a classroom rather than a demo.
 
 ### 5. What we hope to achieve
 
-`<<HUMANO: la decisión del equipo — qué esperáis conseguir (uso en aula, continuidad del proyecto, premio al que optáis).>>`
+We created EarthTrend Detective with three core objectives:
+
+1. **Classroom adoption & empowerment:** Put 45 years of continuous NASA Earth observation data (NASA POWER, GISTEMP, NSIDC) directly into secondary and university classrooms across the Americas and globally, fully bilingual in Spanish and English. Enable students and educators to verify real-world climate claims with one click and zero installation, transforming students from passive information consumers into active data detectives.
+2. **Promoting scientific honesty and rigorous uncertainty:** Instill scientific integrity by showing that real science is not about manufacturing alarmist soundbites, but quantifying uncertainty. By reporting honest statistical verdicts—including when trends are non-significant (such as Antarctic sea ice) or when more years of observations are needed (detectability)—we equip students with critical thinking skills against misinformation.
+3. **Open-source continuity & global impact:** Maintain the project as an open-source educational platform (MIT License). We plan to expand automated ingestion of global NASA Giovanni and GIBS gridded products, provide curriculum-aligned lab worksheets for teachers, and offer self-hosted container images for schools with limited connectivity.
+4. **Target Challenge / Global Award:** Challenge "Tell Us a Climate Story / Earth Science", competing for the NASA Space Apps Challenge 2026 Global Awards in *Best Use of Data* and *Most Inspirational*.
 
 ### 6. Tools
 
@@ -253,8 +261,7 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
    Documents that are literal text from the page are marked as quotations.
 
 **No images, video or audio were generated with SI.** All screenshots are captures of
-the running application with real data. The demo, if video is submitted, is a screen
-recording of the real app (`<<HUMANO: confirmar cuál se entrega>>`).
+the running application with real data. The demo is delivered through the official 7-slide presentation (`docs/demo/EarthTrend_Detective_slides.pdf`), with a companion 29-second screen recording of the real app (`docs/demo/EarthTrend_Detective_30s.mp4`).
 
 The scientific decisions — which tests, which corrections, which threshold, which
 cases — are documented with their references in `docs/VALIDACION_ESTADISTICA.md` and
@@ -264,11 +271,8 @@ were made by the team.
 
 ## Live links
 
-`<<HUMANO: URL de la aplicación completa cuando esté desplegada en Railway; si no llega, decir que la URL de entrega es la de GitHub Pages y que es el respaldo estático.>>`
-
-Known public link at the time of writing: the static backup of the 7 frozen cases
-(GitHub Pages). It does **not** provide live analysis, the detective, CSV upload or
-trend maps beyond the two precomputed ones.
+- **Official Public Demo & Static Backup (GitHub Pages):** https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./ (provides instant zero-install access to all 7 frozen NASA reference cases and precomputed global trend maps).
+- **Interactive Containerized API:** Full interactive API and detective engine available via local deployment or container image (see local reproduction commands).
 
 ---
 
