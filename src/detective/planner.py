@@ -145,12 +145,19 @@ def _years(question: str) -> tuple[int | None, int | None, int | None]:
 
 
 def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: str = "rules") -> dict[str, Any]:
-    """Deterministic fallback: first retrieved variable + gazetteer/grammar place."""
+    """Deterministic fallback: first *available* retrieved variable + gazetteer/grammar place.
+
+    RONDA_3 §4: a card for a planned product (available=false) may rank first, but it
+    cannot be analysed. We never offer it as the variable to investigate; the first
+    analysable card wins, and ``_coverage`` decides whether to answer ``no_match``.
+    """
     places = extract_places(question, limit=2)
     start, end, last_n = _years(question)
+    chosen = next((c for c in cards if c.get("available", True)), cards[0] if cards else None)
+    variables = (chosen.get("variables") or []) if chosen else []
     plan = {
         "intent": _intent(question),
-        "variable_ids": [cards[0]["variables"][0]] if cards and cards[0].get("variables") else [],
+        "variable_ids": [variables[0]] if variables else [],
         "place": places[0] if places else None,
         "place_b": places[1] if len(places) > 1 else None,
         "start_year": start,
@@ -161,8 +168,8 @@ def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: 
         "mode": mode,
         "planner": "lora" if mode == "lora" else "rules",
     }
-    if cards:
-        plan["why"] = cards[0].get("title")
+    if chosen:
+        plan["why"] = chosen.get("title")
     plan.update(_coverage(question, plan, lang))
     return plan
 

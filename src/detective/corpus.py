@@ -75,6 +75,7 @@ class Document:
             "publisher": self.publisher,
             "variables": list(self.variables),
             "text": self.text,
+            "available": bool(self.available),
         }
 
 

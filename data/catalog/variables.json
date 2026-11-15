@@ -1608,7 +1608,7 @@
       "connector": "giovanni_csv",
       "available": false,
       "names": {
-        "es": "Indice de vegetacion NDVI (MODIS)",
+        "es": "Índice de vegetación NDVI (MODIS)",
         "en": "NDVI vegetation index (MODIS)"
       },
       "simple_definition": {

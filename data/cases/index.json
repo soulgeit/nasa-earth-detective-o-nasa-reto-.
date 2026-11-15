@@ -30,14 +30,6 @@
     "source": "NASA POWER v2.10.0",
     "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-77.03&latitude=-12.05&start=1981&end=2025&format=JSON",
     "retrieved_at": "2026-11-14T18:55:36Z"
-   },
-   "title": {
-    "en": "Lima, Peru: air temperature 1981-2025",
-    "es": "Lima, Peru: temperatura del aire 1981-2025"
-   },
-   "finding": {
-    "en": "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is SIGNIFICANT rather than strong.",
-    "es": "La temperatura del aire subio unos 0,16 °C por decada (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de minimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte."
    }
   },
   {
@@ -70,14 +62,6 @@
     "source": "NASA POWER v2.10.0",
     "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=15.65&latitude=78.22&start=1981&end=2025&format=JSON",
     "retrieved_at": "2026-11-15T00:49:47Z"
-   },
-   "title": {
-    "en": "Svalbard, Norway: air temperature 1981-2025",
-    "es": "Svalbard, Noruega: temperatura del aire 1981-2025"
-   },
-   "finding": {
-    "en": "Air temperature rose about 0.70 °C per decade (Theil-Sen), 3.14 °C in total, and both tests agree: SIGNIFICANT_STRONG.",
-    "es": "La temperatura del aire subio unos 0,70 °C por decada (Theil-Sen), 3,14 °C en total, y ambas pruebas coinciden: SIGNIFICANT_STRONG."
    }
   },
   {
@@ -110,14 +94,6 @@
     "source": "NASA POWER v2.10.0",
     "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=-80.63&latitude=-5.19&start=1981&end=2025&format=JSON",
     "retrieved_at": "2026-11-15T00:49:47Z"
-   },
-   "title": {
-    "en": "Piura, Peru: precipitation 1981-2025",
-    "es": "Piura, Peru: precipitacion 1981-2025"
-   },
-   "finding": {
-    "en": "Precipitation shows a slight decrease of about 0.011 mm/day per decade (Theil-Sen); the tests disagree and Mann-Kendall gives p = 0.075, so the verdict is SUGGESTIVE, not proven.",
-    "es": "La precipitacion muestra un descenso leve de unos 0,011 mm/dia por decada (Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, asi que el veredicto es SUGGESTIVE, no demostrado."
    }
   },
   {
@@ -138,8 +114,8 @@
     "lon": null,
     "bbox": null
    },
-   "verdict_code": "SIGNIFICANT",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "verdict_code": "SIGNIFICANT_STRONG",
+   "frozen_at": "2026-11-15T04:15:38Z",
    "paths": {
     "series": "data/cases/arctic-seaice/series.json",
     "analysis": "data/cases/arctic-seaice/analysis.json",
@@ -149,7 +125,7 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T00:49:47Z"
+    "retrieved_at": "2026-11-15T04:15:40Z"
    }
   },
   {
@@ -171,7 +147,7 @@
     "bbox": null
    },
    "verdict_code": "NOT_SIGNIFICANT",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "frozen_at": "2026-11-15T04:16:47Z",
    "paths": {
     "series": "data/cases/antarctic-seaice/series.json",
     "analysis": "data/cases/antarctic-seaice/analysis.json",
@@ -181,7 +157,7 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T00:49:47Z"
+    "retrieved_at": "2026-11-15T04:16:50Z"
    }
   },
   {
@@ -219,14 +195,6 @@
     "source": "Giovanni (GES DISC) CSV export",
     "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
     "retrieved_at": "2026-11-15T00:52:21Z"
-   },
-   "title": {
-    "en": "Amazon basin: air temperature 1980-2026 (user CSV)",
-    "es": "Cuenca amazonica: temperatura del aire 1980-2026 (CSV del usuario)"
-   },
-   "finding": {
-    "en": "Air temperature rose about 0.19 °C per decade (Theil-Sen), 0.87 °C in total, from an uploaded NASA Giovanni export; both tests agree: SIGNIFICANT_STRONG.",
-    "es": "La temperatura del aire subio unos 0,19 °C por decada (Theil-Sen), 0,87 °C en total, a partir de una exportacion de NASA Giovanni subida por el usuario; ambas pruebas coinciden: SIGNIFICANT_STRONG."
    }
   },
   {
@@ -264,14 +232,6 @@
     "source": "Giovanni (GES DISC) CSV export",
     "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
     "retrieved_at": "2026-11-15T00:52:22Z"
-   },
-   "title": {
-    "en": "Amazon basin: precipitation 1980-2026 (user CSV)",
-    "es": "Cuenca amazonica: precipitacion 1980-2026 (CSV del usuario)"
-   },
-   "finding": {
-    "en": "Precipitation trend is about -0.083 mm/day per decade (Theil-Sen); with p = 0.34 neither test rejects 'no trend': NOT_SIGNIFICANT.",
-    "es": "La tendencia de la precipitacion es de unos -0,083 mm/dia por decada (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': NOT_SIGNIFICANT."
    }
   }
  ]
