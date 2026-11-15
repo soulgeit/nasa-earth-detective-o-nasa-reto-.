@@ -2251,10 +2251,11 @@
   "source": "Giovanni (GES DISC) CSV export",
   "underlying": "\"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)",
   "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
-  "retrieved_at": "2026-11-15T00:52:22Z",
+  "retrieved_at": "2026-11-15T12:06:27Z",
   "sha256": "04274ffea92b26525d7dc2b51622d8696657092dc2b14640213cf46b1f3cd0e1",
   "native_resolution": null,
   "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+  "n_missing": 0,
   "header_metadata": [
    "Title:,\"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)\"",
    "User Start Date:,1980-01-01T00:00:00Z",

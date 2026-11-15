@@ -7,7 +7,7 @@
  },
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Lima, Peru",
   "lat": -12.05,
   "lon": -77.03,
   "bbox": null
@@ -18,19 +18,19 @@
  },
  "titles": {
   "en": "Lima, Peru: air temperature 1981-2025",
-  "es": "Lima, Peru: temperatura del aire 1981-2025"
+  "es": "Lima, Perú: temperatura del aire 1981-2025"
  },
  "story": {
   "en": [
-   "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is SIGNIFICANT rather than strong.",
+   "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is a significant trend rather than a clear, strong one.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La temperatura del aire subio unos 0,16 °C por decada (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de minimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
+   "La temperatura del aire subió unos 0,16 °C por década (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de mínimos cuadrados discrepa, por eso el veredicto es tendencia significativa y no clara y fuerte.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T00:49:44Z",
+ "frozen_at": "2026-11-15T12:03:20Z",
  "verdict_code": "SIGNIFICANT",
  "provenance": {
   "kind": "nasa_api",
@@ -40,6 +40,7 @@
   "retrieved_at": "2026-11-14T18:55:36Z",
   "sha256": "8e74b53294f55792eecf610b32b340bb840c161787e66c354047206bf5831807",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }

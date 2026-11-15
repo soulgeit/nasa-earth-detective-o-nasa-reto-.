@@ -5,7 +5,7 @@
  "cadence": "monthly",
  "region": {
   "kind": "named",
-  "name": null,
+  "name": "Antarctic sea ice",
   "lat": null,
   "lon": null,
   "bbox": null
@@ -2320,10 +2320,10 @@
  "provenance": {
   "kind": "nasa_file",
   "source": "NSIDC Sea Ice Index v4",
-  "underlying": "NSIDC-0051, NSIDC-0051,NSIDC-0081, NSIDC-0803",
+  "underlying": "NSIDC-0051, NSIDC-0081, NSIDC-0803",
   "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
   "request_urls_pattern": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_{MM}_extent_v4.0.csv",
-  "retrieved_at": "2026-11-15T04:45:32Z",
+  "retrieved_at": "2026-11-15T12:27:37Z",
   "sha256": "298b650b323683d91ded11e5530af014bb54603ff22b890e49dbce59540699b3",
   "native_resolution": "hemispheric monthly index",
   "citation": "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135",
@@ -2332,7 +2332,7 @@
   "n_missing": 2,
   "source_splice": [
    "NSIDC-0051",
-   "NSIDC-0051,NSIDC-0081",
+   "NSIDC-0081",
    "NSIDC-0803"
   ],
   "source_splice_note": "the NSIDC monthly files change source_dataset mid-series; no data were adjusted"

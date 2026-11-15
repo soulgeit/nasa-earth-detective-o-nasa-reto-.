@@ -5,7 +5,7 @@
  "cadence": "monthly",
  "region": {
   "kind": "named",
-  "name": null,
+  "name": "Arctic sea ice",
   "lat": null,
   "lon": null,
   "bbox": null
@@ -2323,7 +2323,7 @@
   "underlying": "NSIDC-0051, NSIDC-0803",
   "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
   "request_urls_pattern": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_{MM}_extent_v4.0.csv",
-  "retrieved_at": "2026-11-15T04:45:30Z",
+  "retrieved_at": "2026-11-15T12:27:36Z",
   "sha256": "cb3d213ef53d28429f6dc9969d63ae3b4aa70dbce8c76e0fddfafe325f22ac9f",
   "native_resolution": "hemispheric monthly index",
   "citation": "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135",

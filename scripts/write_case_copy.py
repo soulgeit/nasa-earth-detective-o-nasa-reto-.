@@ -17,75 +17,87 @@ CASES = os.path.join(ROOT, "data", "cases")
 COPY = {
     "lima-t2m": {
         "title_en": "Lima, Peru: air temperature 1981-2025",
-        "title_es": "Lima, Peru: temperatura del aire 1981-2025",
+        "title_es": "Lima, Perú: temperatura del aire 1981-2025",
         "finding_en": "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), "
                       "a total of 0.71 °C. Mann-Kendall finds the trend significant; the "
-                      "least-squares test disagrees, so the verdict is SIGNIFICANT rather than strong.",
-        "finding_es": "La temperatura del aire subio unos 0,16 °C por decada (Theil-Sen, 1981-2025), "
+                      "least-squares test disagrees, so the verdict is a significant trend rather than a clear, strong one.",
+        "finding_es": "La temperatura del aire subió unos 0,16 °C por década (Theil-Sen, 1981-2025), "
                       "0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba "
-                      "de minimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
+                      "de mínimos cuadrados discrepa, por eso el veredicto es tendencia significativa y no clara y fuerte.",
     },
     "svalbard-t2m": {
         "title_en": "Svalbard, Norway: air temperature 1981-2025",
         "title_es": "Svalbard, Noruega: temperatura del aire 1981-2025",
         "finding_en": "Air temperature rose about 0.70 °C per decade (Theil-Sen), 3.14 °C in total, "
-                      "and both tests agree: SIGNIFICANT_STRONG.",
-        "finding_es": "La temperatura del aire subio unos 0,70 °C por decada (Theil-Sen), 3,14 °C en "
-                      "total, y ambas pruebas coinciden: SIGNIFICANT_STRONG.",
+                      "and both tests agree: clear, strong trend.",
+        "finding_es": "La temperatura del aire subió unos 0,70 °C por década (Theil-Sen), 3,14 °C en "
+                      "total, y ambas pruebas coinciden: tendencia clara y fuerte.",
     },
     "piura-prectotcorr": {
         "title_en": "Piura, Peru: precipitation 1981-2025",
-        "title_es": "Piura, Peru: precipitacion 1981-2025",
+        "title_es": "Piura, Perú: precipitación 1981-2025",
         "finding_en": "Precipitation shows a slight decrease of about 0.011 mm/day per decade "
                       "(Theil-Sen); the tests disagree and Mann-Kendall gives p = 0.075, so the "
-                      "verdict is SUGGESTIVE, not proven.",
-        "finding_es": "La precipitacion muestra un descenso leve de unos 0,011 mm/dia por decada "
-                      "(Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, asi que el "
-                      "veredicto es SUGGESTIVE, no demostrado.",
+                      "verdict is suggestive, not yet certain.",
+        "finding_es": "La precipitación muestra un descenso leve de unos 0,011 mm/día por década "
+                      "(Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, así que el "
+                      "veredicto es sugerente, aun sin certeza.",
     },
     "arctic-seaice": {
         "title_en": "Arctic sea ice extent, 1978-2026",
-        "title_es": "Extension del hielo marino del Artico, 1978-2026",
-        "finding_en": "Arctic sea ice extent fell about 0.50 million km2 per decade "
-                      "(Theil-Sen, 1978-2026), 2.38 million km2 in total (-4.4%). Both tests agree: "
-                      "SIGNIFICANT_STRONG. Two months (1987-12 and 1988-01) are missing in the source "
+        "title_es": "Extensión del hielo marino del Ártico, 1978-2026",
+        "finding_en": "Arctic sea ice extent fell about 0.50 million km² per decade "
+                      "(Theil-Sen, 1978-2026), 2.38 million km² in total (-4.4%). Both tests agree: "
+                      "clear, strong trend. Two months (1987-12 and 1988-01) are missing in the source "
                       "and are reported as missing, not as zero.",
-        "finding_es": "La extension del hielo marino del Artico bajo unos 0,50 millones de km2 por "
-                      "decada (Theil-Sen, 1978-2026), 2,38 millones de km2 en total (-4,4%). Ambas "
-                      "pruebas coinciden: SIGNIFICANT_STRONG. Faltan dos meses en la fuente "
+        "finding_es": "La extensión del hielo marino del Ártico bajó unos 0,50 millones de km² por "
+                      "década (Theil-Sen, 1978-2026), 2,38 millones de km² en total (-4,4%). Ambas "
+                      "pruebas coinciden: tendencia clara y fuerte. Faltan dos meses en la fuente "
                       "(1987-12 y 1988-01) y se informan como faltantes, no como cero.",
     },
     "antarctic-seaice": {
         "title_en": "Antarctic sea ice extent, 1978-2026",
-        "title_es": "Extension del hielo marino del Antartico, 1978-2026",
-        "finding_en": "Antarctic sea ice extent fell about 0.05 million km2 per decade (Theil-Sen), "
-                      "0.23 million km2 in total (-0.4%). The trend is NOT_SIGNIFICANT: with "
+        "title_es": "Extensión del hielo marino del Antártico, 1978-2026",
+        "finding_en": "Antarctic sea ice extent fell about 0.05 million km² per decade (Theil-Sen), "
+                      "0.23 million km² in total (-0.4%). The trend is not significant: with "
                       "autocorrelation corrected, p = 0.63, so no change can be stated. It would take "
                       "about 133 years of data to detect a trend this small.",
-        "finding_es": "La extension del hielo marino del Antartico bajo unos 0,05 millones de km2 por "
-                      "decada (Theil-Sen), 0,23 millones de km2 en total (-0,4%). La tendencia es "
-                      "NOT_SIGNIFICANT: corregida la autocorrelacion, p = 0,63, asi que no se puede "
-                      "afirmar un cambio. Harian falta unos 133 anos de datos para detectar una "
-                      "tendencia tan pequena.",
+        "finding_es": "La extensión del hielo marino del Antártico bajó unos 0,05 millones de km² por "
+                      "década (Theil-Sen), 0,23 millones de km² en total (-0,4%). La tendencia es "
+                      "not significant: corregida la autocorrelación, p = 0,63, así que no se puede "
+                      "afirmar un cambio. Harian falta unos 133 años de datos para detectar una "
+                      "tendencia tan pequeña.",
     },
     "amazonia-t2m": {
         "title_en": "Amazon basin: air temperature 1980-2026 (user CSV)",
-        "title_es": "Cuenca amazonica: temperatura del aire 1980-2026 (CSV del usuario)",
+        "title_es": "Cuenca amazónica: temperatura del aire 1980-2026 (CSV del usuario)",
         "finding_en": "Air temperature rose about 0.19 °C per decade (Theil-Sen), 0.87 °C in total, "
-                      "from an uploaded NASA Giovanni export; both tests agree: SIGNIFICANT_STRONG.",
-        "finding_es": "La temperatura del aire subio unos 0,19 °C por decada (Theil-Sen), 0,87 °C en "
-                      "total, a partir de una exportacion de NASA Giovanni subida por el usuario; "
-                      "ambas pruebas coinciden: SIGNIFICANT_STRONG.",
+                      "from an uploaded NASA Giovanni export; both tests agree: clear, strong trend.",
+        "finding_es": "La temperatura del aire subió unos 0,19 °C por década (Theil-Sen), 0,87 °C en "
+                      "total, a partir de una exportación de NASA Giovanni subida por el usuario; "
+                      "ambas pruebas coinciden: tendencia clara y fuerte.",
     },
     "amazonia-prectotcorr": {
         "title_en": "Amazon basin: precipitation 1980-2026 (user CSV)",
-        "title_es": "Cuenca amazonica: precipitacion 1980-2026 (CSV del usuario)",
+        "title_es": "Cuenca amazónica: precipitación 1980-2026 (CSV del usuario)",
         "finding_en": "Precipitation trend is about -0.083 mm/day per decade (Theil-Sen); with "
-                      "p = 0.34 neither test rejects 'no trend': NOT_SIGNIFICANT.",
-        "finding_es": "La tendencia de la precipitacion es de unos -0,083 mm/dia por decada "
+                      "p = 0.34 neither test rejects 'no trend': no trend detectable so far.",
+        "finding_es": "La tendencia de la precipitación es de unos -0,083 mm/día por década "
                       "(Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': "
-                      "NOT_SIGNIFICANT.",
+                      "no trend detectable so far.",
     },
+}
+
+
+# Etiquetas de usuario para el veredicto: las mismas palabras que muestra la
+# interfaz (src/ui/i18n.js, claves verdict.*). El codigo en mayusculas no se
+# escribe en un texto que lee el estudiante.
+VERDICT_WORDS = {
+    "SIGNIFICANT_STRONG": ("Clear, strong trend", "Tendencia clara y fuerte"),
+    "SIGNIFICANT": ("Significant trend", "Tendencia significativa"),
+    "SUGGESTIVE": ("Suggestive, not yet certain", "Sugerente, aun sin certeza"),
+    "NOT_SIGNIFICANT": ("No trend detectable so far", "Todavia no se detecta tendencia"),
+    "INSUFFICIENT_DATA": ("Not enough data to answer", "Faltan datos para responder"),
 }
 
 

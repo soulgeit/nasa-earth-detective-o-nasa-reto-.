@@ -2,7 +2,7 @@
  "schema": "analysis/2",
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Svalbard, Norway",
   "lat": 78.22,
   "lon": 15.65,
   "bbox": null
@@ -4109,8 +4109,8 @@
    "en": "Air temperature at 2 m is increasing across the analyzed period."
   },
   "where": {
-   "es": "Observado en las coordenadas (+78.22°, +15.65°).",
-   "en": "Observed in coordinates (+78.22°, +15.65°)."
+   "es": "Observado en Svalbard, Noruega.",
+   "en": "Observed in Svalbard, Norway."
   },
   "how_much": {
    "es": "Tasa estimada de +0.699 °C/década, con un cambio acumulado de +3.144 °C.",
@@ -4134,6 +4134,7 @@
   "retrieved_at": "2026-11-15T00:49:47Z",
   "sha256": "6d5fac4f95cfd6f3a4d26ddbad074854fb12895929fe05931d6484d92f206286",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }

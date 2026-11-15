@@ -91,11 +91,29 @@ def build_one(case: dict[str, Any]) -> dict[str, Any]:
         else:
             kwargs["lat"], kwargs["lon"] = case["lat"], case["lon"]
         ts = get_series(case["variable"], **kwargs)
+
+    # Ronda 5: el texto "donde" debe nombrar el lugar. El motor usa un unico
+    # region.name para los dos idiomas; se deja el nombre en ingles (el que
+    # consume la API por defecto) y el texto de cada idioma se fija abajo con
+    # su nombre, sin tocar ninguna cifra.
+    if not ts["region"].get("name"):
+        ts["region"]["name"] = case["name_en"]
+
     analysis = analyze_series(
         ts,
         ratio_scale=bool(card.get("ratio_scale", False)),
         homogeneous_since=((card.get("source") or {}).get("homogeneous_since")),
     )
+
+    answers = analysis.get("answers") or {}
+    if answers.get("where") is not None:
+        where_es = f"Observado en {case['name_es']}."
+        where_en = f"Observed in {case['name_en']}."
+        if case.get("giovanni_csv") or ts["region"].get("kind") == "bbox":
+            # Una caja no es un lugar con nombre de ciudad: se dice que es un area.
+            where_es = f"Observado en el área de {case['name_es']}."
+            where_en = f"Observed in the {case['name_en']} area."
+        analysis["answers"]["where"] = {"es": where_es, "en": where_en}
 
     case_dir = os.path.join(CASES_DIR, case["id"])
     os.makedirs(case_dir, exist_ok=True)

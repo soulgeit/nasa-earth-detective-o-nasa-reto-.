@@ -5,7 +5,7 @@
  "cadence": "monthly",
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Svalbard, Norway",
   "lat": 78.22,
   "lon": 15.65,
   "bbox": null
@@ -2181,6 +2181,7 @@
   "retrieved_at": "2026-11-15T00:49:47Z",
   "sha256": "6d5fac4f95cfd6f3a4d26ddbad074854fb12895929fe05931d6484d92f206286",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }

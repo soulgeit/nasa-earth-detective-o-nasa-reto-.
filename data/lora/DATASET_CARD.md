@@ -82,6 +82,26 @@ program output, not a model's answers.
 
 ---
 
+## Known defects, in one paragraph (for the AI-use declaration)
+
+This dataset teaches the output format of the plan, and it does that part well, but it
+has two measured defects. First, **every `out_of_scope` example carries an
+earth-science variable** (440 of 440 in train, 83 of 83 in val, 71 of 71 in test):
+`"¿Cuál es el sentido de la vida?"` is paired with `variable_ids: ["SEAICE_EXTENT_S"]`,
+which teaches the model to attach a variable to off-topic questions. Second, **some
+questions promise a date range but carry no years** (`"... in Bogotá between  and ?"`):
+92 of 4 323 rows in train with the literal double-space archetype, 174 with the wider
+reading; 70 and 97 in val; 51 and 63 in test. Both defects are in the generator
+(`scripts/build_lora_dataset.py:815` for the first), not in the adapter's training
+procedure. The test split comes from the same templates as training, so the 84.5 %
+variable accuracy measured on it overstates performance on questions written by hand:
+on the 50 reference questions the fine-tuned model scores 40/50 against 49/50 for the
+rule-based planner. **That is why the product plans with rules and the fine-tuned model
+is an optional local mode.** The JSONL files are kept as they are, because the
+published adapter was trained on exactly these bytes.
+
+---
+
 ## Measured defects (Ronda 4 audit, 2026-11-15)
 
 Both defects below were found in review. They are measured, not estimated, with the

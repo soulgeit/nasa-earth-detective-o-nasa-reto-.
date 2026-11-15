@@ -23,29 +23,30 @@
  },
  "titles": {
   "en": "Amazon basin: precipitation 1980-2026 (user CSV)",
-  "es": "Cuenca amazonica: precipitacion 1980-2026 (CSV del usuario)"
+  "es": "Cuenca amazónica: precipitación 1980-2026 (CSV del usuario)"
  },
  "story": {
   "en": [
-   "Precipitation trend is about -0.083 mm/day per decade (Theil-Sen); with p = 0.34 neither test rejects 'no trend': NOT_SIGNIFICANT.",
+   "Precipitation trend is about -0.083 mm/day per decade (Theil-Sen); with p = 0.34 neither test rejects 'no trend': no trend detectable so far.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La tendencia de la precipitacion es de unos -0,083 mm/dia por decada (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': NOT_SIGNIFICANT.",
+   "La tendencia de la precipitación es de unos -0,083 mm/día por década (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': no trend detectable so far.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T00:52:21Z",
+ "frozen_at": "2026-11-15T12:06:26Z",
  "verdict_code": "NOT_SIGNIFICANT",
  "provenance": {
   "kind": "user_upload",
   "source": "Giovanni (GES DISC) CSV export",
   "underlying": "\"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)",
   "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
-  "retrieved_at": "2026-11-15T00:52:22Z",
+  "retrieved_at": "2026-11-15T12:06:27Z",
   "sha256": "04274ffea92b26525d7dc2b51622d8696657092dc2b14640213cf46b1f3cd0e1",
   "native_resolution": null,
   "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+  "n_missing": 0,
   "header_metadata": [
    "Title:,\"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)\"",
    "User Start Date:,1980-01-01T00:00:00Z",

@@ -2,7 +2,7 @@
  "schema": "analysis/2",
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Piura, Peru",
   "lat": -5.19,
   "lon": -80.63,
   "bbox": null
@@ -4109,8 +4109,8 @@
    "en": "Precipitation (corrected) is decreasing across the analyzed period."
   },
   "where": {
-   "es": "Observado en las coordenadas (-5.19°, -80.63°).",
-   "en": "Observed in coordinates (-5.19°, -80.63°)."
+   "es": "Observado en Piura, Perú.",
+   "en": "Observed in Piura, Peru."
   },
   "how_much": {
    "es": "Tasa estimada de -0.011 mm/day/década (-2.0 % por década), con un cambio acumulado de -0.050 mm/day.",
@@ -4137,6 +4137,7 @@
   "retrieved_at": "2026-11-15T00:49:47Z",
   "sha256": "cc74b0613583c42ecb17a0bc9189001853108e11515c16e116c21ac885f03189",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }
