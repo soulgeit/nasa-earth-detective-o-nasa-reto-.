@@ -1,12 +1,12 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — rag-qa — 2026-11-15 14:15 hora de Perú
+## ESTADO — rag-qa — 2026-11-15 15:00 hora de Perú
 Rama@commit: rag/qa · empujado: sí
-VERIFICADO: Arranque de Ronda 7 completado; data/knowledge/golden_cities.jsonl creado con 60 preguntas reales de referencia (12 por ciudad en Lima, Huancayo, Andahuaylas, Ica y Ayacucho; 30 en español y 30 en inglés; cubriendo exactamente los 12 temas climáticos de §4); scripts/eval_cities.py implementado y probado midiendo Hit@1, Hit@3 y Precision@3 por ciudad; suite tests/detective/test_golden_cities.py (7 passed en 0.33s) y tests/detective/test_fragments.py (6 passed en 0.23s) al 100% en verde; scripts/validate_fragments.py verificado; línea base inicial de recuperación documentada en reports/qa/ronda7-baseline.md (Hit@3 inicial de 11.7% confirmando la necesidad de nutrición regional).
+VERIFICADO: Tanda 1 de rag-lima (29 docs) y rag-ica (54 docs) evaluadas sobre integracion/ronda7; Hit@3 en Ica alcanza 91.7% (11/12) y Hit@1 75.0% (9/12); Hit@3 en Lima se mantiene sólido (8/12 en Top 3 y 5/12 en Rank 1); corpus regional suma 83 documentos válidos en scripts/validate_fragments.py --stats; muestreo de veracidad completado en 10 docs de Lima (9/10 en 200 OK, 1/10 en 468 por WAF) y 10 docs de Ica (5/10 en 200 OK, 1/10 en 404 crítico en SENAMHI, 4/10 en 403 OECD/PMC); auditoría preventiva de los 13 enlaces del reto (§8) completada; notas de handoff emitidas para rag-lima, rag-ica y rag-recursos; suite tests/detective/ al 100% en verde (13 passed).
 ESCRITO (sin ejecutar de punta a punta): Ninguno.
-ROTO / NO HECHO: Ninguno. Marco de evaluación y muestreo de veracidad listo para recibir las tandas de fragmentos.
-Siguiente paso: Esperar la Tanda 1 (15:15) en integracion/ronda7 para medir progreso de recuperación, ejecutar muestreo de veracidad (10 docs por carril) y emitir notas handoff si hay inconsistencias.
-Necesito de: Los carriles regionales (rag-lima, rag-huancayo, rag-andahuaylas, rag-ica, rag-ayacucho), rag-datos y rag-recursos: empujar sus primeras tandas (≥15 docs/ciudad) a integracion/ronda7.
-Avisos para otros carriles: El benchmark oficial de las cinco ciudades está activo en data/knowledge/golden_cities.jsonl. Pueden ejecutar python scripts/eval_cities.py localmente para comprobar si sus fragmentos son recuperados para su ciudad y temas. Auditoría preventiva de los 13 enlaces del reto (§8) enviada a rag-recursos en reports/handoff/rag-qa--para--rag-recursos.md.
+ROTO / NO HECHO: Ninguno en carril rag-qa. Detectado enlace roto 404 en rag-ica transferido vía handoff para corrección del dueño.
+Siguiente paso: Esperar tandas de Huancayo, Andahuaylas, Ayacucho, rag-datos y rag-recursos.
+Necesito de: rag-huancayo, rag-andahuaylas, rag-ayacucho, rag-datos, rag-recursos: integrar sus primeras tandas en integracion/ronda7.
+Avisos para otros carriles: Handoff emitido en reports/handoff/rag-qa--para--rag-ica.md (corregir URL 404 de radiación) y reports/handoff/rag-qa--para--rag-recursos.md (supersedes en SWOT y alertas de certificados).
 <!-- ESTADO:FIN -->
 
 # Reporte de QA y Calidad RAG — Ronda 7 (Huiracocha IA)
