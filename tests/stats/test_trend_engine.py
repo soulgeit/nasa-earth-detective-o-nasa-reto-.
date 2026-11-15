@@ -387,3 +387,36 @@ def test_lima_real_verdict_coherence_and_texts():
     assert "Observado en None." not in where_es
     assert "Observed in None." not in where_en
     assert "-12.05" in where_es or "Lima" in where_es
+
+
+def test_how_much_text_matches_published_slope():
+    """La cifra del texto y la publicada en `trend` coinciden hasta el último dígito.
+
+    Regresión (Ronda 6, H1): el texto se formateaba con la pendiente SIN redondear
+    (~0.15849 -> "+0.158") y `trend` publica `round(..., 4)` (0.1585 -> "+0.159").
+    La interfaz prefiere el número del texto, así que la cifra grande salía +0.158
+    mientras la explicación decía +0.159. Lima es el caso donde se veía.
+    """
+    import re
+
+    repo = Path(__file__).resolve().parent.parent.parent
+    checked = 0
+    for case_dir in sorted((repo / "data" / "cases").iterdir()):
+        series = case_dir / "series.json"
+        if not series.is_file():
+            continue
+        with open(series, "r", encoding="utf-8") as f:
+            ts = json.load(f)
+        res = analyze_series(ts)
+        published = res["trend"]["sen_slope_per_decade"]
+        expected = f"{published:+.3f}"
+        for lang in ("es", "en"):
+            text = res["answers"]["how_much"][lang]
+            match = re.search(r"([+-]\d+\.\d+)", text)
+            assert match, f"{case_dir.name}/{lang}: no number in {text!r}"
+            assert match.group(1) == expected, (
+                f"{case_dir.name}/{lang}: text says {match.group(1)}, "
+                f"published slope rounds to {expected}"
+            )
+        checked += 1
+    assert checked >= 7, f"expected the 7 frozen cases, checked {checked}"
