@@ -1,3 +1,16 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — hermes-2 — 2026-11-14 19:20 hora de Perú
+Rama@commit: feature/scrapes@6ffe1bd · empujado: sí
+VERIFICADO: casos analysis/2 → `python -X utf8 -I scripts/regenerate_cases_v2.py` → 5/5 recomputados con el motor real (no traducidos del JSON viejo) + `data/cases/index.json`.
+VERIFICADO: atlas con el motor real → `python -X utf8 -I scripts/build_atlas.py --variable T2M --bbox -82 -18 -68 -2` → 759 celdas, 455 significativas (59,9 %); GISTEMP 16 041 celdas, 15 429 (96,2 %). Ya no usan el fallback local.
+VERIFICADO: API → `src.api.main.list_cases()` devuelve 5 casos con precedencia NASA y `get_atlas('T2M')` responde trendmap/2.
+ESCRITO (sin ejecutar de punta a punta): nada pendiente.
+ROTO / NO HECHO: el veredicto sigue mal en `main`: arctic-seaice sale SIGNIFICANT_STRONG con OLS p=0,3985 y `tests_agree: true`. El arreglo existe en `origin/feature/stats@ef18e01`, no en main; no lo aplico (carril de Antigravity 2).
+Siguiente paso: cuando se integre ef18e01, reejecutar `scripts/regenerate_cases_v2.py` (un comando).
+Necesito de: cfable (integrador): integrar `origin/feature/stats@ef18e01` antes de congelar el veredicto de los casos.
+Avisos para otros carriles: el dataset LoRA estaba truncado en disco (4323→281, 814→78, 632→78); restaurado desde el commit bueno, no regenerado.
+<!-- ESTADO:FIN -->
+
 # Reportes de Hermes 2
 
 ## S1 — LISTO  (2026-11-14 15:50 UTC-5)

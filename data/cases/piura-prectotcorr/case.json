@@ -1,6 +1,10 @@
 {
  "id": "piura-prectotcorr",
  "variable_id": "PRECTOTCORR",
+ "variable_name": {
+  "es": "Precipitación corregida",
+  "en": "Precipitation (corrected)"
+ },
  "region": {
   "kind": "point",
   "name": null,
@@ -24,11 +28,16 @@
    "TODO_HUMANO"
   ]
  },
- "frozen_at": "2026-11-14T21:43:33Z",
- "source": {
+ "frozen_at": "2026-11-15T00:09:17Z",
+ "verdict_code": "SUGGESTIVE",
+ "provenance": {
   "kind": "nasa_api",
   "source": "NASA POWER v2.10.0",
-  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=-80.63&latitude=-5.19&start=1981&end=2025&format=JSON"
- },
- "significance": {}
+  "underlying": "MERRA-2",
+  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=-80.63&latitude=-5.19&start=1981&end=2025&format=JSON",
+  "retrieved_at": "2026-11-15T00:09:20Z",
+  "sha256": "0f4b11fa35f61fc912c3831f5f2706e2bf6012cbe3595eff9f7810d7a778f525",
+  "native_resolution": "0.5° x 0.625°",
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+ }
 }

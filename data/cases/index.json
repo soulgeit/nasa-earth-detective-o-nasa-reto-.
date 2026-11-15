@@ -1,0 +1,164 @@
+{
+ "cases": [
+  {
+   "id": "lima-t2m",
+   "variable_id": "T2M",
+   "names": {
+    "es": "Lima, Perú",
+    "en": "Lima, Peru"
+   },
+   "variable_name": {
+    "es": "Temperatura del aire a 2 m",
+    "en": "Air temperature at 2 m"
+   },
+   "region": {
+    "kind": "point",
+    "name": null,
+    "lat": -12.05,
+    "lon": -77.03,
+    "bbox": null
+   },
+   "verdict_code": "SIGNIFICANT_STRONG",
+   "frozen_at": "2026-11-15T00:09:17Z",
+   "paths": {
+    "series": "data/cases/lima-t2m/series.json",
+    "analysis": "data/cases/lima-t2m/analysis.json",
+    "case": "data/cases/lima-t2m/case.json"
+   },
+   "provenance": {
+    "kind": "nasa_api",
+    "source": "NASA POWER v2.10.0",
+    "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-77.03&latitude=-12.05&start=1981&end=2025&format=JSON",
+    "retrieved_at": "2026-11-15T00:08:19Z"
+   }
+  },
+  {
+   "id": "svalbard-t2m",
+   "variable_id": "T2M",
+   "names": {
+    "es": "Svalbard, Noruega",
+    "en": "Svalbard, Norway"
+   },
+   "variable_name": {
+    "es": "Temperatura del aire a 2 m",
+    "en": "Air temperature at 2 m"
+   },
+   "region": {
+    "kind": "point",
+    "name": null,
+    "lat": 78.22,
+    "lon": 15.65,
+    "bbox": null
+   },
+   "verdict_code": "SIGNIFICANT_STRONG",
+   "frozen_at": "2026-11-15T00:09:17Z",
+   "paths": {
+    "series": "data/cases/svalbard-t2m/series.json",
+    "analysis": "data/cases/svalbard-t2m/analysis.json",
+    "case": "data/cases/svalbard-t2m/case.json"
+   },
+   "provenance": {
+    "kind": "nasa_api",
+    "source": "NASA POWER v2.10.0",
+    "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=15.65&latitude=78.22&start=1981&end=2025&format=JSON",
+    "retrieved_at": "2026-11-15T00:09:19Z"
+   }
+  },
+  {
+   "id": "piura-prectotcorr",
+   "variable_id": "PRECTOTCORR",
+   "names": {
+    "es": "Piura, Perú",
+    "en": "Piura, Peru"
+   },
+   "variable_name": {
+    "es": "Precipitación corregida",
+    "en": "Precipitation (corrected)"
+   },
+   "region": {
+    "kind": "point",
+    "name": null,
+    "lat": -5.19,
+    "lon": -80.63,
+    "bbox": null
+   },
+   "verdict_code": "SUGGESTIVE",
+   "frozen_at": "2026-11-15T00:09:17Z",
+   "paths": {
+    "series": "data/cases/piura-prectotcorr/series.json",
+    "analysis": "data/cases/piura-prectotcorr/analysis.json",
+    "case": "data/cases/piura-prectotcorr/case.json"
+   },
+   "provenance": {
+    "kind": "nasa_api",
+    "source": "NASA POWER v2.10.0",
+    "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=-80.63&latitude=-5.19&start=1981&end=2025&format=JSON",
+    "retrieved_at": "2026-11-15T00:09:20Z"
+   }
+  },
+  {
+   "id": "arctic-seaice",
+   "variable_id": "SEAICE_EXTENT_N",
+   "names": {
+    "es": "Hielo marino del Ártico",
+    "en": "Arctic sea ice"
+   },
+   "variable_name": {
+    "es": "Extensión del hielo marino del Ártico",
+    "en": "Arctic sea ice extent"
+   },
+   "region": {
+    "kind": "named",
+    "name": null,
+    "lat": null,
+    "lon": null,
+    "bbox": null
+   },
+   "verdict_code": "SIGNIFICANT_STRONG",
+   "frozen_at": "2026-11-15T00:09:17Z",
+   "paths": {
+    "series": "data/cases/arctic-seaice/series.json",
+    "analysis": "data/cases/arctic-seaice/analysis.json",
+    "case": "data/cases/arctic-seaice/case.json"
+   },
+   "provenance": {
+    "kind": "nasa_file",
+    "source": "NSIDC Sea Ice Index v4",
+    "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
+    "retrieved_at": "2026-11-15T00:09:22Z"
+   }
+  },
+  {
+   "id": "antarctic-seaice",
+   "variable_id": "SEAICE_EXTENT_S",
+   "names": {
+    "es": "Hielo marino del Antártico",
+    "en": "Antarctic sea ice"
+   },
+   "variable_name": {
+    "es": "Extensión del hielo marino del Antártico",
+    "en": "Antarctic sea ice extent"
+   },
+   "region": {
+    "kind": "named",
+    "name": null,
+    "lat": null,
+    "lon": null,
+    "bbox": null
+   },
+   "verdict_code": "NOT_SIGNIFICANT",
+   "frozen_at": "2026-11-15T00:09:17Z",
+   "paths": {
+    "series": "data/cases/antarctic-seaice/series.json",
+    "analysis": "data/cases/antarctic-seaice/analysis.json",
+    "case": "data/cases/antarctic-seaice/case.json"
+   },
+   "provenance": {
+    "kind": "nasa_file",
+    "source": "NSIDC Sea Ice Index v4",
+    "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
+    "retrieved_at": "2026-11-15T00:09:23Z"
+   }
+  }
+ ]
+}
