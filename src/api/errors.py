@@ -31,6 +31,7 @@ KNOWN_CODES: frozenset[str] = frozenset(
         "TOO_LARGE",
         "RATE_LIMITED",
         "INTERNAL_ERROR",
+        "VARIABLE_PLANNED",
     }
 )
 
@@ -51,6 +52,10 @@ DEFAULT_MESSAGES: dict[str, dict[str, str]] = {
     "UPSTREAM_TIMEOUT": {
         "es": "La fuente de datos de la NASA no respondió a tiempo.",
         "en": "The NASA data source did not respond in time.",
+    },
+    "VARIABLE_PLANNED": {
+        "es": "Esa variable todavía no está cargada: está planificada.",
+        "en": "That variable is not loaded yet: it is planned.",
     },
     "BBOX_TOO_LARGE": {
         "es": "La caja geográfica es demasiado grande para una sola consulta.",
@@ -103,6 +108,7 @@ STATUS_BY_CODE: dict[str, int] = {
     "INVALID_REQUEST": 400,
     "NOT_FOUND": 404,
     "TOO_LARGE": 413,
+    "VARIABLE_PLANNED": 409,
     "RATE_LIMITED": 429,
     "INTERNAL_ERROR": 500,
 }

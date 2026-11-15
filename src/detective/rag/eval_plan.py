@@ -49,12 +49,15 @@ def evaluate(*, planner: str | None = None, limit: int | None = None) -> dict[st
     planners = collections.Counter()
     failures: list[dict[str, Any]] = []
     started = time.perf_counter()
+    per_question: list[float] = []
 
     for row in rows:
         question = row["question"]
         lang = row.get("lang", "es")
         expected = set(row.get("expected_variable_ids") or [])
+        t0 = time.perf_counter()
         result = plan(question, lang=lang)
+        per_question.append(time.perf_counter() - t0)
         got = set(result.get("variable_ids") or [])
         intent = str(result.get("intent"))
         intents[intent] += 1
@@ -80,6 +83,8 @@ def evaluate(*, planner: str | None = None, limit: int | None = None) -> dict[st
         "by_intent": dict(intents),
         "by_planner": dict(planners),
         "seconds": round(time.perf_counter() - started, 1),
+        "seconds_per_question": round(per_question[-1] if per_question else 0.0, 2),
+        "seconds_total_median": round(sorted(per_question)[len(per_question) // 2], 2) if per_question else 0.0,
         "failures": failures,
     }
 
@@ -94,6 +99,8 @@ def markdown(result: dict[str, Any], *, planner_label: str) -> str:
         + ", ".join(f"`{k}` {v}" for k, v in sorted(result["by_intent"].items())),
         "",
         "Quién planificó / Who planned: " + ", ".join(f"`{k}` {v}" for k, v in sorted(result["by_planner"].items())),
+        "",
+        f"Tiempo / Time: {result['seconds']} s total, mediana {result['seconds_total_median']} s por pregunta.",
         "",
     ]
     if result["failures"]:
@@ -116,6 +123,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
+
+    if args.planner == "local-lora":
+        # Load the adapter once before timing the run, so the model is not loaded
+        # and unloaded per question (serve.py caches it in a module global). This
+        # is what a real user experiences: one load, then fast questions.
+        # serve.py prints its load messages to stdout; with --json that would corrupt
+        # the JSON, so the whole warmup runs with stdout redirected to stderr.
+        import contextlib
+
+        from src.ml import serve  # type: ignore
+
+        with contextlib.redirect_stdout(sys.stderr):
+            serve.plan_with_lora("warmup", candidates=[{"variable_id": "T2M", "title": "x"}], lang="es")
 
     try:
         result = evaluate(planner=args.planner, limit=args.limit)

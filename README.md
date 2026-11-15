@@ -41,6 +41,7 @@ python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8791
 Run the checks:
 
 ```bash
+pip install -r requirements-dev.txt     # pytest + httpx: only the checks need them
 python -m pytest -q
 python scripts/smoke_api.py http://127.0.0.1:8791
 python scripts/validate_datasets.py data/cases/*/series.json

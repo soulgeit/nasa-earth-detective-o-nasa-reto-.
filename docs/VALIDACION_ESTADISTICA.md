@@ -58,6 +58,15 @@ Years of continuous monthly observations required to detect a trend with 90% pro
 $$n^* = \left[ \left( \frac{3.3 \cdot \sigma_N}{|\omega|} \right) \cdot \sqrt{\frac{1 + \phi}{1 - \phi}} \right]^{2/3}$$
 where $\sigma_N$ is the monthly residual standard deviation, $\phi$ is the lag-1 residual autocorrelation, and $\omega$ is the annual slope.
 
+### 3.6. The Four-Verdict Classification Rule
+
+EarthTrend Detective categorizes climate trend significance into four formal verdicts based on rigorous multi-test agreement and observational detectability thresholds:
+1. **`SIGNIFICANT_STRONG` ($p < 0.01$):** Awarded exclusively when all parametric and non-parametric tests agree on statistical significance at $\alpha = 0.05$ (Hamed & Rao autocorrelation-corrected Mann-Kendall $p < 0.01$, annual mean Mann-Kendall $p < 0.05$, Santer-adjusted effective degrees of freedom OLS $t$-test $p < 0.05$, and both Theil-Sen and OLS 95% confidence intervals strictly exclude zero) **and** the observational record duration equals or exceeds the Weatherhead et al. (1998) formal trend detectability threshold ($n^* \le \text{years}$).
+2. **`SIGNIFICANT` ($p < 0.05$):** Conferred when the autocorrelation-corrected Mann-Kendall test achieves significance ($p < 0.05$) and the Theil-Sen 95% confidence interval strictly excludes zero, backed by at least one secondary test (annual Mann-Kendall or adjusted OLS), but the series exhibits parametric discrepancy (e.g., Santer OLS fails under heavy serial persistence $\phi$, flagging `TESTS_DISAGREE`) or requires additional observation years ($n^* > \text{years}$) for unequivocal 95%/90% power detection.
+3. **`SUGGESTIVE` ($p < 0.10$):** Denotes marginal or exploratory evidence where at least one individual test indicates significance ($p < 0.05$) or corrected Mann-Kendall yields $0.05 \le p < 0.10$, but core non-parametric criteria and dual-interval bounds remain insufficient for a confirmed finding.
+4. **`NOT_SIGNIFICANT` ($p \ge 0.10$):** Assigned when no test detects a statistically meaningful trend; non-parametric and parametric confidence intervals comfortably bracket zero, confirming that observed variations remain entirely consistent with unforced natural climate variability.
+
+
 ---
 
 ## 4. Benchmark: Lima, Peru (MERRA-2 / NASA POWER)

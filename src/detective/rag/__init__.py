@@ -159,13 +159,23 @@ def retrieve(
     # bonus on a normalised BM25 score: multiplying unbounded BM25 by the prior let
     # a mediocre match with a "clean" alias beat a perfect one — measured, the query
     # "Temperatura del aire a 2 m" ranked GISTEMP above T2M.
+    #
+    # RONDA_4 rule 19: ambiguity created by a variable we cannot offer must not
+    # dilute the evidence. "dust" points at AOD_55 and MODIS_AOD; MODIS_AOD is
+    # `planned`, so the alias is really unambiguous and AOD_55 gets its full weight.
     bm25_peak = max(bm25_scores.values()) if bm25_scores else 0.0
     normalized_scores = (
         {idx: (score / bm25_peak if bm25_peak else 0.0) for idx, score in bm25_scores.items()}
         if bm25_scores
         else {idx: 1.0 for idx in fused}
     )
-    prior = specificity_prior(query)
+    available_ids = {v for doc in corpus.docs if doc.available for v in doc.variables}
+    prior = {
+        vid: value for vid, value in specificity_prior(query).items() if vid in available_ids
+    }
+    if prior:
+        peak = max(prior.values()) or 1.0
+        prior = {vid: value / peak for vid, value in prior.items()}
     weighted = {
         idx: (
             normalized_scores.get(idx, 0.0)
@@ -199,8 +209,14 @@ def retrieve(
 
 
 def retrieve_for_plan(question: str, *, lang: str = "es", k: int = 6) -> list[dict[str, Any]]:
-    """What the planner sees as candidate variables (contract R3: 6 cards)."""
+    """What the planner sees as candidate variables (contract R3: 6 cards).
+
+    RONDA_4 rule 19: a ``planned`` variable is never a candidate — neither for the
+    rules nor for the LoRA. The retrieved cards are filtered to what the app can
+    actually fetch, so the plan either proposes a real variable or says "no_match".
+    """
     cards = retrieve(question, lang=lang, k=k, types=["variable_card"])
+    cards = [c for c in cards if c.get("available", True)]
     if len(cards) < k:
         extra = retrieve(question, lang=lang, k=k, types=["biome_profile", "region_note", "nasa_article"])
         seen = {c["id"] for c in cards}

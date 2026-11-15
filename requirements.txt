@@ -1,8 +1,17 @@
-fastapi>=0.100.0
-uvicorn>=0.22.0
-pydantic>=2.0.0
-requests>=2.31.0
-numpy>=1.24.0
-scipy>=1.10.0
-pymannkendall>=1.4.3
-python-multipart>=0.0.9
+# SI-assisted: claude-omni-3 (Claude Opus 5.5)
+# Versiones fijadas (RONDA_4 §4, claude-omni-3 tarea 2): las del entorno que
+# pasa la suite completa. Sin `>=` un despliegue en un día distinto trae otra
+# versión de numpy o pydantic y la demo cambia de comportamiento sin avisar.
+#
+# El planificador LoRA NO va aquí: son varios GB y el servidor público usa
+# reglas. Sus dependencias están en requirements-ml.txt (antigravity-2).
+fastapi==0.163.0
+starlette==1.10.0
+uvicorn==0.54.0
+pydantic==2.14.3
+python-multipart==0.0.33
+requests==2.34.2
+certifi==2026.10.23
+numpy==2.5.4
+scipy==1.18.1
+pymannkendall==1.4.3

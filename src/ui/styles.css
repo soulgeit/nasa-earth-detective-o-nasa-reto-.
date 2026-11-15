@@ -46,7 +46,9 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background: var(--paper);
-  font-variant-numeric: tabular-nums;
+  /* No `tabular-nums` here: in Schibsted Grotesk that feature also gives the period,
+     the comma and the colon the width of a digit, so "-0.495" was drawn "-0 . 495"
+     and "Lima, Peru:" as "Lima , Peru :" (measured: 9 px -> 20 px at 32 px). */
 }
 img, svg, canvas { max-width: 100%; }
 button, input, select { font: inherit; color: inherit; }
@@ -428,7 +430,7 @@ details.method[open] summary::before { content: "–"; }
 .test-table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 .test-table th, .test-table td { text-align: left; padding: 0.35rem 0.5rem 0.35rem 0; border-bottom: 1px solid var(--rule-soft); }
 .test-table th { font-weight: 600; color: var(--muted); font-size: var(--step--1); }
-.test-table td.num { font-variant-numeric: tabular-nums; }
+.test-table td.num { white-space: nowrap; }
 .warn-list { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0; margin: 0; list-style: none; }
 .warn-list li {
   font-size: var(--step--1);
@@ -641,7 +643,6 @@ details.method[open] summary::before { content: "–"; }
 .scale-label {
   font-size: var(--step--1);
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
   color: var(--ink-2);
 }
 .legend-detail {
@@ -681,10 +682,51 @@ details.method[open] summary::before { content: "–"; }
   display: grid;
   gap: 0.4rem;
 }
+.plan-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 .plan-heading {
   font-size: var(--step--1);
   font-weight: 700;
   color: var(--teal-ink);
+  margin: 0;
+}
+.plan-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.plan-badge-lora {
+  background: #e6f4ea;
+  color: #137333;
+  border: 1px solid #ceead6;
+}
+.plan-badge-rules {
+  background: var(--rule-soft);
+  color: var(--muted);
+  border: 1px solid var(--rule);
+}
+.plan-note {
+  font-size: 0.78125rem;
+  color: var(--muted);
+  background: var(--paper);
+  border-left: 2px solid var(--rule);
+  padding: 0.25rem 0.5rem;
+  margin: 0;
+  font-style: italic;
+}
+select option:disabled {
+  color: var(--muted);
+  background-color: var(--paper-warm, #f3f3f1);
+  font-style: italic;
 }
 .plan-intent {
   font-family: var(--serif);
@@ -991,4 +1033,102 @@ details.method[open] summary::before { content: "–"; }
   font-style: italic;
   font-size: 0.85rem;
   margin-left: 0.35rem;
+}
+
+/* ---------- Ronda 4: Mobile Viewport (390px, no horizontal scroll) ---------- */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 480px) {
+  .masthead-inner {
+    padding: 0.75rem 0.75rem 0.5rem;
+    gap: 0.65rem;
+  }
+  .product h1 {
+    font-size: 1.35rem;
+    line-height: 1.15;
+  }
+  .product .tagline {
+    font-size: 0.8125rem;
+    max-width: 100%;
+  }
+  .mode-switch {
+    width: 100%;
+    display: flex;
+    padding: 0.15rem;
+  }
+  .mode-tab {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 0.35rem 0.3rem;
+    font-size: 0.75rem;
+  }
+  .header-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .header-actions .btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.55rem;
+  }
+  .lang-switch {
+    margin-left: auto;
+  }
+  .workbench {
+    padding: 0.75rem 0.65rem 2.5rem;
+    gap: 1.25rem;
+  }
+  .map-frame {
+    border-radius: var(--radius);
+  }
+  #map {
+    height: 230px !important;
+  }
+  .chart-wrap {
+    height: 240px !important;
+    padding: 0.5rem 0.25rem 0.25rem;
+  }
+  .finding {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+    padding: 0.5rem 0;
+  }
+  .finding dt {
+    font-size: 0.75rem;
+  }
+  .finding dd {
+    font-size: 0.875rem;
+  }
+  .measure .value {
+    font-size: 1.6rem;
+  }
+  .ladder-caption {
+    font-size: 0.6875rem;
+    gap: 0.4rem;
+  }
+  .disagree-panel {
+    padding: 0.65rem 0.75rem;
+  }
+  .disagree-panel p {
+    font-size: 0.8125rem;
+  }
+  .test-agreement-list {
+    font-size: 0.8125rem;
+  }
+  .explain-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .search-row {
+    flex-wrap: nowrap;
+  }
+  .period-row {
+    gap: 0.4rem;
+  }
 }

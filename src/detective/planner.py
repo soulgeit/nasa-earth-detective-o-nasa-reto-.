@@ -23,7 +23,7 @@ from .config import SETTINGS
 from .gazetteer import geocode
 from .lexicon import expand, specificity_prior
 from .llm import AIUnavailable, chat
-from .places import extract_places
+from .places import extract_places, resolve_place
 from .rag import retrieve_for_plan
 from .text_norm import detect_language, fold
 
@@ -144,13 +144,36 @@ def _years(question: str) -> tuple[int | None, int | None, int | None]:
     return None, None, last_n
 
 
+def _resolved_places(question: str, *, limit: int = 2) -> list[str]:
+    """Places the gazetteer or the regions file can actually resolve (RONDA_4 §4.2).
+
+    A span that no verified source resolves is not a place, so it never reaches
+    the plan. This is what stops ``place: "sea"`` and ``place_b: "the"``.
+    """
+    resolved: list[str] = []
+    for span in extract_places(question, limit=limit + 2):
+        if resolve_place(span):
+            resolved.append(span)
+        if len(resolved) >= limit:
+            break
+    return resolved
+
+
 def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: str = "rules") -> dict[str, Any]:
-    """Deterministic fallback: first retrieved variable + gazetteer/grammar place."""
-    places = extract_places(question, limit=2)
+    """Deterministic fallback: first *available* retrieved variable + a resolvable place.
+
+    RONDA_3 §4: a card for a planned product (available=false) may rank first, but it
+    cannot be analysed. We never offer it as the variable to investigate; the first
+    analysable card wins, and ``_coverage`` decides whether to answer ``no_match``.
+    RONDA_4 §4.2: a span that no verified source resolves is not a place.
+    """
+    places = _resolved_places(question, limit=2)
     start, end, last_n = _years(question)
+    chosen = next((c for c in cards if c.get("available", True)), cards[0] if cards else None)
+    variables = (chosen.get("variables") or []) if chosen else []
     plan = {
         "intent": _intent(question),
-        "variable_ids": [cards[0]["variables"][0]] if cards and cards[0].get("variables") else [],
+        "variable_ids": [variables[0]] if variables else [],
         "place": places[0] if places else None,
         "place_b": places[1] if len(places) > 1 else None,
         "start_year": start,
@@ -161,9 +184,68 @@ def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: 
         "mode": mode,
         "planner": "lora" if mode == "lora" else "rules",
     }
-    if cards:
-        plan["why"] = cards[0].get("title")
+    if chosen:
+        plan["why"] = chosen.get("title")
     plan.update(_coverage(question, plan, lang))
+    return _out_of_scope_guard(question, plan, lang)
+
+
+# --- out of scope and unknown variables (RONDA_4 §4.2) ----------------------
+# A question about the meaning of life is not a question about snow depth; and the
+# catalogue has no wind variable, so "is the wind getting stronger?" must say so.
+OUT_OF_SCOPE_RE = re.compile(
+    r"(?<!\w)(?:"
+    r"meaning of life|sentido de la vida|"
+    r"qui[eé]n gan[oó]|who won|"
+    r"f[uú]tbol|football|soccer|partido de|"
+    r"elecciones|election|"
+    r"receta de|recipe for|cocinar|cook\b|"
+    r"chiste|joke|"
+    r"canci[oó]n|cancion|song|"
+    r"pel[ií]cula|movie|film\b|"
+    r"precio del d[oó]lar|stock price|cu[aá]nto cuesta"
+    r")(?!\w)",
+    re.IGNORECASE,
+)
+
+# Physical processes the student may name that no catalogue variable covers.
+UNKNOWN_TOPIC_RE = re.compile(
+    r"(?<!\w)(?:viento|wind|vientos|winds|windy)(?!\w)", re.IGNORECASE
+)
+
+
+def _catalog_has_wind() -> bool:
+    from .corpus import load_catalog_cards
+
+    return any("WS2M" == str(card.get("id")) for card, _a in load_catalog_cards())
+
+
+def _out_of_scope_guard(question: str, plan: dict[str, Any], lang: str) -> dict[str, Any]:
+    """Last gate before a plan leaves the rules path."""
+    folded = fold(question)
+    if OUT_OF_SCOPE_RE.search(question) or OUT_OF_SCOPE_RE.search(folded):
+        cleared = dict(plan)
+        cleared.update({
+            "intent": "out_of_scope",
+            "variable_ids": [],
+            "place": None,
+            "place_b": None,
+            "why": None,
+        })
+        return cleared
+
+    if UNKNOWN_TOPIC_RE.search(question) and not _catalog_has_wind():
+        cleared = dict(plan)
+        cleared.update({
+            "intent": "no_match",
+            "variable_ids": [],
+            "missing": ["viento / wind speed (WS2M)"] if lang == "es" else ["wind speed (WS2M)"],
+            "missing_ids": ["WS2M"],
+            "available": False,
+            "note": "unknown_variable: WS2M is not in the catalogue",
+        })
+        return cleared
+
     return plan
 
 
@@ -447,6 +529,16 @@ def validate_plan(raw: Any, *, question: str, candidates: set[str], lang: str) -
         "hypothesis": hypothesis,
         "lang": raw.get("lang") if raw.get("lang") in ("es", "en") else lang,
     }
+
+    # RONDA_4 §5.2: el modelo propone y las reglas comprueban. A place the gazetteer
+    # or the regions file cannot resolve is dropped (it was hallucinated), and the
+    # server-side scope rules still apply to what the model produced.
+    for key in ("place", "place_b"):
+        value = plan[key]
+        if value is not None and not resolve_place(value):
+            plan[key] = None
+            note = f"dropped_unresolved_{key}"
+            plan["why"] = f"{plan['why']}; {note}" if plan.get("why") else note
     return plan, None
 
 
@@ -540,22 +632,39 @@ def plan(question: str, *, lang: str = "es") -> dict[str, Any]:
 
     # Off-topic questions are answered before retrieval: a football question must
     # not come back with a climate variable because one word collided.
-    if _intent(question) == "out_of_scope":
+    if _intent(question) == "out_of_scope" or OUT_OF_SCOPE_RE.search(question):
         return _empty_plan("out_of_scope", language, "rules")
+
+    # A process the catalogue does not cover at all ("viento") is said out loud,
+    # not answered with the closest thing we happen to have.
+    if UNKNOWN_TOPIC_RE.search(question) and not _catalog_has_wind():
+        result = _empty_plan("no_match", language, "rules", reason="unknown_variable: WS2M")
+        result["missing"] = ["viento / wind speed (WS2M)"] if language == "es" else ["wind speed (WS2M)"]
+        result["missing_ids"] = ["WS2M"]
+        result["available"] = False
+        return result
 
     cards = retrieve_for_plan(question, lang=language, k=6)
     if not cards:
         return _empty_plan("no_match", language, "rules", reason="no candidate variables retrieved")
 
+    # RONDA_4 §5.2 — who plans:
+    #   * the public server runs `AI_MODE=extractive`: rules plan, nothing is loaded;
+    #   * locally, `PLANNER_MODEL=local-lora` opts in to the adapter explicitly.
+    # The LoRA is therefore never the silent default: it wins only when the operator
+    # asks for it, and its real numbers (200-case set + 50 reference questions) are
+    # published together in docs/EVAL_IA.md (rule 20).
     if SETTINGS.ai_mode == "full" and SETTINGS.planner_model:
         if _planner_model_is_local_lora():
             result = _local_lora(question, language, cards)
             if result is not None:
-                return result
+                # §5.2: the model proposes, the rules verify. Whatever the adapter
+                # produced still goes through the scope gate.
+                return _out_of_scope_guard(question, result, language)
             fallback = _rules_plan(question, language, cards)
             fallback["note"] = "local_lora_unavailable: src/ml/serve.py or adapter not ready"
             return fallback
-        return _llm_plan(question, language, cards, mode="llm")
+        return _out_of_scope_guard(question, _llm_plan(question, language, cards, mode="llm"), language)
 
     return _rules_plan(question, language, cards)
 

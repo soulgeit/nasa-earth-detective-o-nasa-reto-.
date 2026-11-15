@@ -96,6 +96,12 @@ def run():
         }""")
         page.wait_for_selector('#detective-plan-card:not([hidden])', timeout=5000)
         page.wait_for_timeout(500)
+
+        # Capture 5B (Ronda 4 new): Plan attribution badge ("Planned by: rules / LoRA")
+        plan_attr_path = os.path.join(MEDIA_DIR, "plan_attribution.png")
+        page.screenshot(path=plan_attr_path)
+        print(f"Captured: {plan_attr_path}")
+
         # Click Confirm & Investigate
         page.evaluate("""() => document.getElementById('plan-confirm-btn').click()""")
         page.wait_for_selector('#result-root:not([hidden])', timeout=15000)
@@ -105,6 +111,14 @@ def run():
         detective_path = os.path.join(MEDIA_DIR, "ai_detective_evidence.png")
         page.screenshot(path=detective_path)
         print(f"Captured: {detective_path}")
+
+        # Capture 7 (Ronda 4 new): Frozen cases gallery (7 official cases)
+        print("7. Capturing frozen cases gallery...")
+        page.evaluate("() => window.__etd.setMode('cases')")
+        page.wait_for_timeout(1000)
+        gallery_path = os.path.join(MEDIA_DIR, "cases_gallery.png")
+        page.screenshot(path=gallery_path)
+        print(f"Captured: {gallery_path}")
 
         # Capture 6: Real Giovanni CSV Upload analysis
         print("6. Uploading real Giovanni CSV (T2M__amazonia.csv)...")

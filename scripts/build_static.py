@@ -100,6 +100,62 @@ def build_from_api(base: str) -> dict[str, int]:
     return counts
 
 
+def _normalize_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Aplana `region` a la raíz porque `openCase()` del UI lee `c.lat`/`c.lon`.
+
+    Es una copia de campos que ya están en el caso; no se inventa nada. El índice
+    real trae `region: {lat, lon, bbox, name}` y la interfaz busca los mismos
+    valores en la raíz: sin esto, la galería se ve pero el clic no abre el caso.
+    """
+    out = dict(case)
+    region = case.get("region") or {}
+    if out.get("lat") is None:
+        out["lat"] = region.get("lat")
+    if out.get("lon") is None:
+        out["lon"] = region.get("lon")
+    if out.get("bbox") is None:
+        out["bbox"] = region.get("bbox")
+    if not out.get("region_name"):
+        names = case.get("names") or {}
+        out["region_name"] = (
+            region.get("name") or names.get("en") or names.get("es") or case.get("id")
+        )
+    return out
+
+
+def _catalog_cards() -> dict[str, dict[str, Any]]:
+    """Tarjetas del catálogo por id (vacío si el catálogo no está en esta rama)."""
+    path = REPO_ROOT / "data" / "catalog" / "variables.json"
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    items = raw.get("variables", []) if isinstance(raw, dict) else raw
+    return {str(c.get("id")): c for c in items if isinstance(c, dict) and c.get("id")}
+
+
+def _decorate_analysis(
+    analysis: dict[str, Any], case: dict[str, Any], cards: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Lo mismo que hace `GET /api/cases/{id}` en la API viva.
+
+    El `analysis.json` congelado no repite la tarjeta de la variable ni el nombre
+    del lugar. Se copian del catálogo y del índice (no se calcula ni se inventa
+    nada) para que el respaldo rotule nombre y unidad igual que la aplicación.
+    """
+    out = dict(analysis)
+    if not out.get("variable"):
+        card = cards.get(str(case.get("variable_id")))
+        if card:
+            out["variable"] = card
+    region = out.get("region")
+    if isinstance(region, dict) and not region.get("name"):
+        names = case.get("names") or {}
+        label = names.get("en") or names.get("es")
+        if label:
+            out["region"] = {**region, "name": label}
+    return out
+
+
 def build_from_cases() -> dict[str, int]:
     """Sin API: usa solo los archivos congelados de `data/cases` y `data/atlas`."""
     dist_api = DIST / "api"
@@ -113,11 +169,22 @@ def build_from_cases() -> dict[str, int]:
         raise SystemExit("data/cases/index.json not found (Hermes 2 lane); nothing to freeze")
     cases = json.loads(cases_index.read_text(encoding="utf-8"))
     cases = cases.get("cases", cases) if isinstance(cases, dict) else cases
+    cases = [_normalize_case(c) for c in cases]
     _write(dist_api, "cases", {"cases": cases})
+    cards = _catalog_cards()
     for case in cases:
-        if case.get("analysis"):
+        # `index.json` publica rutas (`paths.analysis`), no el análisis inline.
+        # Aceptamos las dos formas para no romper llamadas anteriores.
+        analysis = case.get("analysis")
+        if analysis is None:
+            rel = (case.get("paths") or {}).get("analysis")
+            if rel:
+                path = REPO_ROOT / rel
+                if path.exists():
+                    analysis = json.loads(path.read_text(encoding="utf-8"))
+        if analysis:
             case_id = case.get("id") or case.get("region_id")
-            _write(dist_api, f"analyze__{case_id}", case["analysis"])
+            _write(dist_api, f"analyze__{case_id}", _decorate_analysis(analysis, case, cards))
             counts["analyses"] += 1
     counts["cases"] = len(cases)
 
@@ -200,8 +267,8 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
       error: {
         code: code,
         message: {
-          es: 'Este respaldo estático solo incluye los casos congelados.',
-          en: 'This static backup only includes the frozen cases.'
+          es: 'El análisis en vivo necesita la aplicación completa. Este respaldo solo trae los casos congelados.',
+          en: 'Live analysis needs the full app. This backup only includes the frozen cases.'
         },
         hint: hint || ''
       }
@@ -216,8 +283,18 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
   }
 
   function samePosition(baked, params) {
+    // Variables hemisféricas/globales (GISTEMP, hielo marino) no llevan posición:
+    // con la variable correcta basta, igual que en la API real.
+    if (!baked || baked === 'null,null' || baked === 'null' || baked.indexOf('null') === 0) return true;
     var want = params.get('bbox');
-    if (want) return baked === want.replace(/\s+/g, '');
+    if (want) {
+      var a = baked.split(','), b = want.replace(/\s+/g, '').split(',');
+      if (a.length !== b.length) return false;
+      for (var k = 0; k < a.length; k++) {
+        if (Math.abs(parseFloat(a[k]) - parseFloat(b[k])) > 5e-4) return false;
+      }
+      return true;
+    }
     var lat = parseFloat(params.get('lat'));
     var lon = parseFloat(params.get('lon'));
     if (baked.indexOf(',') < 0 || isNaN(lat) || isNaN(lon)) return false;
@@ -229,6 +306,10 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
     if (path === '/api/health' || path === '/health') return 'health';
     if (path === '/api/catalog/variables') return 'catalog_variables';
     if (path === '/api/cases') return 'cases';
+    if (path.indexOf('/api/cases/') === 0) {
+      var cid = decodeURIComponent(path.slice('/api/cases/'.length));
+      return INDEX['analyze__' + cid] ? 'case__' + cid : null;
+    }
     if (path.indexOf('/api/atlas/') === 0) return 'atlas__' + decodeURIComponent(path.slice('/api/atlas/'.length));
     if (path === '/api/analyze' || path === '/api/series') {
       var vid = params.get('variable_id');
@@ -253,6 +334,14 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
     }
 
     var key = slug(url.pathname, url.searchParams);
+    if (key && key.indexOf('case__') === 0) {
+      // Same shape as GET /api/cases/{id}: the index card plus the frozen analysis.
+      var caseId = key.slice('case__'.length);
+      var list = (INDEX.cases && INDEX.cases.payload && INDEX.cases.payload.cases) || [];
+      var card = null;
+      for (var i = 0; i < list.length; i++) { if (list[i] && list[i].id === caseId) card = list[i]; }
+      return Promise.resolve(jsonResponse({ case: card, analysis: INDEX['analyze__' + caseId].payload }, 200));
+    }
     if (key && INDEX[key]) {
       var entry = INDEX[key];
       var body = entry.payload;
@@ -268,6 +357,17 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
 
 def _bake_index(dist_api: Path) -> dict[str, Any]:
     """Construye el índice de rutas con la posición que las produjo."""
+    # `analysis/2` no repite `variable.id`; el índice de casos sí lo trae.
+    cases_path = dist_api / "cases.json"
+    case_variables: dict[str, str] = {}
+    if cases_path.exists():
+        payload = json.loads(cases_path.read_text(encoding="utf-8"))
+        for case in payload.get("cases", []) if isinstance(payload, dict) else []:
+            cid = case.get("id") or case.get("region_id")
+            vid = case.get("variable_id")
+            if cid and vid:
+                case_variables[str(cid)] = str(vid)
+
     index: dict[str, Any] = {}
     for path in sorted(dist_api.glob("*.json")):
         stem = path.stem
@@ -275,11 +375,18 @@ def _bake_index(dist_api: Path) -> dict[str, Any]:
         entry: dict[str, Any] = {"payload": payload}
         if stem.startswith("analyze__"):
             region = payload.get("region") or {}
-            if region.get("bbox"):
-                entry["position"] = ",".join(str(v) for v in region["bbox"])
+            lat, lon, bbox = region.get("lat"), region.get("lon"), region.get("bbox")
+            if bbox:
+                entry["position"] = ",".join(str(v) for v in bbox)
+            elif lat is not None and lon is not None:
+                entry["position"] = f"{lat},{lon}"
             else:
-                entry["position"] = f"{region.get('lat')},{region.get('lon')}"
-            entry["variable_id"] = (payload.get("variable") or {}).get("id")
+                # Variables hemisféricas/globales: sin posición, se sirven por variable.
+                entry["position"] = None
+            variable_id = (payload.get("variable") or {}).get("id")
+            if not variable_id:
+                variable_id = case_variables.get(stem[len("analyze__"):])
+            entry["variable_id"] = variable_id
         index[stem] = entry
     return index
 

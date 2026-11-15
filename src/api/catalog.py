@@ -82,6 +82,16 @@ def _load() -> tuple[list[dict[str, Any]], str, str]:
     full = _read_json(CATALOG_PATH)
     if full and isinstance(full.get("variables"), list):
         cards = [dict(v, _catalog_source="catalog") for v in full["variables"]]
+        # El catálogo guarda las variables planificadas en una clave aparte
+        # (`planned`), no dentro de `variables`. Sin leerla, la API publicaba 0
+        # planned y respondía VARIABLE_UNKNOWN («no está en el catálogo») a una
+        # variable que sí está, en vez de VARIABLE_PLANNED con la forma de
+        # cargarla. Se cargan marcadas: nunca cuentan como disponibles (regla 19).
+        seen = {c.get("id") for c in cards}
+        for v in full.get("planned") or []:
+            if isinstance(v, dict) and v.get("id") and v["id"] not in seen:
+                seen.add(v["id"])
+                cards.append(dict(v, planned=True, available=False, _catalog_source="catalog"))
         return cards, "catalog", datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     seed = _read_json(SEED_PATH)
@@ -137,6 +147,21 @@ def has_connector(card: dict[str, Any], connector: str) -> bool:
 #: la tenemos, se carga subiendo el CSV», y nunca se ofrecen para analizar
 #: (docs/RONDA_3.md §4, claude-omni-1b).
 SERVABLE_CONNECTORS = frozenset({"power", "gistemp", "nsidc_seaice"})
+
+
+def is_planned(card: dict[str, Any]) -> bool:
+    """¿Es una variable planificada (no analizable todavía)?
+
+    Regla 19 (RONDA_4): una `planned` nunca es candidata. Si el catálogo declara
+    `available`/`planned` explícitos se respeta; si no, se deduce del conector:
+    solo son servibles power, gistemp y nsidc_seaice. Lo `planned` (Giovanni)
+    se carga subiendo su CSV y jamás se analiza por id.
+    """
+    if card.get("planned") is True:
+        return True
+    if card.get("available") is False:
+        return True
+    return card.get("connector") not in SERVABLE_CONNECTORS
 
 
 def with_availability(card: dict[str, Any]) -> dict[str, Any]:

@@ -76,6 +76,19 @@ def test_sentinel_fill_and_physical_range_rejected():
     errs_temp = validate_document(doc_temp)
     assert any("fuera del rango físico" in e for e in errs_temp)
 
+    # 4. Viento WS2M fuera de rango físico (0 a 150 m/s)
+    doc_wind_neg = good_doc(variable_id="WS2M")
+    doc_wind_neg["data"][0]["value"] = -5.0
+    assert any("fuera del rango físico" in e for e in validate_document(doc_wind_neg))
+
+    doc_wind_high = good_doc(variable_id="WS2M")
+    doc_wind_high["data"][0]["value"] = 250.0
+    assert any("fuera del rango físico" in e for e in validate_document(doc_wind_high))
+
+    doc_wind_ok = good_doc(variable_id="WS2M")
+    doc_wind_ok["data"][0]["value"] = 12.5
+    assert validate_document(doc_wind_ok) == []
+
 
 def test_duplicate_and_unordered_dates():
     doc = good_doc()
@@ -117,3 +130,29 @@ def test_validator_cli_exit_codes(tmp_path):
     fail = subprocess.run([sys.executable, "scripts/validate_datasets.py", str(bad)], cwd=root)
     assert ok.returncode == 0
     assert fail.returncode != 0
+
+
+def test_validator_cli_expands_wildcards_itself(tmp_path):
+    """PowerShell y cmd no expanden `*`: el script recibe el patron tal cual (QA D3)."""
+    import subprocess
+    import sys
+    import os
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for name in ("a", "b"):
+        folder = tmp_path / name
+        folder.mkdir()
+        (folder / "series.json").write_text(json.dumps(good_doc()), encoding="utf-8")
+    pattern = str(tmp_path / "*" / "series.json")
+    ok = subprocess.run(
+        [sys.executable, "scripts/validate_datasets.py", pattern],
+        cwd=root, capture_output=True, text=True,
+    )
+    assert ok.returncode == 0, ok.stdout + ok.stderr
+    assert "2/2" in ok.stdout
+    # Un patron que no encuentra nada es un fallo visible, no un exito vacio.
+    none = subprocess.run(
+        [sys.executable, "scripts/validate_datasets.py", str(tmp_path / "*" / "nothing.json")],
+        cwd=root, capture_output=True, text=True,
+    )
+    assert none.returncode != 0

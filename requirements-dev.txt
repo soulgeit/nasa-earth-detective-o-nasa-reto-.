@@ -1,0 +1,7 @@
+# SI-assisted: cfable (Claude Fable 5.2)
+# Lo que piden las comprobaciones del README (`python -m pytest -q`). La
+# aplicacion no lo necesita: por eso no esta en requirements.txt ni en la imagen
+# del despliegue. Versiones fijadas: las del entorno que pasa la suite completa.
+-r requirements.txt
+pytest==9.2.0
+httpx==0.28.1

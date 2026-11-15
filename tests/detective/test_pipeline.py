@@ -76,17 +76,23 @@ def test_pipeline_offline(question, lang, expected, analysis_result, no_network)
     assert answer["guard"]["numbers_ok"] is True
 
 
-@pytest.mark.parametrize("question,lang,fragment", [
-    ("¿la selva de Madre de Dios pierde vegetación?", "es", "vegetación"),
-    ("is Amazon vegetation declining?", "en", "vegetation"),
+@pytest.mark.parametrize("question,lang", [
+    ("¿la selva de Madre de Dios pierde vegetación?", "es"),
+    ("is Amazon vegetation declining?", "en"),
 ])
-def test_missing_variable_is_declared_not_substituted(question, lang, fragment):
-    """The catalogue has no NDVI: the plan must say so and offer real alternatives."""
+def test_missing_variable_is_declared_not_substituted(question, lang):
+    """NDVI is a `planned` product: the plan must say so and offer real alternatives.
+
+    The assertion checks the variable identity (``missing_ids``), not the human
+    name: the catalogue names it "Indice de vegetacion NDVI (MODIS)" through
+    claude-omni-1b's lane, and a test must not depend on another lane's spelling.
+    """
     result = detective.plan(question, lang=lang)
     assert result["intent"] == "no_match"
     assert result["variable_ids"] == []
-    assert any(fragment in name for name in result["missing"])
     assert "MODIS_NDVI" in result["missing_ids"]
+    assert result["missing"], "no_match must name what is missing"
+    assert result.get("how_to_load"), "no_match must say how to load it"
     for alt in result.get("alternatives", []):
         assert alt["variable_id"] != "MODIS_NDVI"
         assert alt["variable_id"], "an alternative without an id is not an alternative"

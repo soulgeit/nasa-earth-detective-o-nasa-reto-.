@@ -54,20 +54,42 @@ def staged_repo(tmp_path: Path) -> Path:
         "trend": {"sen_slope_per_decade": 0.31},
         "provenance": {"kind": "nasa_api", "source": "NASA POWER", "request_url": "https://example"},
     }
+    # El caso global no trae posición: la variable sin lugar cambia tierra por área.
+    global_analysis = {
+        "schema": "analysis/2",
+        "region": {"kind": "named", "name": None, "lat": None, "lon": None, "bbox": None},
+        "period": {"start": "1979-01", "end": "2025-12", "n_obs": 576},
+        "trend": {"sen_slope_per_decade": -0.5},
+        "provenance": {"kind": "nasa_file", "source": "NSIDC"},
+    }
     (root / "data" / "cases").mkdir(parents=True)
+    # `data/cases/index.json` real publica RUTAS (`paths`), no el análisis inline.
+    # Esta es la forma que el build debe saber leer (regresión: horneaba 0 análisis).
+    (root / "data" / "cases" / "lima-t2m").mkdir()
+    (root / "data" / "cases" / "lima-t2m" / "analysis.json").write_text(
+        json.dumps(analysis), encoding="utf-8"
+    )
+    (root / "data" / "cases" / "arctic-seaice").mkdir()
+    (root / "data" / "cases" / "arctic-seaice" / "analysis.json").write_text(
+        json.dumps(global_analysis), encoding="utf-8"
+    )
     (root / "data" / "cases" / "index.json").write_text(
         json.dumps(
             {
                 "cases": [
                     {
-                        "id": "lima_t2m",
-                        "region_id": "lima_t2m",
-                        "region_name": "Lima, Peru",
+                        "id": "lima-t2m",
                         "variable_id": "T2M",
-                        "lat": -12.05,
-                        "lon": -77.03,
-                        "analysis": analysis,
-                    }
+                        "names": {"es": "Lima, Perú", "en": "Lima, Peru"},
+                        "region": {"kind": "point", "lat": -12.05, "lon": -77.03, "bbox": None},
+                        "paths": {"analysis": "data/cases/lima-t2m/analysis.json"},
+                    },
+                    {
+                        "id": "arctic-seaice",
+                        "variable_id": "SEAICE_EXTENT_N",
+                        "region": {"kind": "named", "lat": None, "lon": None, "bbox": None},
+                        "paths": {"analysis": "data/cases/arctic-seaice/analysis.json"},
+                    },
                 ]
             }
         ),
@@ -94,7 +116,9 @@ def test_build_creates_complete_dist(staged_repo: Path) -> None:
         assert (dist / name).exists(), f"{name} missing from dist/"
     assert (dist / "api" / "cases.json").exists()
     assert (dist / "api" / "catalog_variables.json").exists()
-    assert (dist / "api" / "analyze__lima_t2m.json").exists()
+    assert (dist / "api" / "analyze__lima-t2m.json").exists()
+    # Regresión: con el formato real (`paths`) el build horneaba 0 análisis.
+    assert (dist / "api" / "analyze__arctic-seaice.json").exists()
 
 
 def test_shim_is_injected_before_app_js(staged_repo: Path) -> None:
@@ -111,10 +135,21 @@ def test_shim_contains_baked_index_with_position(staged_repo: Path) -> None:
     match = re.search(r"var INDEX = (\{.*?\});\s*/\*", shim, re.S)
     assert match, "INDEX literal not found"
     index = json.loads(match.group(1))
-    entry = index["analyze__lima_t2m"]
+    entry = index["analyze__lima-t2m"]
     assert entry["variable_id"] == "T2M"
     assert entry["position"] == "-12.05,-77.03"
     assert entry["payload"]["schema"] == "analysis/2"
+    # El caso global no tiene posición y aun así debe llevar su variable.
+    global_entry = index["analyze__arctic-seaice"]
+    assert global_entry["variable_id"] == "SEAICE_EXTENT_N"
+    assert global_entry["position"] is None
+
+
+def test_global_case_matches_without_position(staged_repo: Path) -> None:
+    """Hielo marino y GISTEMP no llevan lat/lon: la variable basta para servirlos."""
+    assert _build(staged_repo).returncode == 0
+    shim = (staged_repo / "dist" / "static-api.js").read_text(encoding="utf-8")
+    assert "if (!baked || baked === 'null,null'" in shim
 
 
 def test_shim_never_invents_data(staged_repo: Path) -> None:
@@ -125,8 +160,35 @@ def test_shim_never_invents_data(staged_repo: Path) -> None:
     assert "return Promise.resolve(jsonResponse(errorPayload('DATA_UNAVAILABLE'" in shim
 
 
+def test_cases_are_flattened_for_the_ui(staged_repo: Path) -> None:
+    """`openCase()` lee c.lat/c.lon en la raíz; el índice los trae en `region`."""
+    assert _build(staged_repo).returncode == 0
+    cases = json.loads((staged_repo / "dist" / "api" / "cases.json").read_text(encoding="utf-8"))["cases"]
+    lima = next(c for c in cases if c["id"] == "lima-t2m")
+    assert lima["lat"] == -12.05 and lima["lon"] == -77.03
+    assert lima["region_name"]
+
+
 def test_missing_ui_file_fails_loudly(staged_repo: Path) -> None:
     (staged_repo / "src" / "ui" / "i18n.js").unlink()
     result = _build(staged_repo)
     assert result.returncode != 0
     assert "i18n.js" in (result.stdout + result.stderr)
+
+
+# --- arquitecto, Ronda 5 -----------------------------------------------------
+
+def test_shim_serves_the_frozen_case_route(staged_repo: Path) -> None:
+    """La interfaz abre un caso con GET /api/cases/<id>; el respaldo debe responderlo."""
+    assert _build(staged_repo).returncode == 0
+    shim = (staged_repo / "dist" / "static-api.js").read_text(encoding="utf-8")
+    assert "path.indexOf('/api/cases/') === 0" in shim
+    assert "analysis: INDEX['analyze__' + caseId].payload" in shim
+
+
+def test_bbox_is_compared_as_numbers(staged_repo: Path) -> None:
+    """'-71' (JavaScript) y '-71.0' (Python) son la misma caja."""
+    assert _build(staged_repo).returncode == 0
+    shim = (staged_repo / "dist" / "static-api.js").read_text(encoding="utf-8")
+    assert "parseFloat(a[k]) - parseFloat(b[k])" in shim
+    assert "baked === want" not in shim

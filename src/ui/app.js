@@ -24,6 +24,7 @@ const state = {
   pointCompareB: null,
   locationName: null,
   locationNameB: null,
+  placeLabel: null, // real place name (geocoder or frozen case); null for a bare map click
   bbox: null,
   lang: window.__etdLang || 'en',
 };
@@ -248,6 +249,7 @@ function initMap() {
 function setPoint(lat, lon, label) {
   state.point = { lat, lon };
   state.bbox = null;
+  state.placeLabel = label || null;
   state.locationName = label || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
   if (map) {
     if (marker) marker.remove();
@@ -288,6 +290,7 @@ function setPointB(lat, lon, label) {
 function setBBox(bbox) {
   state.bbox = bbox;
   state.point = null;
+  state.placeLabel = null;
   state.locationName = `[${bbox.map(v => v.toFixed(2)).join(', ')}]`;
   if (map) {
     if (marker) { marker.remove(); marker = null; }
@@ -331,15 +334,56 @@ async function searchPlace(q, isB = false) {
 
 /* ---------------------------------------------------------------- catalog */
 
+const PLANNED_FALLBACK = [
+  { id: 'GPM_IMERG_PRECIP', names: { en: 'GPM IMERG precipitation', es: 'Precipitación GPM IMERG' } },
+  { id: 'GLDAS_SOILM_0_10', names: { en: 'Soil moisture 0-10 cm (GLDAS)', es: 'Humedad del suelo 0-10 cm (GLDAS)' } },
+  { id: 'GLDAS_EVAP', names: { en: 'Evapotranspiration (GLDAS)', es: 'Evapotranspiración (GLDAS)' } },
+  { id: 'GLDAS_RUNOFF', names: { en: 'Runoff (GLDAS)', es: 'Escorrentía (GLDAS)' } },
+  { id: 'AIRS_SURF_AIR_TEMP', names: { en: 'Surface air temperature (AIRS)', es: 'Temperatura superficial del aire (AIRS)' } },
+  { id: 'OMI_NO2_TROP', names: { en: 'Tropospheric nitrogen dioxide (OMI)', es: 'Dióxido de nitrógeno troposférico (OMI)' } },
+  { id: 'OMI_O3_TOTAL', names: { en: 'Total column ozone (OMI)', es: 'Ozono total en columna (OMI)' } },
+  { id: 'MODIS_NDVI', names: { en: 'NDVI vegetation index (MODIS)', es: 'Índice de vegetación NDVI (MODIS)' } },
+  { id: 'MODIS_LST_DAY', names: { en: 'Daytime land surface temperature (MODIS)', es: 'Temperatura diurna superficie terrestre (MODIS)' } },
+  { id: 'MODIS_AOD', names: { en: 'Aerosol optical depth (MODIS)', es: 'Espesor óptico de aerosoles (MODIS)' } },
+];
+
+function isPlannedVariable(varId) {
+  if (!varId) return false;
+  if (state.plannedCatalog && state.plannedCatalog.some(p => p.id === varId)) return true;
+  return PLANNED_FALLBACK.some(p => p.id === varId);
+}
+
 function renderCatalog() {
   const select = $('#variable-select');
   if (!select) return;
   select.innerHTML = '';
-  for (const v of state.catalog) {
+
+  // 1. Available variables (selectable)
+  const available = state.catalog.filter(v => v.available !== false);
+  const optgroupAvail = el('optgroup', { label: state.lang === 'es' ? 'Variables disponibles' : 'Available variables' });
+  for (const v of available) {
     const optName = v.names?.[state.lang] || v.names?.es || v.names?.en || v.power_longname || v.id;
     const opt = el('option', { value: v.id }, `${optName} (${v.unit || ''})`);
-    select.appendChild(opt);
+    optgroupAvail.appendChild(opt);
   }
+  select.appendChild(optgroupAvail);
+
+  // 2. Planned variables (Rule 19: cannot be chosen, disabled)
+  const plannedList = (state.plannedCatalog && state.plannedCatalog.length)
+    ? state.plannedCatalog
+    : PLANNED_FALLBACK;
+  const notLoadedLabel = t('detective.plan.not_loaded');
+  const optgroupPlanned = el('optgroup', {
+    label: state.lang === 'es' ? 'Planificadas (requieren CSV de Giovanni)' : 'Planned (require Giovanni CSV)'
+  });
+  for (const p of plannedList) {
+    const pName = p.names?.[state.lang] || p.names?.es || p.names?.en || p.id;
+    const opt = el('option', { value: p.id, disabled: true }, `${pName} — ${notLoadedLabel}`);
+    opt.setAttribute('title', notLoadedLabel);
+    optgroupPlanned.appendChild(opt);
+  }
+  select.appendChild(optgroupPlanned);
+
   onVariableChange();
 }
 
@@ -372,12 +416,35 @@ async function loadCases() {
   }
   for (const c of state.cases) {
     const btn = el('button', { type: 'button', class: 'btn case-btn' });
-    const nameSpan = el('span', null, c.region_name || c.id || c.region_id);
-    btn.appendChild(nameSpan);
-    if (c.description) btn.appendChild(el('small', null, c.description));
+    btn.appendChild(el('span', null, caseTitle(c)));
+    const sub = caseVerdictLabel(c) || c.description;
+    if (sub) btn.appendChild(el('small', null, sub));
     btn.addEventListener('click', () => openCase(c));
     list.appendChild(btn);
   }
+}
+
+/* The index publishes bilingual `title`, `names` and `finding`; older builds had `region_name`. */
+function caseTitle(c) {
+  const L = state.lang;
+  return c.title?.[L] || c.title?.en || c.names?.[L] || c.names?.en || c.region_name || c.id || c.region_id;
+}
+
+function casePlace(c) {
+  const L = state.lang;
+  return c.names?.[L] || c.names?.en || c.region?.name || c.region_name || c.id;
+}
+
+function caseVerdictLabel(c) {
+  if (!c.verdict_code) return '';
+  const key = `verdict.${c.verdict_code}`;
+  const label = t(key);
+  return label && label !== key ? label : '';
+}
+
+function caseFinding(c) {
+  const L = state.lang;
+  return c.finding?.[L] || c.finding?.en || c.description || '';
 }
 
 async function openCase(c) {
@@ -387,12 +454,38 @@ async function openCase(c) {
     select.value = c.variable_id;
     onVariableChange();
   }
-  if (c.lat !== undefined && c.lon !== undefined && c.lat !== null && c.lon !== null) {
-    setPoint(c.lat, c.lon, c.region_name || c.id);
-    if (map) map.setView([c.lat, c.lon], 5);
-  } else if (c.bbox) {
-    setBBox(c.bbox);
-    if (map) map.fitBounds([[c.bbox[1], c.bbox[0]], [c.bbox[3], c.bbox[2]]]);
+  // The position lives under `region` in /api/cases; the static backup also copies it to the root.
+  const r = c.region || {};
+  const lat = c.lat ?? r.lat;
+  const lon = c.lon ?? r.lon;
+  const bbox = c.bbox || r.bbox;
+  const hasPoint = lat !== undefined && lat !== null && lon !== undefined && lon !== null;
+  if (bbox && (r.kind === 'bbox' || !hasPoint)) {
+    setBBox(bbox);
+    if (map) map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
+  } else if (hasPoint) {
+    setPoint(Number(lat), Number(lon), casePlace(c));
+    if (map) map.setView([Number(lat), Number(lon)], 5);
+  } else {
+    // Hemispheric or global case: it has no place, so forget the one chosen before.
+    state.point = null;
+    state.bbox = null;
+    state.placeLabel = null;
+    state.locationName = casePlace(c);
+    if (marker) { marker.remove(); marker = null; }
+    if (rect) { rect.remove(); rect = null; }
+    const chosen = $('#place-chosen');
+    if (chosen) chosen.textContent = state.locationName;
+  }
+  // A frozen case is shown exactly as it was frozen: same series, same numbers, same provenance.
+  if (c.id) {
+    try {
+      const frozen = await apiGet(`/api/cases/${encodeURIComponent(c.id)}`);
+      if (frozen && frozen.analysis && frozen.analysis.schema === 'analysis/2') {
+        renderAnalysis(frozen.analysis);
+        return;
+      }
+    } catch (_) { /* a build without this route: fall through to the live analysis */ }
   }
   investigate();
 }
@@ -436,6 +529,8 @@ async function investigate() {
     } else if (state.point) {
       params.lat = Number(state.point.lat).toFixed(4);
       params.lon = Number(state.point.lon).toFixed(4);
+      // The API writes this name into region.name, so the text says "Lima, Peru" and not coordinates.
+      if (state.placeLabel && !isGlobal) params.place = state.placeLabel;
     }
 
     state.analysis = await apiGet('/api/analyze', params);
@@ -1119,6 +1214,40 @@ function renderPlan(plan) {
   const placeName = plan.place || (state.lang === 'es' ? 'el lugar seleccionado' : 'the selected place');
 
   $('#plan-intent-text').textContent = t('detective.plan.intent', { var: cleanVar, place: placeName });
+
+  // Planner attribution badge (LoRA fine-tuned model vs rules)
+  const isLora = plan.planner === 'lora' || plan.mode === 'lora';
+  const badge = $('#plan-meta-badge');
+  if (badge) {
+    badge.textContent = isLora ? t('detective.plan.by_lora') : t('detective.plan.by_rules');
+    badge.className = `plan-badge ${isLora ? 'plan-badge-lora' : 'plan-badge-rules'}`;
+  }
+
+  // Fallback note if any
+  const noteEl = $('#plan-note-text');
+  if (noteEl) {
+    if (plan.note) {
+      noteEl.textContent = plan.note;
+      noteEl.hidden = false;
+    } else {
+      noteEl.textContent = '';
+      noteEl.hidden = true;
+    }
+  }
+
+  // Rule 19: If plan picked a planned variable, it cannot be run directly
+  const confirmBtn = $('#plan-confirm-btn');
+  if (confirmBtn) {
+    if (isPlannedVariable(varId)) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = t('detective.plan.not_loaded');
+      confirmBtn.setAttribute('title', 'This variable requires uploading its Giovanni CSV');
+    } else {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = t('detective.plan.run');
+      confirmBtn.removeAttribute('title');
+    }
+  }
 }
 
 async function confirmPlan() {
@@ -1301,8 +1430,8 @@ async function loadDemoCase(idx) {
 
   const c = state.cases[idx % state.cases.length];
   $('#demo-counter').textContent = t('demo.step', { curr: (idx % state.cases.length) + 1, total: state.cases.length });
-  $('#demo-case-title').textContent = c.region_name || c.id;
-  $('#demo-case-text').textContent = c.description || (state.lang === 'es' ? 'Caso emblemático con datos satelitales reales.' : 'Real satellite observation case.');
+  $('#demo-case-title').textContent = caseTitle(c);
+  $('#demo-case-text').textContent = caseFinding(c) || (state.lang === 'es' ? 'Caso emblemático con datos satelitales reales.' : 'Real satellite observation case.');
 
   const fill = $('#demo-progress-fill');
   if (fill) {
@@ -1505,7 +1634,11 @@ function boot() {
     .catch((err) => showError(err))
     .finally(() => {
       apiGet(`/api/catalog/variables?lang=${state.lang}`)
-        .then((d) => { state.catalog = (d && d.variables) || []; renderCatalog(); })
+        .then((d) => {
+          state.catalog = (d && d.variables) || [];
+          if (d && Array.isArray(d.planned)) state.plannedCatalog = d.planned;
+          renderCatalog();
+        })
         .catch((err) => showError(err));
       loadCases();
     });

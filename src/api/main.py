@@ -150,15 +150,20 @@ def health_live() -> dict[str, str]:
 def list_variables(lang: str = Query("es", pattern="^(es|en)$")) -> dict[str, Any]:
     cards = catalog.all_variables()
     meta = catalog.catalog_meta()
-    out = []
+    out: list[dict[str, Any]] = []
+    planned: list[dict[str, Any]] = []
     for card in cards:
         item = catalog.with_availability(card)
         for field in ("names", "simple_definition"):
             value = item.get(field)
             if isinstance(value, dict) and lang in value:
                 item[f"{field}_lang"] = value[lang]
-        out.append(item)
-    return {"catalog": meta, "variables": out}
+        (planned if catalog.is_planned(card) else out).append(item)
+    # Regla 19: las `planned` se publican aparte y no se cuentan como
+    # disponibles. La interfaz las muestra como «not loaded yet» y no las deja
+    # elegir; la API las rechaza con VARIABLE_PLANNED.
+    meta = dict(meta, n_available=len(out), n_planned=len(planned))
+    return {"catalog": meta, "variables": out, "planned": planned}
 
 
 @app.get("/api/catalog/regions", tags=["catalog"])
@@ -221,6 +226,64 @@ def list_cases() -> dict[str, Any]:
     return {"cases": _frozen("cases")}
 
 
+@app.get("/api/cases/{case_id}", tags=["catalog"])
+def get_case(case_id: str) -> dict[str, Any]:
+    """Un caso congelado completo: su ficha del índice y el análisis guardado en disco.
+
+    La galería abre el caso tal como se congeló (misma serie, mismas cifras y
+    misma procedencia, también la de un CSV subido) sin volver a pedir nada a
+    la fuente. Aquí no se recalcula: si el archivo falta o no es `analysis/2`,
+    se dice con un error del contrato en vez de sustituirlo por otro análisis.
+    """
+    from .config import CASES_DIR
+
+    case = next(
+        (c for c in _frozen("cases") if isinstance(c, dict) and c.get("id") == case_id),
+        None,
+    )
+    if case is None:
+        raise ApiError(
+            "NOT_FOUND",
+            message={
+                "es": f"No existe el caso congelado '{case_id[:60]}'.",
+                "en": f"There is no frozen case '{case_id[:60]}'.",
+            },
+            hint="GET /api/cases lists the available ids.",
+        )
+    # El id ya salió del índice, no de la URL: la ruta no puede salirse de CASES_DIR.
+    path = (CASES_DIR / str(case["id"]) / "analysis.json").resolve()
+    if CASES_DIR.resolve() not in path.parents or not path.exists():
+        raise ApiError(
+            "DATA_UNAVAILABLE",
+            message={
+                "es": "El análisis congelado de este caso no está en disco.",
+                "en": "The frozen analysis of this case is not on disk.",
+            },
+            hint=f"Expected data/cases/{case['id']}/analysis.json (Hermes 2 lane).",
+        )
+    try:
+        analysis = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ApiError("INTERNAL_ERROR", hint=f"Invalid frozen analysis: {exc}") from exc
+    if not isinstance(analysis, dict) or analysis.get("schema") != "analysis/2":
+        raise ApiError("INTERNAL_ERROR", hint="Frozen analysis is not analysis/2.")
+
+    # Igual que /api/analyze: la tarjeta del catálogo viaja con el análisis para
+    # que la interfaz rotule nombre y unidad. Son campos del catálogo, no cifras.
+    if not analysis.get("variable") and case.get("variable_id"):
+        try:
+            analysis["variable"] = catalog.get_variable(str(case["variable_id"]))
+        except ApiError:
+            pass
+    region = analysis.get("region")
+    if isinstance(region, dict) and not region.get("name"):
+        names = case.get("names") or {}
+        label = names.get("en") or names.get("es")
+        if label:
+            region["name"] = label
+    return {"case": case, "analysis": analysis}
+
+
 @app.get("/api/atlas/{variable_id}", tags=["catalog"])
 def get_atlas(variable_id: str) -> dict[str, Any]:
     catalog.get_variable(variable_id)
@@ -278,7 +341,7 @@ def _series_params(
     end: str | None,
     place: str | None = None,
 ) -> dict[str, Any]:
-    card = catalog.get_variable(variable_id)
+    card = validation.check_analyzable(variable_id)
     position, mode = validation.point_or_bbox(lat, lon, bbox, card=card)
     start, end = validation.check_period(start, end)
     params: dict[str, Any] = {
@@ -340,7 +403,7 @@ def trendmap_endpoint(
     end: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
 ) -> JSONResponse:
     _limit(request)
-    catalog.get_variable(variable_id)
+    validation.check_analyzable(variable_id)
     box = validation.check_bbox(bbox)
     assert box is not None
     start, end = validation.check_period(start, end)
