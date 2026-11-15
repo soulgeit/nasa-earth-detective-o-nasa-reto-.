@@ -256,7 +256,49 @@ def geocode(q: str, *, limit: int = 5) -> list[dict[str, Any]]:
         # worse than answering nothing: the UI then asks for a click on the map.
         return []
     ranked = _rank(list(places), q)[:limit]
-    return [p.to_public(score=s) for p, s in ranked]
+    results = [p.to_public(score=s) for p, s in ranked]
+    # RONDA_4 §4.2: a place is accepted only if a verified source resolves it.
+    # Named regions carry their own verified coordinates, so they can satisfy a
+    # place name the city gazetteer does not contain ("Madre de Dios", "Sahel").
+    if not results:
+        results = _region_lookup(q, limit=limit)
+    return results
+
+
+def _region_lookup(q: str, *, limit: int = 5) -> list[dict[str, Any]]:
+    """Exact (accent-free) match against data/catalog/regions.json."""
+    path = SETTINGS.catalog_dir / "regions.json"
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    rows = payload.get("regions") if isinstance(payload, dict) else payload
+    wanted = fold(q).strip()
+    out: list[dict[str, Any]] = []
+    for row in rows or []:
+        names = row.get("names") or {}
+        candidates = {fold(str(v)).strip() for v in names.values() if v}
+        if wanted not in candidates:
+            continue
+        try:
+            lat, lon = float(row["lat"]), float(row["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        out.append({
+            "name": names.get("en") or names.get("es") or row.get("id"),
+            "country": None,
+            "lat": round(lat, 4),
+            "lon": round(lon, 4),
+            "bbox": row.get("bbox"),
+            "population": None,
+            "source": "regions",
+            "match_score": 1.0,
+        })
+        if len(out) >= limit:
+            break
+    return out
 
 
 def find_in_text(text: str, *, limit: int = 3) -> list[tuple[Place, str]]:

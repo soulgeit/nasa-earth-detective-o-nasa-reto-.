@@ -74,6 +74,8 @@ class Document:
             "date": self.date,
             "publisher": self.publisher,
             "variables": list(self.variables),
+            # RONDA_4 rule 19: a planned product is documented but never analysable.
+            "available": self.available,
             "text": self.text,
             "available": bool(self.available),
         }

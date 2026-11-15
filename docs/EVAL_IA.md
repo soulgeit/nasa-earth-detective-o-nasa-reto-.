@@ -105,23 +105,53 @@ python -m src.detective.rag.eval             # tabla de recuperación
 Comando: `python -m src.detective.rag.eval_plan` (añade `--json` para uso automático).
 
 <!-- TABLA_PLAN_INICIO -->
-Medido el 2026-11-14 a las 21:35 (hora de Perú), `AI_MODE=extractive`, sin modelo.
+### Planner over the 50 golden questions (RONDA 3 & 4)
 
-| Planificador / Planner | Acierto de variable / Variable accuracy | Preguntas |
+Commands:
+`python -m src.detective.rag.eval_plan` (rules) and
+`AI_MODE=full PLANNER_MODEL=local-lora python -m src.detective.rag.eval_plan --planner local-lora`.
+Measured 2026-11-15, `main` merged, rule 19 applied (a `planned` variable is never a candidate).
+
+| Planner | Variable accuracy | Questions |
 |---|---|---|
 | rules | 49/50 = 0.980 | 50 |
+| LoRA (local, CPU) | 37/50 = 0.740 | 50 |
 
-Intenciones detectadas: `define` 1, `investigate` 49.
-Quién planificó: `rules` 50/50.
+Both numbers are always reported together (rule 20). Timing on this machine
+(GTX 1650 SUPER, CPU inference): ~3.6 s/question for rules; ~13.7 s/question for
+LoRA after one ~60 s model load.
 
-Fallos:
+Rules failures (1):
 
-| Pregunta / Question | Idioma | Intención | Devuelto / Got | Esperado / Expected |
+| Question | Lang | Intent | Got | Expected |
 |---|---|---|---|---|
 | Is dust from the Sechura Desert travelling farther now? | en | `investigate` | `GWETTOP` | `AOD_55` |
 
-**LoRA: no disponible.** El adaptador no existe en el repositorio, así que esta tabla
-**no tiene columna de LoRA**: un modelo sin entrenar no tiene número. Cuando Antigravity 2
-publique el adaptador, `python -m src.detective.rag.eval_plan --planner local-lora`
-rellena esa columna con inferencia real.
+LoRA failures (13) — none is a `planned` variable, so rule 19 removed 15 of the
+previous 19 misses:
+
+| Question | Lang | Intent | Got | Expected |
+|---|---|---|---|---|
+| ¿Está lloviendo menos en Piura en los últimos años? | es | compare | T2M | PRECTOTCORR |
+| ¿El aire de Lima está más sucio que hace años? | es | compare | RH2M | AOD_55 |
+| ¿Qué ha pasado con la lluvia en la selva de Madre de Dios? | es | investigate | T2M | PRECTOTCORR |
+| Temperatura de la superficie del suelo en la costa | es | investigate | GISTEMP_TANOM | TS |
+| ¿El lago Titicaca está perdiendo agua por evaporación? | es | investigate | TQV | EVLAND, GWETTOP |
+| ¿La garúa de Lima se está volviendo más frecuente? | es | compare | ALLSKY_SFC_SW_DWN | CLOUD_AMT, RH2M |
+| ¿El vapor de agua sobre la costa peruana cambió? | es | investigate | RH2M | TQV |
+| ¿Qué variable debo mirar para saber si Piura se desertifica? | es | investigate | T2M | GWETTOP, PRECTOTCORR |
+| ¿Las lluvias de El Niño son más intensas en Tumbes? | es | compare | T2M | PRECTOTCORR |
+| Ground surface temperature in Puno, trend? | en | investigate | GISTEMP_TANOM | TS |
+| Is Lima's drizzle becoming more frequent? | en | investigate | PRECTOTCORR | CLOUD_AMT, RH2M |
+| Which variable tells me if Piura is turning into desert? | en | investigate | T2M | GWETTOP, PRECTOTCORR |
+| Are El Nino rains stronger in Tumbes? | en | compare | T2M | PRECTOTCORR |
+
+### Who plans by default (RONDA 4 §5.2)
+
+The LoRA **is not the silent default**. The public server runs `AI_MODE=extractive`
+(rules plan, no model loaded). Locally, `PLANNER_MODEL=local-lora` opts in to the
+adapter explicitly, and every plan the model produces is re-verified by the rules
+(variable available, place resolvable). On the 50 reference questions the rules
+(49/50) beat the LoRA (37/50), so rules are the default and the LoRA is an explicit
+option with its real numbers.
 <!-- TABLA_PLAN_FIN -->

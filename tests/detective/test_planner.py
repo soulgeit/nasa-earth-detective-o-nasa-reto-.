@@ -164,8 +164,8 @@ def test_candidate_lines_match_the_dataset_shape():
         assert " - " in line, f"missing the definition separator: {line}"
 
 
-def test_local_lora_without_serving_falls_back_to_rules(monkeypatch):
-    """PLANNER_MODEL=local-lora must not pretend if src/ml/serve.py is absent."""
+def _lora_settings(monkeypatch):
+    """Switch the planner to `local-lora` for one test (regla 22: no disk state)."""
     from src.detective import config as cfg
     from src.detective import planner as planner_module
 
@@ -177,11 +177,178 @@ def test_local_lora_without_serving_falls_back_to_rules(monkeypatch):
         knowledge_dir=cfg.SETTINGS.knowledge_dir, index_dir=cfg.SETTINGS.index_dir,
         request_timeout=5.0,
     ), raising=False)
-    from src.detective.planner import plan as _plan
+    return planner_module
 
-    result = _plan("¿está lloviendo menos en Piura?", lang="es")
+
+# A module-scoped fixture is NOT possible here (each test needs a fresh fake); the
+# global cleanup is applied only to the tests in this file that exercise the LoRA,
+# by the `_clean_serve` fixture they request explicitly.
+
+
+@pytest.fixture()
+def _clean_serve(monkeypatch):
+    """RONDA_4 rule 22: these tests must not depend on what is on disk or in memory.
+
+    `src/ml/serve.py` keeps the loaded model in module globals, so a test elsewhere
+    that loaded the real adapter would make `plan_with_lora` answer from it and the
+    "adapter missing" case would silently succeed (that is the §2.4 defect of the
+    ml lane, not ours to fix). We drop the module before and after each test here
+    and undo the globals, so every test installs its own fake explicitly.
+    """
+    import sys
+
+    saved = sys.modules.pop("src.ml.serve", None)
+    parent = sys.modules.get("src.ml")
+    if parent is not None and getattr(parent, "serve", None) is saved:
+        try:
+            delattr(parent, "serve")
+        except AttributeError:
+            pass
+    yield
+    sys.modules.pop("src.ml.serve", None)
+    if parent is not None:
+        current = getattr(parent, "serve", None)
+        if current is not None:
+            try:
+                delattr(parent, "serve")
+            except AttributeError:
+                pass
+    if saved is not None:
+        for attr in ("_GLOBAL_MODEL", "_GLOBAL_TOKENIZER"):
+            if hasattr(saved, attr):
+                setattr(saved, attr, None)
+        sys.modules["src.ml.serve"] = saved
+        if parent is not None:
+            parent.serve = saved
+
+
+def test_local_lora_without_serving_falls_back_to_rules(monkeypatch, _clean_serve):
+    """RONDA_4 rule 22: the test simulates ABSENCE, it does not depend on the disk.
+
+    `src.ml.serve.plan_with_lora` raises, which is what happens on a machine with
+    no adapter or no GPU. The planner must fall back to rules and say why.
+    """
+    import sys
+    import types
+
+    sys.modules.pop("src.ml.serve", None)
+    import src.ml as _ml_parent
+    if hasattr(_ml_parent, "serve"):
+        try:
+            delattr(_ml_parent, "serve")
+        except AttributeError:
+            pass
+    fake = types.ModuleType("src.ml.serve")
+
+    def plan_with_lora(*args, **kwargs):
+        raise FileNotFoundError("no adapter on this machine (simulated)")
+
+    fake.plan_with_lora = plan_with_lora
+    monkeypatch.setitem(sys.modules, "src.ml.serve", fake)
+    planner_module = _lora_settings(monkeypatch)
+
+    result = planner_module.plan("¿está lloviendo menos en Piura?", lang="es")
     assert result["mode"] == "rules"
-    assert "local_lora" in result.get("note", "") or "rejected" in result.get("note", "")
+    assert result["planner"] == "rules"
+    assert "local_lora" in result.get("note", "")
+
+
+def test_local_lora_with_a_valid_plan_says_lora(monkeypatch, _clean_serve):
+    """RONDA_4 rule 22 (opposite case): a simulated adapter wins and is reported."""
+    import json as _json
+    import sys
+    import types
+
+    sys.modules.pop("src.ml.serve", None)
+    import src.ml as _ml_parent
+    if hasattr(_ml_parent, "serve"):
+        try:
+            delattr(_ml_parent, "serve")
+        except AttributeError:
+            pass
+    fake = types.ModuleType("src.ml.serve")
+    fake.plan_with_lora = lambda question, candidates=None, lang="es": {
+        "intent": "investigate",
+        "variable_ids": ["PRECTOTCORR"],
+        "place": "Piura",
+        "place_b": None,
+        "start_year": None,
+        "end_year": None,
+        "last_n_years": None,
+        "hypothesis": "down",
+        "lang": "es",
+    }
+    monkeypatch.setitem(sys.modules, "src.ml.serve", fake)
+    planner_module = _lora_settings(monkeypatch)
+
+    result = planner_module.plan("¿está lloviendo menos en Piura?", lang="es")
+    assert result["mode"] == "lora"
+    assert result["planner"] == "lora"
+    assert result["variable_ids"] == ["PRECTOTCORR"]
+
+
+def test_local_lora_returning_a_planned_variable_is_rejected(monkeypatch, _clean_serve):
+    """RONDA_4 rule 19 + §5.2: the model proposes, the rules verify."""
+    import sys
+    import types
+
+    sys.modules.pop("src.ml.serve", None)
+    import src.ml as _ml_parent
+    if hasattr(_ml_parent, "serve"):
+        try:
+            delattr(_ml_parent, "serve")
+        except AttributeError:
+            pass
+    fake = types.ModuleType("src.ml.serve")
+    fake.plan_with_lora = lambda question, candidates=None, lang="es": {
+        "intent": "investigate",
+        "variable_ids": ["MODIS_NDVI"],
+        "place": "Madre de Dios",
+        "place_b": None,
+        "start_year": None, "end_year": None, "last_n_years": None,
+        "hypothesis": "down", "lang": "es",
+    }
+    monkeypatch.setitem(sys.modules, "src.ml.serve", fake)
+    planner_module = _lora_settings(monkeypatch)
+
+    result = planner_module.plan("¿la selva de Madre de Dios pierde vegetación?", lang="es")
+    assert result["planner"] == "rules", "a planned variable must not come out of the model path"
+    assert "MODIS_NDVI" not in (result.get("variable_ids") or [])
+    assert result.get("note", "").startswith("lora_rejected")
+
+
+def test_local_lora_inventing_a_place_drops_it(monkeypatch, _clean_serve):
+    """§5.2: a place the gazetteer cannot resolve is removed, not shown.
+
+    (Not "Atlantis": there is a real town called Atlantis in South Africa, so it
+    resolves. "Xanaduprobe" does not exist in the gazetteer.)
+    """
+    import sys
+    import types
+
+    sys.modules.pop("src.ml.serve", None)
+    import src.ml as _ml_parent
+    if hasattr(_ml_parent, "serve"):
+        try:
+            delattr(_ml_parent, "serve")
+        except AttributeError:
+            pass
+    fake = types.ModuleType("src.ml.serve")
+    fake.plan_with_lora = lambda question, candidates=None, lang="es": {
+        "intent": "investigate",
+        "variable_ids": ["T2M"],
+        "place": "Xanaduprobe",
+        "place_b": None,
+        "start_year": None, "end_year": None, "last_n_years": None,
+        "hypothesis": "unknown", "lang": "es",
+    }
+    monkeypatch.setitem(sys.modules, "src.ml.serve", fake)
+    planner_module = _lora_settings(monkeypatch)
+
+    # The invented name must appear in the question for validation to reach it.
+    result = planner_module.plan("temperatura en Xanaduprobe", lang="es")
+    assert result["place"] is None
+    assert "dropped_unresolved_place" in (result.get("why") or "")
 
 
 # --- RONDA_3 §4.2: planned variables from the catalogue ---------------------
