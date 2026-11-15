@@ -1,16 +1,19 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3a — 2026-11-15 01:15 hora de Perú
-Rama@commit: feature/static@dd6b748 · empujado: sí (gh-pages@4e526a2)
-VERIFICADO: `python scripts/build_static.py --from-cases` → 7 casos, 7 análisis, 2 atlas, 0 errores (antes horneaba 0 análisis)
-VERIFICADO: Playwright sobre servidor estático → 7 casos, veredicto «Significant trend», pendiente +0.159 °C/década, procedencia NASA POWER v2.10.0, gráfica dibujada, 0 errores JS, 0 peticiones fallidas
-VERIFICADO: cambio de idioma EN→ES («Frozen cases» → «Casos congelados»); aviso de lo no horneado en ambos idiomas
-VERIFICADO: hielo marino sin coordenadas → 200 SIGNIFICANT_STRONG; ningún -9999 dentro de dist/
-VERIFICADO: `pytest tests/api/test_static_build.py` → 7 passed (2 pruebas nuevas de regresión)
-ROTO / NO HECHO: tarea 3 (regenerar tras la integración de las 10:00) queda pendiente; faltaba esa integración al cerrar
-Siguiente paso: regenerar dist/ tras la integración de las 10:00 y repetir el push a gh-pages
-Necesito de: humano: activar GitHub Pages en Settings → Pages → rama gh-pages
-Avisos para otros carriles: la interfaz (`src/ui/app.js` `openCase`) lee `c.lat`/`c.lon` en la raíz, pero `/api/cases` publica `region: {lat, lon}`: en la app viva el clic de la galería no abre el caso. Lo normalizo en mi build; claude-omni-1 debería arreglarlo en la UI o hermes-2 en el índice.
+## ESTADO — claude-omni-3a — 2026-11-15 07:05 hora de Perú
+Rama@commit: feature/static@(ronda5) · empujado: sí (gh-pages@4e526a2 → pendiente el push de la 07:10)
+VERIFICADO (R5 · tarea 1): `python scripts/build_static.py --from-cases` → 7 casos, 7 análisis, 2 atlas, 0 errores; `.nojekyll` presente en dist/
+VERIFICADO (R5 · tarea 1): Playwright sirviendo dist/ bajo subcarpeta `/nasa-earth-detective-o-nasa-reto-./` a 1440 y 390 px → **los 7 casos abren** con su verdict_code y su pendiente, con unidad, **0 errores de consola**
+VERIFICADO (R5 · tarea 1): cifras de la UI = `analysis.json` en los 7: lima +0.159 SIGNIFICANT · svalbard +0.699 SIGNIFICANT_STRONG · piura −0.011 SUGGESTIVE · arctic −0.495 SIGNIFICANT_STRONG · antarctic −0.048 NOT_SIGNIFICANT · amazonia-t2m +0.186 SIGNIFICANT_STRONG · amazonia-prectotcorr −0.083 NOT_SIGNIFICANT
+VERIFICADO (R5 · tarea 1): `pytest tests/api/test_static_build.py` → 11 passed (2 pruebas nuevas: `.nojekyll` y `GET /api/cases/<id>` en el shim)
+ROTO / NO HECHO: —
+Siguiente paso: tarea 3 — abrir la URL pública tras el push y comprobar los 7 casos, 1440 y 390 px
+Necesito de: nadie
+Avisos para otros carriles: `analysis.json` no lleva `variable.unit`; la unidad la pone el catálogo (`_decorate_analysis`). El respaldo ya responde `GET /api/cases/<id>`.
 <!-- ESTADO:FIN -->
+
+## Estado anterior (Ronda 4, 01:15)
+
+**Antes:** 7 casos, veredicto «Significant trend», pendiente +0.159 °C/década, procedencia NASA POWER v2.10.0, gráfica dibujada, cambio de idioma EN↔ES, hielo marino 200 SIGNIFICANT_STRONG, ningún −9999, 7 passed.
 
 # Reporte — claude-omni-3a (respaldo estático)
 
