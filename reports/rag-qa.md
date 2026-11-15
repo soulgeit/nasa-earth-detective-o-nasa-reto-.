@@ -1,12 +1,12 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — rag-qa — 2026-11-15 15:00 hora de Perú
+## ESTADO — rag-qa — 2026-11-15 15:45 hora de Perú
 Rama@commit: rag/qa · empujado: sí
-VERIFICADO: Tanda 1 de rag-lima (29 docs) y rag-ica (54 docs) evaluadas sobre integracion/ronda7; Hit@3 en Ica alcanza 91.7% (11/12) y Hit@1 75.0% (9/12); Hit@3 en Lima se mantiene sólido (8/12 en Top 3 y 5/12 en Rank 1); corpus regional suma 83 documentos válidos en scripts/validate_fragments.py --stats; muestreo de veracidad completado en 10 docs de Lima (9/10 en 200 OK, 1/10 en 468 por WAF) y 10 docs de Ica (5/10 en 200 OK, 1/10 en 404 crítico en SENAMHI, 4/10 en 403 OECD/PMC); auditoría preventiva de los 13 enlaces del reto (§8) completada; notas de handoff emitidas para rag-lima, rag-ica y rag-recursos; suite tests/detective/ al 100% en verde (13 passed).
+VERIFICADO: Integración completa de las 5 ciudades y recursos evaluada sobre integracion/ronda7; corpus validado con scripts/validate_fragments.py --stats suma 712 documentos válidos en 13 archivos (Lima 130, Ica 137, Huancayo 123, Andahuaylas 118, Ayacucho 162, Recursos 42); evaluación RAG global (scripts/eval_cities.py) subió a 66.7% Hit@3 (40/60) y 35.0% Hit@1 (21/60), destacando Ayacucho (100.0% Hit@3), Huancayo (66.7%), Andahuaylas (66.7%), Lima (58.3%) e Ica (41.7%); muestreo de veracidad cruzado (10 docs por carril) completado: Huancayo impecable (10/10 en 200 OK), Andahuaylas 9/10 en 200 OK, Recursos 8/10 en 200 OK; detectada alerta crítica en Ayacucho (7/10 URLs con HTTP 404 por rutas no existentes en gob.pe) y enlace roto 404 en Ica (Atlas radiación); handoffs emitidos para rag-ayacucho, rag-ica, rag-lima y rag-recursos; suite tests/detective/ al 100% en verde (13 passed).
 ESCRITO (sin ejecutar de punta a punta): Ninguno.
-ROTO / NO HECHO: Ninguno en carril rag-qa. Detectado enlace roto 404 en rag-ica transferido vía handoff para corrección del dueño.
-Siguiente paso: Esperar tandas de Huancayo, Andahuaylas, Ayacucho, rag-datos y rag-recursos.
-Necesito de: rag-huancayo, rag-andahuaylas, rag-ayacucho, rag-datos, rag-recursos: integrar sus primeras tandas en integracion/ronda7.
-Avisos para otros carriles: Handoff emitido en reports/handoff/rag-qa--para--rag-ica.md (corregir URL 404 de radiación) y reports/handoff/rag-qa--para--rag-recursos.md (supersedes en SWOT y alertas de certificados).
+ROTO / NO HECHO: Ninguno en carril rag-qa. URLs 404 reportadas en Ayacucho e Ica notificadas a los dueños para corrección antes de las 18:30 (momento en que rag-qa asume corrección exclusiva).
+Siguiente paso: Monitorear subsanación de enlaces rotos por los carriles y preparar informe final consolidado a las 18:45.
+Necesito de: rag-ayacucho: corregir los 7 enlaces rotos (404) de gob.pe reportados en handoff; rag-ica: corregir URL 404 de radiación.
+Avisos para otros carriles: Handoff crítico emitido en reports/handoff/rag-qa--para--rag-ayacucho.md; informes detallados en reports/qa/ronda7-tanda1.md y reports/qa/ronda7-tanda2.md.
 <!-- ESTADO:FIN -->
 
 # Reporte de QA y Calidad RAG — Ronda 7 (Huiracocha IA)
