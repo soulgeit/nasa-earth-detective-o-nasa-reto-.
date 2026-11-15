@@ -139,7 +139,7 @@
     "bbox": null
    },
    "verdict_code": "SIGNIFICANT_STRONG",
-   "frozen_at": "2026-11-15T12:03:25Z",
+   "frozen_at": "2026-11-15T12:27:35Z",
    "paths": {
     "series": "data/cases/arctic-seaice/series.json",
     "analysis": "data/cases/arctic-seaice/analysis.json",
@@ -149,7 +149,7 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T12:03:26Z"
+    "retrieved_at": "2026-11-15T12:27:36Z"
    },
    "title": {
     "en": "Arctic sea ice extent, 1978-2026",
@@ -179,7 +179,7 @@
     "bbox": null
    },
    "verdict_code": "NOT_SIGNIFICANT",
-   "frozen_at": "2026-11-15T12:03:26Z",
+   "frozen_at": "2026-11-15T12:27:36Z",
    "paths": {
     "series": "data/cases/antarctic-seaice/series.json",
     "analysis": "data/cases/antarctic-seaice/analysis.json",
@@ -189,7 +189,7 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T12:03:27Z"
+    "retrieved_at": "2026-11-15T12:27:37Z"
    },
    "title": {
     "en": "Antarctic sea ice extent, 1978-2026",
