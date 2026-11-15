@@ -432,6 +432,10 @@ def copy_ui() -> None:
             f"UI is missing {', '.join(missing)}. Merge feature/ui into this branch first, "
             "or run this script from a worktree that has it."
         )
+    # GitHub Pages ejecuta Jekyll sobre la rama publicada; con `.nojekyll` sirve
+    # los archivos tal cual. Sin él, las rutas que empiezan por guion bajo o los
+    # JSON bajo `api/` pueden desaparecer o reescribirse.
+    (DIST / ".nojekyll").write_text("", encoding="utf-8")
 
 
 def main() -> int:

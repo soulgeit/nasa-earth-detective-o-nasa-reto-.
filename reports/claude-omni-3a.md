@@ -1,18 +1,107 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3a — 2026-11-15 01:15 hora de Perú
-Rama@commit: feature/static@dd6b748 · empujado: sí (gh-pages@4e526a2)
-VERIFICADO: `python scripts/build_static.py --from-cases` → 7 casos, 7 análisis, 2 atlas, 0 errores (antes horneaba 0 análisis)
-VERIFICADO: Playwright sobre servidor estático → 7 casos, veredicto «Significant trend», pendiente +0.159 °C/década, procedencia NASA POWER v2.10.0, gráfica dibujada, 0 errores JS, 0 peticiones fallidas
-VERIFICADO: cambio de idioma EN→ES («Frozen cases» → «Casos congelados»); aviso de lo no horneado en ambos idiomas
-VERIFICADO: hielo marino sin coordenadas → 200 SIGNIFICANT_STRONG; ningún -9999 dentro de dist/
-VERIFICADO: `pytest tests/api/test_static_build.py` → 7 passed (2 pruebas nuevas de regresión)
-ROTO / NO HECHO: tarea 3 (regenerar tras la integración de las 10:00) queda pendiente; faltaba esa integración al cerrar
-Siguiente paso: regenerar dist/ tras la integración de las 10:00 y repetir el push a gh-pages
-Necesito de: humano: activar GitHub Pages en Settings → Pages → rama gh-pages
-Avisos para otros carriles: la interfaz (`src/ui/app.js` `openCase`) lee `c.lat`/`c.lon` en la raíz, pero `/api/cases` publica `region: {lat, lon}`: en la app viva el clic de la galería no abre el caso. Lo normalizo en mi build; claude-omni-1 debería arreglarlo en la UI o hermes-2 en el índice.
+## ESTADO — claude-omni-3a — 2026-11-15 07:05 hora de Perú
+Rama@commit: feature/static@8eebe38 · empujado: sí · **gh-pages@bbf6e10** (antes 4e526a2)
+VERIFICADO (R5 · tarea 1): `python scripts/build_static.py --from-cases` → 7 casos, 7 análisis, 2 atlas, 0 errores; `.nojekyll` presente en dist/
+VERIFICADO (R5 · tarea 1): Playwright sirviendo dist/ bajo subcarpeta `/nasa-earth-detective-o-nasa-reto-./` a 1440 y 390 px → **los 7 casos abren** con su verdict_code y su pendiente, con unidad, **0 errores de consola**
+VERIFICADO (R5 · tarea 1): cifras de la UI = `analysis.json` en los 7: lima +0.159 SIGNIFICANT · svalbard +0.699 SIGNIFICANT_STRONG · piura −0.011 SUGGESTIVE · arctic −0.495 SIGNIFICANT_STRONG · antarctic −0.048 NOT_SIGNIFICANT · amazonia-t2m +0.186 SIGNIFICANT_STRONG · amazonia-prectotcorr −0.083 NOT_SIGNIFICANT
+VERIFICADO (R5 · tarea 1): `pytest tests/api/test_static_build.py` → 11 passed (2 pruebas nuevas: `.nojekyll` y `GET /api/cases/<id>` en el shim)
+VERIFICADO (R5 · tarea 3): URL pública `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` → HTTP 200, `Last-Modified: Sun, 15 Nov 2026 12:01:47 GMT` (sello nuevo); con y sin barra final, a 1440 y 390 px: **7 de 7 casos abren con veredicto, pendiente y unidad, 0 errores de consola**; los 2 de la Amazonía ya abren (+0.186 °C/década y −0.083 mm/día)
+VERIFICADO (R5 · tarea 2): los 8 endpoints que necesitan la API (plan, analyze, upload, trendmap, geocode, compare, scout, explain) → 503 `DATA_UNAVAILABLE` con el aviso en **es y en**; al pulsar «Investigate» sale el panel con `<Code: DATA_UNAVAILABLE>` + mensaje traducido, nunca pantalla vacía
+ROTO / NO HECHO: tarea 4 (regenerar tras las integraciones de 10:00 y 15:00) — no hay integración nueva todavía a las 07:45
+Siguiente paso: esperar la integración de las 10:00, repetir la tarea 1 y volver a empujar `gh-pages`
+Necesito de: nadie
+Avisos para otros carriles: GitHub rechaza la API de Pages para este token (404 en `/pages`), pero el sitio publica solo; la comprobación fiable es `curl -I` + Playwright, no `Invoke-WebRequest` (falla por IPv6). `analysis.json` no lleva `variable.unit`: la pone el catálogo (`_decorate_analysis`).
 <!-- ESTADO:FIN -->
 
+## Estado anterior (Ronda 4, 01:15)
+
+**Antes:** 7 casos, veredicto «Significant trend», pendiente +0.159 °C/década, procedencia NASA POWER v2.10.0, gráfica dibujada, cambio de idioma EN↔ES, hielo marino 200 SIGNIFICANT_STRONG, ningún −9999, 7 passed.
+
 # Reporte — claude-omni-3a (respaldo estático)
+
+## RONDA 5 — la URL pública (GitHub Pages)
+
+### Tarea 1 — regenerar desde `integracion/ronda5` (07:30) — HECHO
+
+Base nueva: `feature/static` fusionado con `origin/integracion/ronda5`.
+Cambio propio: `copy_ui()` escribe un `.nojekyll` vacío en `dist/` (sin él,
+GitHub Pages pasa el sitio por Jekyll).
+
+```
+$ python scripts/build_static.py --from-cases
+dist/ built
+{ "cases": 7, "analyses": 7, "atlas": 2, "errors": 0 }
+$ ls dist/.nojekyll        →  existe (0 bytes)
+```
+
+Servido **bajo subcarpeta** `/nasa-earth-detective-o-nasa-reto-./` (como lo
+publica GitHub Pages), Playwright a 1440 y 390 px, un caso por carga:
+
+| Caso | Veredicto en pantalla | Pendiente | Unidad | `analysis.json` |
+|---|---|---|---|---|
+| lima-t2m | Significant trend | +0.159 | °C per decade | 0.1585 SIGNIFICANT |
+| svalbard-t2m | Clear, strong trend | +0.699 | °C per decade | 0.6986 SIGNIFICANT_STRONG |
+| piura-prectotcorr | Suggestive, not yet certain | −0.011 | mm/day per decade | −0.011 SUGGESTIVE |
+| arctic-seaice | Clear, strong trend | −0.495 | million km² per decade | −0.4953 SIGNIFICANT_STRONG |
+| antarctic-seaice | No trend detectable so far | −0.048 | million km² per decade | −0.0481 NOT_SIGNIFICANT |
+| amazonia-t2m | Clear, strong trend | +0.186 | °C per decade | 0.1864 SIGNIFICANT_STRONG |
+| amazonia-prectotcorr | No trend detectable so far | −0.083 | mm/day per decade | −0.0829 NOT_SIGNIFICANT |
+
+**7 de 7 abren, 0 errores de consola.** `pytest tests/api/test_static_build.py`
+→ **11 passed**.
+
+### Tarea 3 — comprobar la URL pública (08:00) — HECHO
+
+`gh-pages`: `4e526a2` → **`bbf6e10`**.
+
+```
+$ curl -sSI https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./index.html
+HTTP/1.1 200 OK
+Content-Length: 18368
+Last-Modified: Sun, 15 Nov 2026 12:01:47 GMT
+```
+
+Con barra final y sin ella, a 1440 y 390 px: **7 de 7 casos** con su veredicto,
+su pendiente y su unidad; los dos de la Amazonía, que en `4e526a2` dejaban la
+pantalla vacía, ya abren. **0 errores de consola.**
+
+Nota de método: `Invoke-WebRequest` de PowerShell da 404 en esta URL (resuelve
+por IPv6); `curl` y Playwright dan 200. La API de GitHub Pages responde 404 con
+este token, pero el sitio publica solo.
+
+### Tarea 2 — avisos de lo que necesita la API (08:30) — HECHO
+
+Los 8 endpoints que dependen del servidor (`/api/ai/plan`, `/api/analyze`,
+`/api/analyze/upload`, `/api/trendmap` fuera de los 2 atlas, `/api/geocode`,
+`/api/compare`, `/api/ai/scout`, `/api/ai/explain`) devuelven **503
+`DATA_UNAVAILABLE`** con el aviso en los dos idiomas:
+
+```
+en: Live analysis needs the full app. This backup only includes the frozen cases.
+es: El análisis en vivo necesita la aplicación completa. Este respaldo solo trae los casos congelados.
+```
+
+Y al pulsar **Investigate** en la interfaz sale el panel de error, no una
+pantalla vacía:
+
+```
+[en] panel visible=True  resultado_oculto=True
+     Code: DATA_UNAVAILABLE
+     Live analysis needs the full app. This backup only includes the frozen cases.
+     The interface never invents data. When the analysis service is down you can still open a frozen, real case.
+[es] panel visible=True  resultado_oculto=True
+     Código: DATA_UNAVAILABLE
+     El análisis en vivo necesita la aplicación completa. Este respaldo solo trae los casos congelados.
+     La interfaz nunca inventa datos. Si el servicio de análisis está caído, aún puedes abrir un caso real congelado.
+```
+
+### Tarea 4 — repetir tras cada integración (10:00 y 15:00) — PENDIENTE
+
+A las 07:45 no hay commits nuevos en `integracion/ronda5` ni en `main`.
+
+---
+
+# Historial — Ronda 4
 
 ## Tarea 1 — `build_static.py --from-cases` (Dom 02:30) — HECHO
 

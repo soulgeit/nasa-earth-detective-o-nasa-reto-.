@@ -119,6 +119,21 @@ def test_build_creates_complete_dist(staged_repo: Path) -> None:
     assert (dist / "api" / "analyze__lima-t2m.json").exists()
     # Regresión: con el formato real (`paths`) el build horneaba 0 análisis.
     assert (dist / "api" / "analyze__arctic-seaice.json").exists()
+    # GitHub Pages ejecuta Jekyll salvo que exista `.nojekyll`.
+    assert (dist / ".nojekyll").exists()
+
+
+def test_nojekyll_is_empty(staged_repo: Path) -> None:
+    assert _build(staged_repo).returncode == 0
+    assert (staged_repo / "dist" / ".nojekyll").read_text(encoding="utf-8") == ""
+
+
+def test_case_endpoint_is_baked(staged_repo: Path) -> None:
+    """La interfaz abre un caso con GET /api/cases/<id>; el shim debe tenerlo."""
+    assert _build(staged_repo).returncode == 0
+    shim = (staged_repo / "dist" / "static-api.js").read_text(encoding="utf-8")
+    assert "'/api/cases/'" in shim
+    assert "case__" in shim
 
 
 def test_shim_is_injected_before_app_js(staged_repo: Path) -> None:
