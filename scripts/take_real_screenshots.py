@@ -1,8 +1,9 @@
 """
 SI-assisted: claude-omni-1 (Claude Sonnet 5.5)
-Script para capturar las 6 pantallas oficiales de la aplicación real (sin ?dev=fixture)
-a 1600x900 en inglés contra el backend de FastAPI en vivo (http://127.0.0.1:8000).
-Cumple rigurosamente con docs/RONDA_3.md (§2.6, §3 Regla 16, §4 claude-omni-1).
+Script para capturar las 8 pantallas oficiales de la aplicación real (sin ?dev=fixture)
+a 1600x900 en inglés contra el backend de FastAPI en vivo (http://127.0.0.1:8000),
+más la captura oficial de móvil a 390px.
+Cumple rigurosamente con docs/RONDA_5.md (§2.5 sin huecos en números, §3 Regla 29, §4 claude-omni-1).
 """
 
 import os
@@ -97,7 +98,7 @@ def run():
         page.wait_for_selector('#detective-plan-card:not([hidden])', timeout=5000)
         page.wait_for_timeout(500)
 
-        # Capture 5B (Ronda 4 new): Plan attribution badge ("Planned by: rules / LoRA")
+        # Capture 5B: Plan attribution badge ("Planned by: rules / LoRA")
         plan_attr_path = os.path.join(MEDIA_DIR, "plan_attribution.png")
         page.screenshot(path=plan_attr_path)
         print(f"Captured: {plan_attr_path}")
@@ -112,41 +113,51 @@ def run():
         page.screenshot(path=detective_path)
         print(f"Captured: {detective_path}")
 
-        # Capture 7 (Ronda 4 new): Frozen cases gallery (7 official cases)
-        print("7. Capturing frozen cases gallery...")
+        # Capture 6: Cases Gallery (7 official frozen cases)
+        print("6. Capturing frozen cases gallery...")
         page.evaluate("() => window.__etd.setMode('cases')")
         page.wait_for_timeout(1000)
         gallery_path = os.path.join(MEDIA_DIR, "cases_gallery.png")
         page.screenshot(path=gallery_path)
         print(f"Captured: {gallery_path}")
 
-        # Capture 6: Real Giovanni CSV Upload analysis
-        print("6. Uploading real Giovanni CSV (T2M__amazonia.csv)...")
-        csv_path = os.path.join(BASE_DIR, "data", "raw", "giovanni", "T2M__amazonia.csv")
-        if os.path.exists(csv_path):
-            file_input = page.locator("#csv-file-input")
-            file_input.set_input_files(csv_path)
-            page.wait_for_selector("#result-root:not([hidden])", timeout=15000)
-            page.wait_for_timeout(1000)
-            page.evaluate("() => window.scrollTo(0, 0)")
-            page.wait_for_timeout(500)
-        else:
-            print("Giovanni CSV not found, fallback to Sechura point...")
-            page.evaluate("""() => {
-                window.__etd.setMode('single');
-                window.__etd.setPoint(-5.55, -80.82, 'Sechura Desert, Peru');
-                const select = document.getElementById('variable-select');
-                if (select) select.value = 'PRECTOTCORR';
-                document.getElementById('investigate-btn').click();
-            }""")
-            page.wait_for_timeout(5000)
-
+        # Capture 7: Not significant case (Antarctic sea ice - honest scientific verdict)
+        print("7. Investigating Antarctic Sea Ice (Not Significant case)...")
+        page.evaluate("""() => {
+            window.__etd.setMode('single');
+            const c = window.__etd.state.cases.find(x => x.id === 'antarctic-seaice');
+            if (c) window.__etd.openCase(c);
+        }""")
+        page.wait_for_selector("#result-root:not([hidden])", timeout=15000)
+        page.wait_for_timeout(1000)
+        page.evaluate("() => window.scrollTo(0, 0)")
+        page.wait_for_timeout(500)
         not_sig_path = os.path.join(MEDIA_DIR, "not_significant_case.png")
         page.screenshot(path=not_sig_path)
         print(f"Captured: {not_sig_path}")
 
+        context.close()
+
+        # Capture 8: Mobile 390px overview
+        print("8. Capturing mobile 390px viewport...")
+        m_ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        m_page = m_ctx.new_page()
+        m_page.goto(URL, wait_until="networkidle")
+        m_page.evaluate("() => window.__etd.setLang('en')")
+        m_page.wait_for_timeout(1000)
+        m_page.evaluate("""() => {
+            window.__etd.setPoint(-12.05, -77.03, 'Lima, Peru');
+            document.getElementById('investigate-btn').click();
+        }""")
+        m_page.wait_for_selector("#result-root:not([hidden])", timeout=15000)
+        m_page.wait_for_timeout(1000)
+        mobile_path = os.path.join(MEDIA_DIR, "mobile_390_overview.png")
+        m_page.screenshot(path=mobile_path)
+        print(f"Captured: {mobile_path}")
+        m_ctx.close()
+
         browser.close()
-        print("All 6 real screenshots successfully updated in docs/media/!")
+        print("All 8 official screenshots + mobile successfully updated in docs/media/!")
 
 if __name__ == "__main__":
     run()
