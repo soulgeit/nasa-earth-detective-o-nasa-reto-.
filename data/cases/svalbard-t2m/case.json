@@ -1,6 +1,10 @@
 {
  "id": "svalbard-t2m",
  "variable_id": "T2M",
+ "variable_name": {
+  "es": "Temperatura del aire a 2 m",
+  "en": "Air temperature at 2 m"
+ },
  "region": {
   "kind": "point",
   "name": null,
@@ -24,11 +28,16 @@
    "TODO_HUMANO"
   ]
  },
- "frozen_at": "2026-11-14T21:43:34Z",
- "source": {
+ "frozen_at": "2026-11-15T00:09:17Z",
+ "verdict_code": "SIGNIFICANT_STRONG",
+ "provenance": {
   "kind": "nasa_api",
   "source": "NASA POWER v2.10.0",
-  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=15.65&latitude=78.22&start=1981&end=2025&format=JSON"
- },
- "significance": {}
+  "underlying": "MERRA-2",
+  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=15.65&latitude=78.22&start=1981&end=2025&format=JSON",
+  "retrieved_at": "2026-11-15T00:09:19Z",
+  "sha256": "78ffab2a4966b81e400867e8d37df961524e0f34f4e9da90830aede6c1e581cd",
+  "native_resolution": "0.5° x 0.625°",
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+ }
 }

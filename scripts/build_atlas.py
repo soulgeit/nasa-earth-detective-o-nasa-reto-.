@@ -53,99 +53,98 @@ def load_etl():
 
 
 def load_grid_analysis():
-    """analyze_grid from the stats lane, or a documented local fallback."""
+    """analyze_grid from the stats lane. ROUND 2: it exists in main, so the
+    local fallback is kept only as a last resort and says so in the output."""
     try:
         from src.stats.trend_engine import analyze_grid  # type: ignore
-        return analyze_grid, "src.stats.analyze_grid"
+        return analyze_grid, "src.stats.analyze_grid (main)"
     except Exception:  # noqa: BLE001
         pass
+    return _local_analyze_grid, "local fallback (build_atlas.py) — analyze_grid unavailable"
 
-    # Fallback: same contract, implemented here with numpy (the pure-Python
-    # loop is far too slow for a 90x180 x 1762-month grid).
-    def analyze_grid(grid: dict, *, alpha: float = 0.05, fdr_q: float = 0.10) -> dict:
-        import numpy as np
 
-        lat_axis = grid["lats"]
-        lon_axis = grid["lons"]
-        dates = grid["dates"]
-        arr = np.array(grid["values"], dtype=float)  # [t][lat][lon]
-        n_lat, n_lon = len(lat_axis), len(lon_axis)
+def _local_analyze_grid(grid: dict, *, alpha: float = 0.05, fdr_q: float = 0.10) -> dict:
+    import numpy as np
 
-        # Time as decimal years, and annual means: 45 values per cell instead
-        # of 1762 months. This is the same reduction the contract applies for
-        # the annual Mann-Kendall test, and it makes a global grid tractable.
-        years = np.array([int(d[:4]) for d in dates])
-        unique_years = np.unique(years)
-        annual = np.full((len(unique_years), n_lat, n_lon), np.nan)
-        for k, year in enumerate(unique_years):
-            block = arr[years == year]
-            with np.errstate(invalid="ignore"):
-                counts = np.sum(~np.isnan(block), axis=0)
-                sums = np.nansum(block, axis=0)
-                annual[k] = np.where(counts >= 10, sums / np.maximum(counts, 1), np.nan)
-        t_years = unique_years.astype(float)
+    lat_axis = grid["lats"]
+    lon_axis = grid["lons"]
+    dates = grid["dates"]
+    arr = np.array(grid["values"], dtype=float)  # [t][lat][lon]
+    n_lat, n_lon = len(lat_axis), len(lon_axis)
 
-        slope = np.full((n_lat, n_lon), np.nan)
-        pval = np.full((n_lat, n_lon), np.nan)
+    # Time as decimal years, and annual means: 45 values per cell instead
+    # of 1762 months. This is the same reduction the contract applies for
+    # the annual Mann-Kendall test, and it makes a global grid tractable.
+    years = np.array([int(d[:4]) for d in dates])
+    unique_years = np.unique(years)
+    annual = np.full((len(unique_years), n_lat, n_lon), np.nan)
+    for k, year in enumerate(unique_years):
+        block = arr[years == year]
+        with np.errstate(invalid="ignore"):
+            counts = np.sum(~np.isnan(block), axis=0)
+            sums = np.nansum(block, axis=0)
+            annual[k] = np.where(counts >= 10, sums / np.maximum(counts, 1), np.nan)
+    t_years = unique_years.astype(float)
 
-        for i in range(n_lat):
-            block = annual[:, i, :]  # [year][lon]
-            for j in range(n_lon):
-                y = block[:, j]
-                mask = ~np.isnan(y)
-                n = int(mask.sum())
-                if n < 25:
-                    continue
-                x = t_years[mask]
-                yy = y[mask]
-                slope[i, j] = _sen_slope_np(x, yy) * 10.0  # per decade
-                pval[i, j] = _mk_p_np(yy)
+    slope = np.full((n_lat, n_lon), np.nan)
+    pval = np.full((n_lat, n_lon), np.nan)
 
-        flat = [
-            (i, j, float(pval[i, j]))
-            for i in range(n_lat) for j in range(n_lon)
-            if not np.isnan(pval[i, j])
+    for i in range(n_lat):
+        block = annual[:, i, :]  # [year][lon]
+        for j in range(n_lon):
+            y = block[:, j]
+            mask = ~np.isnan(y)
+            n = int(mask.sum())
+            if n < 25:
+                continue
+            x = t_years[mask]
+            yy = y[mask]
+            slope[i, j] = _sen_slope_np(x, yy) * 10.0  # per decade
+            pval[i, j] = _mk_p_np(yy)
+
+    flat = [
+        (i, j, float(pval[i, j]))
+        for i in range(n_lat) for j in range(n_lon)
+        if not np.isnan(pval[i, j])
+    ]
+    significant = _bh_significant(flat, fdr_q)
+    sig_matrix = [[False] * n_lon for _ in range(n_lat)]
+    for i, j in significant:
+        sig_matrix[i][j] = True
+
+    n_cells = int(np.sum(~np.isnan(slope)))
+    n_sig = len(significant)
+    up = sum(1 for i, j in significant if float(slope[i, j]) > 0)
+    down = n_sig - up
+
+    def clean(matrix):
+        return [
+            [None if (isinstance(v, float) and math.isnan(v)) else float(v) for v in row]
+            for row in matrix
         ]
-        significant = _bh_significant(flat, fdr_q)
-        sig_matrix = [[False] * n_lon for _ in range(n_lat)]
-        for i, j in significant:
-            sig_matrix[i][j] = True
 
-        n_cells = int(np.sum(~np.isnan(slope)))
-        n_sig = len(significant)
-        up = sum(1 for i, j in significant if float(slope[i, j]) > 0)
-        down = n_sig - up
-
-        def clean(matrix):
-            return [
-                [None if (isinstance(v, float) and math.isnan(v)) else float(v) for v in row]
-                for row in matrix
-            ]
-
-        return {
-            "schema": "trendmap/2",
-            "variable_id": grid.get("variable_id") or "",
-            "unit_per_decade": (grid.get("unit") or "") + "/decade",
-            "bbox": grid.get("bbox"),
-            "lats": lat_axis,
-            "lons": lon_axis,
-            "slope_per_decade": clean(slope),
-            "p_value": clean(pval),
-            "significant_fdr": sig_matrix,
-            "fdr_q": fdr_q,
-            "n_cells": n_cells,
-            "n_significant": n_sig,
-            "period": {"start": dates[0], "end": dates[-1]},
-            "summary": {
-                "share_up_significant": round(up / n_cells, 4) if n_cells else 0.0,
-                "share_down_significant": round(down / n_cells, 4) if n_cells else 0.0,
-            },
-            "provenance": grid.get("provenance") or {},
-            "method_note": "local per-cell Sen slope + Mann-Kendall with BH FDR; "
-                           "replace with src.stats.analyze_grid when available",
-        }
-
-    return analyze_grid, "local fallback (build_atlas.py)"
+    return {
+        "schema": "trendmap/2",
+        "variable_id": grid.get("variable_id") or "",
+        "unit_per_decade": (grid.get("unit") or "") + "/decade",
+        "bbox": grid.get("bbox"),
+        "lats": lat_axis,
+        "lons": lon_axis,
+        "slope_per_decade": clean(slope),
+        "p_value": clean(pval),
+        "significant_fdr": sig_matrix,
+        "fdr_q": fdr_q,
+        "n_cells": n_cells,
+        "n_significant": n_sig,
+        "period": {"start": dates[0], "end": dates[-1]},
+        "summary": {
+            "share_up_significant": round(up / n_cells, 4) if n_cells else 0.0,
+            "share_down_significant": round(down / n_cells, 4) if n_cells else 0.0,
+        },
+        "provenance": grid.get("provenance") or {},
+        "method_note": "local per-cell Sen slope + Mann-Kendall with BH FDR; "
+                       "used only when src.stats.analyze_grid is unavailable",
+    }
 
 
 def slopegrid_value(v) -> float:
