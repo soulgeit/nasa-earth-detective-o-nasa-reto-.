@@ -84,7 +84,7 @@ COPY = {
                       "p = 0.34 neither test rejects 'no trend': no trend detectable so far.",
         "finding_es": "La tendencia de la precipitación es de unos -0,083 mm/día por década "
                       "(Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': "
-                      "no trend detectable so far.",
+                      "todavía no se detecta tendencia.",
     },
 }
 
