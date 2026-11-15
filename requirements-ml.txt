@@ -1,0 +1,27 @@
+# SI-assisted: Antigravity 2 (Gemini 3.8 Flash)
+# EarthTrend Detective - Fine-tuning & LoRA Dependencies (Ronda 4)
+# Python 3.12+ (tested on Python 3.12.10 with CUDA 12.4)
+#
+# Installation:
+#   pip install -r requirements.txt
+#   pip install -r requirements-ml.txt
+
+--extra-index-url https://download.pytorch.org/whl/cu124
+
+torch==2.6.0+cu124
+transformers==5.23.0
+peft==0.21.3
+bitsandbytes==0.50.2
+accelerate==1.15.0
+datasets>=2.14.0
+
+# ----------------------------------------------------------------------
+# Comandos canónicos para reproducir entrenamiento y evaluación:
+# ----------------------------------------------------------------------
+#
+# 1. Reproducir entrenamiento LoRA (150 pasos, GPU local >= 4 GB VRAM):
+#    python src/ml/train_lora.py --max-steps 150 --batch-size 2 --grad-accum 4 --lr 0.0002 --lora-r 16 --lora-alpha 32 --lora-dropout 0.05 --seed 42 --output-dir models/etd-planner-lora --log-file reports/lora/training_log.json
+#
+# 2. Reproducir evaluación formal LoRA vs Base vs Reglas (200 casos de prueba, semilla 42):
+#    python src/ml/eval_lora.py --adapter models/etd-planner-lora --test-file data/lora/test.jsonl --max-samples 200 --seed 42 --output-eval reports/lora/eval.json --output-preds reports/lora/predictions.jsonl
+# ----------------------------------------------------------------------

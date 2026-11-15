@@ -62,8 +62,6 @@ def load_lora_planner(
 
     root = Path(__file__).resolve().parent.parent.parent
     adapter_dir = root / (adapter_path or "models/etd-planner-lora")
-    if not adapter_dir.exists() and (root / "models/planner-lora").exists():
-        adapter_dir = root / "models/planner-lora"
 
     if not adapter_dir.exists() or not (adapter_dir / "adapter_config.json").exists():
         raise FileNotFoundError(
