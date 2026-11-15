@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-e — 2026-11-15 07:40 hora de Perú
-Rama@commit: feature/qa@pendiente_commit · empujado: comprobando (PC1)
+## ESTADO — claude-omni-e — 2026-11-15 07:45 hora de Perú
+Rama@commit: feature/qa@5b61009 · empujado: sí (commit 5b61009 en origin/feature/qa)
 VERIFICADO: Informe 2 de QA completo antes de la hora límite (09:00). 10 recorridos repetidos en EN/ES a 1440 y 390 px con Playwright sobre integracion/ronda5 + 68 capturas examinadas individualmente (regla 29). De los 11 defectos del informe 1: 9 cerrados (D1, D2, D3, D4, D6, D7, D9, D10, D11) y 2 abiertos (D5: unidades en español; D8: ID crudo Giovanni; ambos asignados a claude-omni-1 a las 08:30). Se añaden 5 defectos nuevos: D12 («between None and None» en modo comparar), D13 (inputs Desde/Hasta no reflejan periodo del caso congelado), D14 (3 URLs con error DNS masie_web, 1 URL 404, 1 URL 403 en VALIDACION_ESTADISTICA.md §5), D15 (12 fichas de docs.jsonl con publisher «Hermes 1») y D16 (tildes en casos). Respaldo estático probado bajo subcarpeta (http://127.0.0.1:8799/nasa-earth-detective-o-nasa-reto-./): 7 de 7 casos abren con su veredicto, pendiente y unidad, con 0 errores de consola.
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en el carril de QA. El producto pasa las comprobaciones técnicas y queda condicionado al cierre de D5, D8, D12, D14 y D15 en la puerta de las 08:30 y la integración G3 de las 10:00.
