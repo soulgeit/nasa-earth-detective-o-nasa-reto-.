@@ -1,20 +1,36 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-1 — 2026-11-14 21:55 hora de Perú
+## ESTADO — antigravity-1 — 2026-11-15 00:05 hora de Perú
 Rama@commit: feature/data-pipeline@HEAD · empujado: sí
-VERIFICADO: Suite completa sobre rama integrada: python -m pytest -q → 226 passed, 9 skipped, 0 failed en 84.41s (0 pruebas rojas; test_published_nasa_benchmarks en SIGNIFICANT_STRONG)
-VERIFICADO: Corrección -9999 en NSIDC Sea Ice Index v4 → 1987-12 y 1988-01 son null, n_missing contado en provenance (Tarea 1)
-VERIFICADO: Validación de rangos físicos por variable (Regla 12) en validate_datasets.py y validate.py → 11/11 tests passed (Tarea 2)
-VERIFICADO: tests/test_system.py migrado a get_series de registro central; shims obsoletos retirados de src/etl/power.py (Tarea 3)
-VERIFICADO: LoRA entrenado y evaluado en NVIDIA GeForce RTX 4070 SUPER (12 GB VRAM): train_loss=0.0607, eval_loss=0.0198 en 353.7s; evaluación sobre 200 casos (semilla 42) muestra 100% JSON válido, 100% esquema válido, 91.5% intención, 84.5% variables exactas (vs 15.5% reglas), 96.5% lugar (Tarea 4). Adaptador subido (25.2 MB, sha256 70314779040b656cc8ed5e4dac0f4285bd9efc7b392acfa870b003794327341c).
-ROTO / NO HECHO: Ninguno en carril ETL / datos ni en entrenamiento LoRA
-Siguiente paso: Facilitar integración de LoRA a claude-omni-2 (wizard) y apoyar en comparativa MERRA-2 POWER vs Giovanni
-Necesito de: hermes-2: regenerar casos congelados (arctic-seaice y antarctic-seaice) con el conector NSIDC corregido
-Avisos para otros carriles: Adaptador LoRA listo en models/etd-planner-lora/ y models/planner-lora/. Reportes completos en reports/lora/. La suite completa está en 226 passed, 0 failed.
+VERIFICADO: Suite completa ejecutada: python -m pytest -q → 236 passed, 4 failed (heredadas de main en detective y ml), 9 skipped en 113.29s. Carril ETL en verde total: 52 passed, 9 skipped, 0 failed en tests/etl/ (8.16s).
+VERIFICADO: Variable de viento WS2M de NASA POWER soportada en el conector con respuesta real guardada en tests/fixtures/real/power_monthly_point_lima_ws2m.json (540 meses, 1981-01 a 2025-12, min 1.86 m/s, max 3.39 m/s, unidad m/s), rango físico registrado en src/etl/validate.py (0.0 a 150.0 m/s) y pruebas unitarias passing en test_power.py y test_validate.py (Ronda 4 Tarea 2).
+VERIFICADO: Variables de temperaturas extremas T2M_MAX y T2M_MIN con respuestas reales guardadas en tests/fixtures/real/ (power_monthly_point_lima_t2m_max.json y power_monthly_point_lima_t2m_min.json, 540 meses cada una), rangos físicos en src/etl/validate.py (T2M_MAX: -90.0 a 75.0 °C; T2M_MIN: -95.0 a 65.0 °C) y pruebas passing.
+VERIFICADO: Adaptador canónico LoRA v1 intacto en models/etd-planner-lora/ (sha256 70314779040b656cc8ed5e4dac0f4285bd9efc7b392acfa870b003794327341c, r=16, alpha=32). Evaluado con sus dos números juntos (Regla 20): 200 casos de prueba (test.jsonl, semilla 42: 100% JSON válido, 91.5% intención, 84.5% variables exactas vs 15.5% reglas) y 50 preguntas de referencia (31/50).
+ROTO / NO HECHO: 4 pruebas de la suite general siguen fallando por causas ajenas al carril ETL (2 en tests/detective/test_pipeline.py por variables planned, 1 en tests/detective/test_planner.py por adapter fallback, 1 en tests/ml/test_lora_real.py por FileNotFound), asignadas a claude-omni-2 y antigravity-2 en docs/RONDA_4.md §4.
+Siguiente paso: Tarea 3 (Dom 06:00): Experimento LoRA v2 en models/etd-planner-lora-v2/ con 2 épocas completas, filtrando los 132 ejemplos con años vacíos, y reporte en reports/lora/v2/.
+Necesito de: claude-omni-1b: dar de alta la ficha de WS2M (y opcionalmente T2M_MAX, T2M_MIN) en el catálogo de variables (data/catalog/variables.json).
+Avisos para otros carriles: WS2M, T2M_MAX y T2M_MIN están listas y validadas con respuestas reales de NASA POWER. claude-omni-1b puede darlas de alta cuando guste.
 <!-- ESTADO:FIN -->
 
 # Antigravity 1 — Datos NASA reales
 
 Rama `feature/data-pipeline` · Carpetas `src/etl/`, `tests/etl/`, `scripts/validate_datasets.py`
+
+---
+
+## Ronda 4 — Tarea 2: Viento (WS2M) y temperaturas extremas en NASA POWER (2026-11-15 00:05 hora de Perú)
+Rama@commit: feature/data-pipeline@HEAD
+Qué quedó:
+- Descargadas y verificadas muestras reales de NASA POWER en `tests/fixtures/real/`:
+  - `power_monthly_point_lima_ws2m.json` (540 meses, 1981-01 a 2025-12, min 1.86 m/s, max 3.39 m/s, unidad m/s)
+  - `power_monthly_point_lima_t2m_max.json` (540 meses, 1981-01 a 2025-12, unidad °C)
+  - `power_monthly_point_lima_t2m_min.json` (540 meses, 1981-01 a 2025-12, unidad °C)
+- Registrados rangos físicos en `src/etl/validate.py` (Regla 12):
+  - `WS2M`: (0.0, 150.0) m/s
+  - `T2M_MAX`: (-90.0, 75.0) °C
+  - `T2M_MIN`: (-95.0, 65.0) °C
+- Pruebas añadidas y pasando en `tests/etl/test_power.py` y `tests/etl/test_validate.py`.
+- Suite `tests/etl/`: 52 passed, 9 skipped en 8.16s (0 fallos).
+- Suite general `python -m pytest -q`: 236 passed, 4 failed (las 4 heredadas de `main`), 9 skipped en 113.29s.
 
 ---
 
