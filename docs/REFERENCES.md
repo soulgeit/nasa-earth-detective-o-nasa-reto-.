@@ -30,9 +30,9 @@ stored in the `provenance` field of each series and shown in the app under
 
 | Source | What we take | Licence | Link |
 |---|---|---|---|
-| **NASA Earth Observatory** (science.nasa.gov/earth/earth-observatory) | 40 articles used in the cited corpus | NASA content is generally public domain; attribution given per document (`publisher`, `url`, `license` in `data/knowledge/docs.jsonl`) | https://science.nasa.gov/earth/earth-observatory/ |
-| **NASA Science** (science.nasa.gov) | 12 articles about Peru / South America and the *Mission: Biomes* pages used by 16 biome profiles and by the glossary term *biome* | As above | https://science.nasa.gov/ · https://science.nasa.gov/kids/earth/mission-biomes/ |
-| **NASA POWER parameter dictionary** (power.larc.nasa.gov) | 24 variable cards (one per variable, in English and Spanish) | NASA open data | https://power.larc.nasa.gov/api/website/metadata/parameters |
+| **NASA Earth Observatory** (science.nasa.gov/earth/earth-observatory) | 24 articles, plus the *Mission: Biomes* material behind 8 biome profiles (each kept in English and Spanish) | NASA content is generally public domain; attribution given per document (`publisher`, `url`, `license` in `data/knowledge/docs.jsonl`) | https://science.nasa.gov/earth/earth-observatory/ |
+| **NASA Science** (science.nasa.gov) | 10 articles about Peru / South America, and the *biome* glossary entry (the term has no standalone AMS entry) | As above | https://science.nasa.gov/ · https://science.nasa.gov/kids/earth/mission-biomes/ |
+| **NASA POWER parameter dictionary** (power.larc.nasa.gov) | 30 variable cards: each of the 15 available variables in English and Spanish | NASA open data | https://power.larc.nasa.gov/api/website/metadata/parameters |
 | **AMS Glossary of Meteorology** (glossary.ametsoc.org) | Definitions for 31 of the 32 glossary terms (English text; Spanish entries are our translations, marked as such) | American Meteorological Society; check the glossary's terms of use before redistributing the text | https://glossary.ametsoc.org/wiki/anomaly/ (one page per term) |
 | **NASA Technical Reports Server (NTRS)** | Acker et al. (2009), method note on trend detection in remotely-sensed time series | NASA open data | https://ntrs.nasa.gov/citations/20090042747 |
 | **Canadian Space Agency** | The SWOT mission page: launch date (16 December 2022), partner agencies and instrument coverage | Government of Canada; cited with attribution | https://www.asc-csa.gc.ca/eng/satellites/swot/ |

@@ -1,16 +1,14 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-1b — 2026-11-14 20:20 hora de Perú
-Rama@commit: feature/catalog@4f09a01 · empujado: sí
-VERIFICADO: planned en el catálogo → `python scripts/validate_knowledge.py` → «catalog: 15 available + 10 planned», 168 documentos, 0 fallos.
-VERIFICADO: suite sobre main fusionado → `python -m pytest -q` → 223 passed, 1 failed, 9 skipped. El único fallo es `test_published_nasa_benchmarks`, por el −9999 de NSIDC (antigravity-1); no es mío.
-VERIFICADO: README.md en inglés con arranque, fuentes, método, límites, mapa del repo y uso de IA.
-ESCRITO (sin ejecutar de punta a punta): `docs/SUBMISSION.md` aún no existe (tarea del domingo 10:00).
-ROTO / NO HECHO: no he podido dar tarjetas de conocimiento a las planned sin romper el planificador; ver aviso.
-Siguiente paso: `docs/SUBMISSION.md` y alta de variables de Giovanni cuando antigravity-1 valide más CSV.
-Necesito de: claude-omni-2: completar `MISSING_TOPICS` de `src/detective/planner.py` con GLDAS_EVAP, GLDAS_RUNOFF, MODIS_LST_DAY y MODIS_AOD (ya cubre 6 de las 10 planned), para que toda planned responda no_match con nombre y alternativa.
-Necesito de: claude-omni-3: publicar `planned` en `/api/catalog/variables` sin contarlas como disponibles.
-Necesito de: cfable (arquitecto): integrar `origin/feature/stats@ef18e01` + el arreglo de −9999 de antigravity-1 para que la suite quede en verde.
-Avisos para otros carriles: NO hay que dar tarjetas de corpus a las planned: una tarjeta de GPM_IMERG_PRECIP gana la recuperación frente a PRECTOTCORR y rompe 11 pruebas del detective. La vía correcta es MISSING_TOPICS.
+## ESTADO — claude-omni-1b — 2026-11-15 07:35 hora de Perú (Ronda 5)
+Rama@commit: feature/catalog@6e3f44d + README (ver commit del README en esta rama) · empujado: sí
+VERIFICADO: `docs/REFERENCES.md` reescrito → `python -X utf8 -I scripts/validate_knowledge.py --max-url-checks 100` → «catalog: 15 available + 10 planned», 168 documentos, **All checks passed** (0 fallos).
+VERIFICADO: las 23 URLs citadas en REFERENCES.md comprobadas en vivo hoy (Power, GISTEMP, NSIDC, Giovanni, EO, NTRS, CSA, GeoNames, Wikidata, Nominatim, GIBS, OSM, Leaflet, Chart.js, Google Fonts, HF SmolLM2, ambos DOI). Solo dan 403 la portada del glossary AMS y el HTML del editor Wiley (§5 lo explica; las páginas de término responden 200).
+VERIFICADO: README final en inglés: URL pública viva (`gh-pages` nuevo sirve los 7 casos y 2 atlas), arranque, comprobaciones, datos, método, límites, uso de IA y licencia (`<<HUMANO>>`).
+VERIFICADO: `python scripts/validate_datasets.py data/cases/*/series.json` → 7/7 válidos; `validate_knowledge.py --offline` → All checks passed.
+VERIFICADO: suite completa → `python -m pytest -q` → **276 passed, 9 skipped, 0 failed** en 220,24 s (exit 0), sobre `feature/catalog` fusionada con `integracion/ronda5`.
+ROTO / NO HECHO: `LICENSE` sigue sin existir (es de claude-omni-3); el README deja `<<HUMANO: …>>` en la licencia.
+Necesito de: humano: decidir licencia (propuesta MIT) para que el README salga de `<<HUMANO>>`; revocar el token al terminar.
+Avisos para otros carriles: el respaldo público ya sirve la versión nueva (7 casos); la URL es `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` y sin el punto final da 404.
 <!-- ESTADO:FIN -->
 
 # Reportes de Claude Omni 1b — catálogo y conocimiento
@@ -67,3 +65,66 @@ del archivo se comprobó el 2026-11-14.
 - El corpus pasa de 166 a **168** documentos; el recuento de `nasa_article` sube a 35 (uno es de la CSA).
 - Los `summary_by` nuevos dicen `claude-omni-1b`; los antiguos conservan `hermes-1` (historial, no se reescribe).
 - Los términos del glosario con página corta conservan el texto original de la página dentro del documento.
+
+---
+
+## Ronda 5 · tarea 1 — `docs/REFERENCES.md` final — LISTO (2026-11-15 07:20 hora de Perú)
+Rama@commit: feature/catalog@6e3f44d · empujado: sí
+Qué quedó: `docs/REFERENCES.md` reescrito contra el uso real de la base de la Ronda 5:
+§1 las fuentes que alimentan los **7 casos y las 15 variables** (POWER/MERRA-2, CERES/SRB, GISTEMP v4,
+Sea Ice Index v4, y los dos CSV de Giovanni con su producto exacto), §2 corpus y nomenclátor
+(EO, NASA Science/Biomes, POWER parameter dictionary, AMS Glossary, NTRS, CSA, GeoNames, Wikidata,
+Nominatim), §3 los 11 DOIs del método, §4 las herramientas **realmente usadas** (incluye Leaflet,
+Chart.js, GIBS, OSM, Google Fonts OFL, SmolLM2 Apache-2.0, PEFT) y §5 cómo se valida.
+Evidencia — el comando que pide la tarea:
+
+```
+$ python -X utf8 -I scripts/validate_knowledge.py --max-url-checks 100
+catalog: 15 available + 10 planned (planned are not counted as available)
+catalog variables: 15
+corpus documents: 168
+  biome_profile    16
+  glossary         64
+  method_note      13
+  nasa_article     35
+  paper_abstract   10
+  variable_card    30
+
+All checks passed.
+EXIT=0
+```
+
+Comprobación en vivo de las URLs que cita el documento (hoy, 2026-11-15): 21 de 23 responden 200.
+Las dos que dan 403 son la **portada** `glossary.ametsoc.org/wiki/Welcome` y el HTML del editor Wiley
+para `doi.org/10.1029/2023JD040179`; ambos casos quedan explicados en el §5 del documento y se
+resuelven por las páginas de término (200) y por el registro de Crossref (OK, 2024).
+El DOI de NSIDC se resolvió por DataCite (Fetterer et al., 2025, «Sea Ice Index, Version 4»).
+
+Falta / riesgos: la licencia del código sigue sin decidir (es de claude-omni-3); REFERENCES.md no la
+necesita, pero el README deja el hueco `<<HUMANO>>`.
+
+---
+
+## Ronda 5 · tarea 2 — README final — LISTO (2026-11-15 07:45 hora de Perú)
+Rama@commit: feature/catalog@(ver commit siguiente) · empujado: sí
+Qué quedó: `README.md` final en inglés con: qué es · **URL pública**
+(`https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./`, y qué hace y qué no hace el
+respaldo) · arranque · cómo comprobarlo (`pytest`, `scripts/gate.py`, smoke, validadores) ·
+planificador LoRA opcional con sus cifras juntas (reglas 49/50; LoRA 40/50 GPU / 37/50 CPU; 84,5 %
+frente a 15,5 % en los 200 casos, **dicho con la salvedad de que salen del mismo generador**) ·
+fuentes de datos · método · límites conocidos · mapa del repo · uso de IA · licencia `<<HUMANO>>`.
+
+Comprobaciones:
+- La tabla de casos se leyó de `data/cases/*/analysis.json` y las etiquetas de `src/ui/i18n.js`,
+  no de memoria (`SUGGESTIVE` → «Suggestive, not yet certain»; `amazonia-prectotcorr` →
+  `NOT_SIGNIFICANT`).
+- El respaldo público se abrió hoy: `static-api.js` sirve los **7 casos** (los dos de la Amazonía
+  incluidos) y **2 atlas** (`atlas__T2M`, `atlas__GISTEMP_TANOM`), con unidad y veredicto.
+  Con el punto final da 200; sin él, 404.
+- `python scripts/validate_datasets.py data/cases/*/series.json` → 7/7 válidos.
+- `python -X utf8 -I scripts/validate_knowledge.py --offline` → All checks passed.
+- `python -m pytest -q` → (totales pegados en el bloque ESTADO).
+
+Falta / riesgos: la URL principal con la **aplicación completa** (Railway) depende de que el humano
+inicie sesión; hoy la URL de entrega es la de Pages y el README lo dice así.
+
