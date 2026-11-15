@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """Tests del conector NASA POWER contra las dos muestras reales (sin red)."""
 
 import json
@@ -179,9 +179,4 @@ def test_period_end_year_means_december():
 
 
 def test_compat_wrapper_signature_matches_motor():
-    import inspect
-
-    sig = inspect.signature(power.get_power_point_series)
-    assert list(sig.parameters) == ["param", "lat", "lon", "start_year", "end_year", "name"]
-    assert callable(power.get_power_regional_series)
     assert callable(power.get_power_grid)

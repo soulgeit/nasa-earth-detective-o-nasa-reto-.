@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """
 Conector NASA POWER (MERRA-2 / CERES) - mensual, punto y regional.
 
@@ -323,6 +323,8 @@ def _series_point(variable_id: str, card: dict, lat: float, lon: float, start: s
     data = [{"date": parsed["dates"][i], "value": parsed["values"][i]} for i in keep]
     if all(pt["value"] is None for pt in data):
         raise DataUnavailable("OUT_OF_COVERAGE", f"POWER no tiene datos para {variable_id} en {lat},{lon}")
+    provenance = dict(provenance)
+    provenance["n_missing"] = sum(1 for pt in data if pt["value"] is None)
     return {
         "schema": "timeseries/2",
         "variable_id": variable_id,
@@ -365,6 +367,7 @@ def _series_bbox(variable_id: str, card: dict, bbox, start: str, end: str) -> di
     provenance = grid["provenance"]
     provenance["cells"] = len(grid["cells"])
     provenance["n_missing_cells"] = int(sum(1 for c in cover if c == 0))
+    provenance["n_missing"] = sum(1 for pt in data if pt["value"] is None)
     provenance["request_urls_count"] = len(grid["request_urls"])
     if len(grid["request_urls"]) > 1:
         provenance["request_urls"] = grid["request_urls"]
@@ -512,23 +515,6 @@ def _period(start_year, end_year) -> tuple[str | None, str | None]:
     if len(text) == 4:
         text = f"{text}-12"
     return start, _year_to_month(text)
-
-
-def get_power_point_series(param, lat, lon, start_year=None, end_year=None, name=None) -> dict:
-    """Firma del conector anterior, sobre el conector vigente (datos reales)."""
-    start, end = _period(start_year, end_year)
-    ts = series(param, lat=lat, lon=lon, start=start, end=end)
-    if name:
-        ts["region"]["name"] = name
-    return ts
-
-
-def get_power_regional_series(param, bbox, start_year=None, end_year=None, name=None) -> dict:
-    start, end = _period(start_year, end_year)
-    ts = series(param, bbox=bbox, start=start, end=end)
-    if name:
-        ts["region"]["name"] = name
-    return ts
 
 
 def get_power_grid(param, bbox, start_year=None, end_year=None) -> dict:
