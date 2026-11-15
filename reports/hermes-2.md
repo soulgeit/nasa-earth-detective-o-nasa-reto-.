@@ -1,17 +1,15 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — hermes-2 — 2026-11-15 07:40 hora de Perú (Ronda 5)
-Rama@commit: feature/scrapes@589566f · empujado: sí
-SUITE COMPLETA sobre integracion/ronda5 fusionado: `python -m pytest -q` → **276 passed, 10 skipped, 0 failed**.
-VERIFICADO: tildes → `python -X utf8 -I scripts/check_case_accents.py` → 0 problemas en 8 archivos. Arregladas en la fuente (`write_case_copy.py`), no con sed sobre el JSON; los títulos en inglés siguen «Lima, Peru».
-VERIFICADO: el lugar en el texto → `answers.where` nombra Lima / Svalbard / Piura / Hielo marino del Ártico / Hielo marino del Antártico / el área de Amazonía; ya no dice «coordenadas» ni «la región seleccionada».
-VERIFICADO: **las cifras no cambiaron** en los 7 casos (trend, tests, significance, period, detectability contra origin/integracion/ronda5): 0 diferencias.
-VERIFICADO: el hallazgo usa «Tendencia clara y fuerte», «Tendencia significativa», «Sugerente, aun sin certeza» y «Todavía no se detecta tendencia»; 0 códigos en mayúsculas en los 14 textos.
-VERIFICADO: `data/lora/DATASET_CARD.md` lleva una sección de un párrafo citable por claude-omni-2, con las cifras del §1.
-VERIFICADO: hielo marino regenerado con el arreglo de antigravity-1 (69d679e) → «Based on» = «NSIDC-0051, NSIDC-0803» y «NSIDC-0051, NSIDC-0081, NSIDC-0803», sin repetidos; cifras idénticas (0 diferencias); `verify_seaice_cases.py` en verde.
-ESCRITO (sin ejecutar de punta a punta): nada.
-ROTO / NO HECHO: nada. Los `.jsonl` del LoRA no se tocan a propósito (regla 21).
+## ESTADO — hermes-2 — 2026-11-15 10:40 UTC (Ronda 6, cierre)
+Rama@commit: feature/scrapes@4642a9f (base origin/main@00f0228) · empujado: sí
+SUITE COMPLETA sobre main: `python -m pytest -q` → **287 passed, 10 skipped, 0 failed** (506 s).
+ENCARGO CUMPLIDO: `data/cases/index.json` y `data/lora/DATASET_CARD.md` revisados línea a línea contra sus datos.
+VERIFICADO: 7/7 casos con `title` y `finding` en EN y ES; ninguno vacío ni `TODO_HUMANO`; 0 códigos internos en los textos; cada cifra del texto coincide con su `analysis.json`.
+VERIFICADO: ficha del dataset contra `train.jsonl`: `meta.source` = template en 4323/4323; 9 claves en orden en 4323/4323; `variable_ids` ⊆ candidatas sin fallos; `lang` coherente; los dos defectos documentados siguen midiendo igual (440/440, 83/83, 71/71).
+ARREGLADO (1): texto español de `amazonia-prectotcorr` acababa en inglés («no trend detectable so far»). Ahora «todavía no se detecta tendencia». 0 mezclas en los 14 textos.
+ARREGLADO (2): la ficha decía «at least 322 times as the gold answer» y el mínimo real es **229** (`ALLSKY_SFC_SW_DWN`, máx. 307 `TQV`, media 273,5). Sustituido por lo medido, con el comando que lo reproduce (`15 229 307`).
+ROTO / NO HECHO: nada de mi carril. Los `.jsonl` del LoRA no se tocan (regla 21).
 Necesito de: nadie.
-Avisos para otros carriles: (1) claude-omni-2: la sección «Known defects, in one paragraph» de `data/lora/DATASET_CARD.md` está escrita para citarla tal cual en la declaración de IA. (2) claude-omni-1: los textos de los casos ya no llevan códigos internos ni unidades inglesas en la frase; el `where` nombra el lugar, así que la interfaz no necesita componerlo. (3) antigravity-2: el «Based on» del hielo ya sale limpio del conector y de los casos congelados.
+Avisos para otros carriles: (1) **claude-omni-3**: `scripts/test_ui_r5.py` importa `playwright` y `requirements-dev.txt` no lo declara; en un clon limpio `python -m pytest -q` se detiene en la recolección con `ModuleNotFoundError`. No lo toqué (carril ajeno y código congelado). (2) **Arquitecto**: este commit y la Ronda 5 están en `feature/scrapes`, listos para fusionar en `main`; no hice commits directos en `main` (regla 30).
 <!-- ESTADO:FIN -->
 
 # Reportes de Hermes 2
@@ -453,3 +451,90 @@ $ python -m pytest -q
 - `python -X utf8 -I scripts/verify_seaice_cases.py` → exit 0.
 - `python -X utf8 -I scripts/check_case_accents.py` → 0 problemas en 8 archivos.
 - Los 7 casos conservan `title` y `finding` en los dos idiomas, sin códigos internos.
+
+---
+
+# HERMES 2 — REPORTE FINAL (Ronda 6, 2026-11-15 10:40 UTC)
+
+Carril: `data/cases/`, `data/atlas/`, `data/lora/` y sus scripts.
+Base: `origin/main`. Rama: `feature/scrapes`. Documento: `docs/RONDA_6.md`.
+
+## Encargo de la Ronda 6
+
+1. Confirmar que `data/cases/index.json` tiene títulos y hallazgos limpios en los 7 casos,
+   en inglés y en español.
+2. Confirmar que `data/lora/DATASET_CARD.md` documenta los rasgos reales del dataset.
+
+**Resultado: dos defectos encontrados y corregidos; todo lo demás confirmado.**
+
+## Defecto 1 — Idioma mezclado (regla 16)
+
+El texto en **español** de `amazonia-prectotcorr` terminaba en inglés:
+
+```
+antes:  "... ninguna prueba rechaza 'sin tendencia': no trend detectable so far."
+ahora:  "... ninguna prueba rechaza 'sin tendencia': todavía no se detecta tendencia."
+```
+
+Corregido en la fuente (`scripts/write_case_copy.py`) y en los dos sitios donde vive el texto
+(`index.json` y `case.json`). Comprobado en los 14 textos:
+
+```
+frases inglesas dentro de textos españoles: 0
+frases españolas dentro de textos ingleses: 0
+```
+
+## Defecto 2 — Cifra no reproducible en la ficha del dataset
+
+`DATASET_CARD.md` decía «Every variable appears at least **322** times as the gold answer».
+Medido sobre `train.jsonl`:
+
+```
+$ python -X utf8 -c "import json,collections; rows=[json.loads(l) for l in open('data/lora/train.jsonl',encoding='utf-8') if l.strip()]; c=collections.Counter(v for r in rows for v in (json.loads(r['messages'][2]['content']).get('variable_ids') or [])); print(len(c), min(c.values()), max(c.values()))"
+15 229 307
+```
+
+Mínimo **229** (`ALLSKY_SFC_SW_DWN`), máximo 307 (`TQV`), media 273,5. El dataset no había
+cambiado (siguen 4 323 filas), así que la cifra estaba mal desde el principio. Sustituida por
+lo medido, con el comando al lado.
+
+## Lo confirmado sin cambios necesarios
+
+| Comprobación | Resultado |
+|---|---|
+| Títulos y hallazgos, 7 casos × 2 idiomas | 14/14 presentes, ninguno vacío ni `TODO_HUMANO` |
+| Códigos internos en el texto (`SIGNIFICANT_STRONG`, …) | 0 |
+| Cada cifra del texto coincide con su `analysis.json` | 7/7 (pendiente Sen y, donde se cita, cambio total) |
+| `meta.source` en las 4 323 filas de train | `template` en todas |
+| Las 9 claves del plan, en orden | 4 323/4 323 |
+| `variable_ids` ⊆ candidatas | 0 incumplimientos |
+| `meta.lang` == `plan.lang` | 0 incumplimientos |
+| Tildes en español (`check_case_accents.py`) | 0 problemas en 8 archivos |
+| Defecto documentado 1: rangos sin años | train 92/174, val 70/97, test 51/63 (sin cambios) |
+| Defecto documentado 2: `out_of_scope` con variable | 440/440, 83/83, 71/71 (sin cambios) |
+
+## Suite completa (regla 14)
+
+```
+$ python -m pytest -q
+287 passed, 10 skipped, 0 failed in 506.00s
+```
+
+## Hueco de entorno que no es mío (para claude-omni-3)
+
+`scripts/test_ui_r5.py` importa `playwright` y **`requirements-dev.txt` no lo declara** (`pytest`
+y `httpx`, nada más). En un clon limpio que siga el README, `python -m pytest -q` se detiene en
+la recolección con `ModuleNotFoundError: No module named 'playwright'`, antes de correr una sola
+prueba. Lo vi al empezar esta ronda; lo instalé solo en mi entorno para poder verificar y no toqué
+`requirements-dev.txt` (carril de claude-omni-3, y además es código congelado). La ficha lo dirá
+en su sección de límites si no se corrige antes de entregar.
+
+## Estado de entrega de mi carril
+
+- 7 casos congelados: `lima-t2m`, `svalbard-t2m`, `piura-prectotcorr`, `arctic-seaice`,
+  `antarctic-seaice`, `amazonia-t2m`, `amazonia-prectotcorr`.
+- Veredictos: SIGNIFICANT · SIGNIFICANT_STRONG · SUGGESTIVE · SIGNIFICANT_STRONG ·
+  NOT_SIGNIFICANT · SIGNIFICANT_STRONG · NOT_SIGNIFICANT.
+- Hielo marino sin relleno (−9999 fuera), `1987-12` y `1988-01` en `null`, «Based on» sin
+  repetidos.
+- Dataset del LoRA intacto a propósito: el adaptador canónico se entrenó con esos bytes.

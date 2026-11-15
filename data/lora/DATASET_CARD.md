@@ -52,9 +52,18 @@ Training data for the small open model that turns a student's question into an
 
 Intent mix actually obtained in train: investigate 60.3 %, compare 15.3 %,
 define 9.1 %, out_of_scope 10.2 %, no_match 5.1 %. Language mix: 53.1 % Spanish,
-46.9 % English. Every variable appears at least 322 times as the gold answer.
-Built against the final `variables.json` and `gazetteer.json` from Hermes 1
-(task S4).
+46.9 % English. All 15 catalogue variables appear as the gold answer and every one
+appears at least **229** times (mean 273.5): the rarest is `ALLSKY_SFC_SW_DWN` with
+229, the most common `TQV` with 307. Built against the final `variables.json` and
+`gazetteer.json` from Hermes 1 (task S4).
+
+Reproduce (Ronda 6 audit: the card used to say "at least 322", which the files do
+not support; the dataset itself is unchanged at 4 323 train rows):
+
+```
+python -X utf8 -c "import json,collections; rows=[json.loads(l) for l in open('data/lora/train.jsonl',encoding='utf-8') if l.strip()]; c=collections.Counter(v for r in rows for v in (json.loads(r['messages'][2]['content']).get('variable_ids') or [])); print(len(c), min(c.values()), max(c.values()))"
+-> 15 229 307
+```
 
 ## Checks
 
