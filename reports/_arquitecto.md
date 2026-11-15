@@ -1,14 +1,13 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-15 13:10 hora de Perú
-Rama@commit: `main@46cb20c` · empujado: sí
-VERIFICADO: Suite completa sobre `main` → **290 passed, 0 failed, 9 skipped** (incluye H1, D12 y D14)
-VERIFICADO: **D12 cerrado en el backend** (`f615459`): `compare()` reproducido contra producción decía «between None and None» para puntos sin nombre del gazetteer; ahora usa `_resolve_region_name` → «coordinates (-12.04°, -77.03°)». Prueba `test_compare_never_prints_none_for_arbitrary_points` (falla sin el cambio).
-VERIFICADO: **D14 cerrado** (`f615459`): la URL de IPCC AR6 WG1 de la tabla «published vs computed» daba 403 (WAF); sustituida por el PDF del SPM (`.../downloads/report/IPCC_AR6_WGI_SPM.pdf`, HTTP 200, 3.3 MB, sección SPM.A.1.2 citada).
-VERIFICADO: Informe 3 de QA actualizado con esa evidencia real (`reports/qa/informe-3.md`).
-ROTO / NO HECHO: **Railway sigue en el código anterior al fix D12** — el redespliegue necesita aprobación del humano (`railway up` desde `46cb20c`). En el árbol de trabajo hay un rebrand en curso (detective → «Huiracocha AI») de otra sesión, sin confirmar.
-Siguiente paso: humano aprueba `railway up` para que la producción sirva D12; «Submit for Judging» a las 20:00.
-Necesito de: humano: autorizar el redespliegue de Railway y enviar el formulario a las 20:00.
-Avisos para otros carriles: main@46cb20c en verde con D12/D14 cerrados; las láminas y SUBMISSION apuntan a Railway como app completa.
+## ESTADO — cfable (arquitecto) — 2026-11-15 18:35 hora de Perú
+Rama@commit: `integracion/ronda7@41dd611` · empujado: sí (NO está en `main`: espera el «integra» del humano)
+VERIFICADO: suite completa **361 pasan / 0 fallan / 9 omitidas**; `scripts/gate.py --offline` → **PUERTA ABIERTA** (7/7: pytest, smoke_api, validate_datasets, validate_knowledge, planned_not_analyzable, case_physical_ranges, no_secrets); `validate_fragments.py` → 773 documentos válidos en 13 archivos.
+VERIFICADO: corpus de **999 documentos** (antes 168): Lima 140, Huancayo 129, Andahuaylas 124, Ica 143, Ayacucho 195; 172 instituciones, 433 páginas fuente; catálogo de **35 variables** (20 nuevas de NASA POWER, cada una pedida en vivo).
+VERIFICADO en navegador (servidor local): «hola» → saludo de Huiracocha IA; «¿Llueve menos en Ica?» → plan + serie real + veredicto + explicación que cita notas SENAMHI de Ica; chip de ciudad → escaneo de 32 variables con corrección de Benjamini–Hochberg (Huancayo 9/32, Ayacucho 16/32 confirmadas); móvil 390 px sin desbordamiento; copia estática con aviso «necesita el servidor en vivo» y 0 errores de consola.
+ROTO / RIESGO: producción (despliegue `978ec8e4` de las 17:31, imagen pesada con `ai_mode=full`) se **colgó a las 17:50**: cada mensaje de chat carga SmolLM2 + LoRA en CPU dentro de la petición y el servicio deja de responder (último log: «generation flags»). Hoy responde de nuevo, pero volverá a colgarse con el siguiente chat. La imagen ligera (reglas + RAG) contesta en milisegundos.
+Siguiente paso: humano → «integra» (`integracion/ronda7` → `main`) y «despliega» (`bash scripts/deploy_railway.sh --deploy`: comprueba, sube la imagen ligera y verifica la URL).
+Necesito de: humano: esas dos órdenes; y decidir si quiere el texto de «Runas de Energía / Machu Picchu» como dedicatoria (no puedo afirmarlo como ubicación técnica: el servidor está en Railway).
+Avisos para otros carriles: `feature/ui` quedó fusionada en `integracion/ronda7`; no empujar chat ni UI a `main`; no desplegar `Dockerfile.lora` en la URL pública.
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)

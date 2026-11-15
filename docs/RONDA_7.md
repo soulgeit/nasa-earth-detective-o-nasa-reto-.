@@ -269,3 +269,24 @@ calculados (`rag-datos`) responden qué, dónde, cuánto y si es significativo e
 cinco lugares concretos; las notas regionales explican el porqué con fuentes; las
 notas de método explican la palabra «significativo». Ninguna de las tres cosas
 vale si una cifra no se puede seguir hasta su origen.
+
+---
+
+## 10. Estado de cierre (domingo 15, 18:35)
+
+- **Rama de la ronda:** `integracion/ronda7` (incluye `feature/ui` ya fusionada). `main` sigue en
+  `b4a45b7` hasta que el dueño diga «integra».
+- **Medido:** suite 361 verdes / 0 rojas; puerta `gate.py` abierta (7/7); 773 documentos de
+  fragmentos válidos; corpus de 999 documentos; 35 variables.
+- **Cobertura por ciudad** (documentos): Lima 140, Huancayo 129, Andahuaylas 124, Ica 143,
+  Ayacucho 195; cada una con 68 hechos calculados por nuestro motor. El número de cada ciudad
+  se lee en vivo en la nota «cómo funciona» de la app (`GET /api/ai/about`).
+- **Contrato ampliado** (los carriles ya lo escribían así): `data_note` es un tipo válido en
+  `regions/`; los ids pueden llevar la fuente si la ciudad es un token; `fetched_at` admite fecha
+  ISO. Lo que sigue rechazando la puerta: texto fuera de 200–1500 caracteres, `sha256` que no es
+  el del texto, ciudad sin nombrar, duplicados.
+- **Producción:** la imagen pesada de `feature/ui` colgó el servicio a las 17:50 (SmolLM2 en CPU
+  dentro de la petición). El despliegue correcto es la imagen ligera de `Dockerfile`
+  (`scripts/deploy_railway.sh`). `Dockerfile.lora` queda como experimental.
+- **Congelación:** desde este punto no se tocan `src/`, `data/catalog/` ni `docs.jsonl`. Los
+  carriles de datos solo corrigen sus archivos y pasan siempre `validate_fragments.py`.
