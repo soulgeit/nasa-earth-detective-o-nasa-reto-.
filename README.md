@@ -52,8 +52,8 @@ many more years of data we need"*.
 | Piura, Peru | Precipitation (`PRECTOTCORR`) | Suggestive, not yet certain |
 | Arctic sea ice | Sea ice extent (`SEAICE_EXTENT_N`) | Clear, strong trend |
 | Antarctic sea ice | Sea ice extent (`SEAICE_EXTENT_S`) | No trend detectable so far |
-| Amazonía (Giovanni CSV) | 2 m air temperature (`T2M`) | Clear, strong trend |
-| Amazonía (Giovanni CSV) | Precipitation (`PRECTOTCORR`) | No trend detectable so far |
+| Amazon basin (Giovanni CSV) | 2 m air temperature (`T2M`) | Clear, strong trend |
+| Amazon basin (Giovanni CSV) | Precipitation (`PRECTOTCORR`) | No trend detectable so far |
 
 The cases are frozen snapshots with their own `series.json`, `analysis.json` and
 `case.json`; the app shows them without recalculating, so everyone sees the same
