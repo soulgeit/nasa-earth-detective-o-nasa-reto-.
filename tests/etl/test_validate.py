@@ -130,3 +130,29 @@ def test_validator_cli_exit_codes(tmp_path):
     fail = subprocess.run([sys.executable, "scripts/validate_datasets.py", str(bad)], cwd=root)
     assert ok.returncode == 0
     assert fail.returncode != 0
+
+
+def test_validator_cli_expands_wildcards_itself(tmp_path):
+    """PowerShell y cmd no expanden `*`: el script recibe el patron tal cual (QA D3)."""
+    import subprocess
+    import sys
+    import os
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for name in ("a", "b"):
+        folder = tmp_path / name
+        folder.mkdir()
+        (folder / "series.json").write_text(json.dumps(good_doc()), encoding="utf-8")
+    pattern = str(tmp_path / "*" / "series.json")
+    ok = subprocess.run(
+        [sys.executable, "scripts/validate_datasets.py", pattern],
+        cwd=root, capture_output=True, text=True,
+    )
+    assert ok.returncode == 0, ok.stdout + ok.stderr
+    assert "2/2" in ok.stdout
+    # Un patron que no encuentra nada es un fallo visible, no un exito vacio.
+    none = subprocess.run(
+        [sys.executable, "scripts/validate_datasets.py", str(tmp_path / "*" / "nothing.json")],
+        cwd=root, capture_output=True, text=True,
+    )
+    assert none.returncode != 0
