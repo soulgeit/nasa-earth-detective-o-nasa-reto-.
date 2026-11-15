@@ -1,6 +1,6 @@
 # RAG de Ica — Carril rag-ica (Ronda 7)
 
-## Estado actual (17:05)
+## Estado actual (15:50)
 
 | Métrica | Valor |
 |---|---|
