@@ -1,12 +1,12 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-1 — 2026-11-15 02:40 hora de Perú
-Rama@commit: feature/ui@integracion-r4 · empujado: no
-VERIFICADO: Tareas Ronda 4 (§4 claude-omni-1): 1) Comprobación en navegador (inglés) con 9 capturas en docs/media/r4/; 2) Atribución "Planned by: rules / fine-tuned model (LoRA)" + nota de fallback + variables planned en optgroup disabled con "Not loaded yet — upload its Giovanni CSV" (Regla 19); 3) Móvil 390px probado con Playwright: 0 px de scroll horizontal (scrollWidth == clientWidth == 390), mapa 367x230px y gráfica utilizables; 4) Script take_real_screenshots.py actualizado a 8 capturas oficiales a 1600x900.
+## ESTADO — claude-omni-1 — 2026-11-15 07:35 hora de Perú
+Rama@commit: feature/ui@integracion/ronda5 · empujado: sí
+VERIFICADO: Tareas Ronda 5 (§4 claude-omni-1): 1) Capturas oficiales repetidas y verificadas visualmente una a una (cero huecos tipográficos en números «+0.158», eliminada carpeta docs/media/r4/); 2) Unidades en español aplicadas en textos, veredictos y selectores (en español `#result-root` de arctic-seaice y piura-prectotcorr no contiene «million» ni «/day»); 3) QA D8 resuelto (upload de Giovanni muestra nombre limpio y no M2SMNXSLV; From/To refleja periodo del caso congelado 1978-2026; dígitos de pendiente coinciden exactamente entre veredicto y explicación en los 7 casos; icono SVG propio no-NASA); 4) 7 láminas oficiales en docs/demo/slides.html y docs/demo/EarthTrend_Detective_slides.pdf (exactamente 7 páginas, 16:9 1280x720, fuentes documentadas en docs/demo/FUENTES.md); 5) Suite completa sobre integracion/ronda5: 276 passed, 0 failed, 9 skipped.
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en interfaz
-Siguiente paso: commit y push a origin/feature/ui en cuanto el clasificador de terminal lo permita; coordinar con claude-omni-3 para despliegue
-Necesito de: Claude Omni 3: despliegue público en hosting (Railway/Fly)
-Avisos para otros carriles: UI implementa Regla 19 estricta (variables planned en optgroup disabled no elegibles); la tarjeta del planificador muestra insignia "Planned by: fine-tuned model (LoRA)" o "Planned by: rules" y nota de respaldo; móvil a 390px sin desborde horizontal.
+Siguiente paso: coordinar con claude-omni-2 (textos de entrega) y claude-omni-3a (despliegue gh-pages)
+Necesito de: claude-omni-3a: verificar que la versión nueva de la interfaz se sirva en GitHub Pages
+Avisos para otros carriles: Las 7 láminas oficiales de entrega están listas en docs/demo/EarthTrend_Detective_slides.pdf (≤ 7 páginas, en inglés, con cifras verificadas de los casos y de EVAL_IA.md anotadas en docs/demo/FUENTES.md); las capturas en docs/media/ son oficiales, sin marcas de la NASA y con tipografía limpia.
 <!-- ESTADO:FIN -->
 
 # Reportes de Claude Omni 1 (Interfaz)
@@ -259,4 +259,72 @@ $ python scripts/verify_r4_ui.py
 [PASS] T3 mobile results no horizontal scroll :: scrollWidth=390, clientWidth=390, diff=0
 [PASS] T3 mobile chart usable
 Total: 16/16 verificaciones en PASS
+```
+
+## RONDA 5 — TAREAS COMPLETADAS (2026-11-15 07:35 UTC-5)
+Rama@commit: feature/ui (base origin/integracion/ronda5)
+Qué quedó:
+1. **Capturas oficiales repetidas y verificadas visualmente (Tarea 1, 07:45)**:
+   - Eliminada la carpeta obsoleta `docs/media/r4/`.
+   - Script `scripts/take_real_screenshots.py` ejecutado de punta a punta contra el backend en vivo (`http://127.0.0.1:8000/`).
+   - Verificadas una a una las 8 capturas a 1600×900 en inglés más la vista móvil a 390px (Regla 29).
+   - Se corroboró la erradicación total del espaciado defectuoso en cifras («-0 . 495» → «-0.495», «Lima , Peru» → «Lima, Peru»).
+2. **Unidades en español aplicadas (Tarea 2, 08:30)**:
+   - Mapa `UNIT_MAP_ES` implementado en `src/ui/i18n.js` y función `formatUnit` integrada en el ciclo de vida de la UI (`renderFindings`, `renderCatalog`, `renderChart`, `sanitizeText`).
+   - Mapeos oficiales: `million km²` → `millones de km²`, `mm/day` → `mm/día`, `MJ/m²/day` → `MJ/m²/día`, `fraction (0-1)` → `fracción (0-1)`, `dimensionless` → `adimensional`, `°C (anomaly vs 1951-1980)` → `°C (anomalía respecto a 1951-1980)`.
+   - **Comprobación estricta superada**: en español, el texto de `#result-root` en `arctic-seaice` y `piura-prectotcorr` **no contiene «million» ni «/day»** (probado con Playwright en `scripts/test_ui_r5.py`).
+3. **Pulido visible y QA D8 resuelto (Tarea 3, 08:30)**:
+   - **QA D8**: Al subir `data/raw/giovanni/T2M__amazonia.csv`, el veredicto y textos despliegan el nombre limpio (*"Air temperature at 2 m"* / *"Temperatura del aire a 2 m"*), erradicando el identificador crudo `M2SMNXSLV_5_12_4_T2MMEAN`.
+   - **Periodo From / To (§2.14)**: Al abrir un caso congelado (como `arctic-seaice`), los campos de entrada de periodo reflejan fielmente el rango del caso analizado (`1978` a `2026`).
+   - **Dígito exacto entre veredicto y explicación (§2.16)**: La pendiente Theil-Sen en el veredicto (`#f-slope`) y en el texto de la explicación narrativa coinciden exactamente hasta el último dígito en los 7 casos congelados (ej. Lima `+0.158` / `+0.158`).
+   - **Icono propio**: Reemplazado `data:,` por un favicon SVG limpio y minimalista en `src/ui/index.html` sin marcas ni insignias de la NASA.
+4. **Las 7 láminas oficiales de entrega (Tarea 4, 10:00)**:
+   - Archivo HTML maquetado en 16:9: `docs/demo/slides.html`.
+   - Documento PDF generado y verificado: `docs/demo/EarthTrend_Detective_slides.pdf` (**exactamente 7 páginas**, legible a 1280×720, sin logotipos de la NASA y sin personas).
+   - Estructura de acuerdo al guion oficial de `docs/KIT_ENTREGA.md` §5:
+     1. *Title & Team*: Proyecto, lema, reto, equipo y caso protagonista (Ártico vs. Antártico).
+     2. *The Problem & 4 Questions*: La brecha entre titulares climáticos y datos brutos satelitales.
+     3. *The Solution in One View*: Captura real de la app, escalera de evidencia y detectabilidad.
+     4. *Real NASA Earth Data*: POWER, GISTEMP, NSIDC, Giovanni y procedencia SHA-256.
+     5. *Honest Statistics*: Contraste científico Ártico (5/5) vs. Antártico (2/5, 84.8 años faltantes).
+     6. *Spatial Atlas & Grounded AI*: Rejilla FDR q=0.10 y detective con 98% en benchmark dorado.
+     7. *Impact & Live Deployment*: Acceso público en GitHub Pages, móvil 390px, código abierto MIT.
+   - Documento de respaldo de cifras: `docs/demo/FUENTES.md` detallando el origen de cada número.
+5. **Suite de pruebas completa (Regla 14)**:
+   - `python -m pytest -q` → **276 passed, 0 failed, 9 skipped** en 199.71s.
+
+Evidencia:
+```bash
+$ python scripts/test_ui_r5.py
+--- 1. Testing arctic-seaice in Spanish ---
+Arctic - contains 'million': False
+Arctic - contains '/day': False
+Arctic Sea Ice Period -> From: 1978, To: 2026
+
+--- 2. Testing piura-prectotcorr in Spanish ---
+Piura - contains 'million': False
+Piura - contains '/day': False
+
+--- 3. Testing QA D8 Giovanni CSV upload ---
+Giovanni CSV result contains 'M2SMNXSLV': False
+Giovanni CSV shows clean variable name: PASS
+
+--- 4. Testing exact digit matching across all 7 cases ---
+Found 7 cases: ['lima-t2m', 'svalbard-t2m', 'piura-prectotcorr', 'arctic-seaice', 'antarctic-seaice', 'amazonia-t2m', 'amazonia-prectotcorr']
+Case lima-t2m               | f-slope: +0.158  | text: +0.158
+Case svalbard-t2m           | f-slope: +0.699  | text: +0.699
+Case piura-prectotcorr      | f-slope: −0.011  | text: -0.011
+Case arctic-seaice          | f-slope: −0.495  | text: -0.495
+Case antarctic-seaice       | f-slope: −0.048  | text: -0.048
+Case amazonia-t2m           | f-slope: +0.186  | text: +0.186
+Case amazonia-prectotcorr   | f-slope: −0.083  | text: -0.083
+
+>>> ALL RONDA 5 UI TESTS PASSED! <<<
+
+$ python scripts/make_slides_pdf.py
+Found 7 slides in HTML.
+SUCCESS: Generated docs/demo/EarthTrend_Detective_slides.pdf (2406487 bytes).
+
+$ python -m pytest -q
+276 passed, 9 skipped in 199.71s
 ```

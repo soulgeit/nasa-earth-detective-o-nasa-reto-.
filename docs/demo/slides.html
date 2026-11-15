@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EarthTrend Detective — Project Presentation Slides</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #16272b;
+      --ink-2: #33484c;
+      --muted: #566967;
+      --paper: #edf0ef;
+      --plate: #ffffff;
+      --rule: #c8d3d1;
+      --rule-soft: #e3eae8;
+      --teal: #125e5a;
+      --teal-ink: #0c4a47;
+      --teal-wash: #dceae7;
+      --ochre: #a2610f;
+      --ochre-wash: #f4e5ce;
+      --danger: #98291a;
+      --danger-wash: #f7e4e0;
+      --sans: "Schibsted Grotesk", system-ui, -apple-system, sans-serif;
+      --serif: "Source Serif 4", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #2b3a3c;
+      font-family: var(--sans);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem 0;
+    }
+
+    .slide {
+      width: 1280px;
+      height: 720px;
+      max-width: 1280px;
+      max-height: 720px;
+      background: var(--paper);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.75rem 3.5rem 2.25rem;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+      border-radius: 4px;
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid var(--teal);
+      padding-bottom: 0.85rem;
+    }
+
+    .slide-eyebrow {
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+
+    .slide-title {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.15;
+      margin-top: 0.25rem;
+    }
+
+    .slide-num {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .slide-content {
+      flex: 1 1 auto;
+      display: grid;
+      align-items: center;
+      padding: 1.25rem 0;
+      gap: 2.5rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1.1fr 1fr;
+    }
+
+    .grid-2-even {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--rule);
+      padding-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    .slide-footer strong {
+      color: var(--teal-ink);
+    }
+
+    /* Typography & Components */
+    h3 { font-size: 1.35rem; color: var(--teal-ink); margin-bottom: 0.5rem; }
+    p.lead { font-family: var(--serif); font-size: 1.2rem; line-height: 1.5; color: var(--ink-2); }
+    p { font-size: 1rem; line-height: 1.5; color: var(--ink-2); }
+
+    .bullet-list {
+      list-style: none;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      font-size: 1.05rem;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+
+    .bullet-list li::before {
+      content: "■";
+      position: absolute;
+      left: 0;
+      top: 0.1rem;
+      font-size: 0.75rem;
+      color: var(--teal);
+    }
+
+    .bullet-list li strong {
+      color: var(--teal-ink);
+    }
+
+    .card {
+      background: var(--plate);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 2px 6px rgba(22, 39, 43, 0.05);
+    }
+
+    .img-frame {
+      background: var(--plate);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(22, 39, 43, 0.08);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .img-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #fafbfb;
+      display: block;
+    }
+
+    .phone-mock {
+      width: 250px;
+      height: 100%;
+      margin: 0 auto;
+      border: 6px solid #16272b;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      background: #ffffff;
+    }
+
+    .phone-mock img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--teal-wash);
+      color: var(--teal-ink);
+      border: 1px solid #b2d4cf;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .stat-box {
+      background: var(--plate);
+      border: 1px solid var(--rule);
+      border-left: 4px solid var(--teal);
+      padding: 0.85rem 1rem;
+      border-radius: 2px;
+    }
+
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--teal-ink);
+    }
+
+    .stat-lbl {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Cover slide styling */
+    .slide-cover {
+      background: linear-gradient(135deg, #103c39 0%, #16272b 100%);
+      color: #f4f6f5;
+      justify-content: center;
+      padding: 4rem 5rem;
+    }
+    .slide-cover h1 {
+      font-size: 3.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      line-height: 1.08;
+    }
+    .slide-cover .subtitle {
+      font-family: var(--serif);
+      font-size: 1.65rem;
+      color: #dceae7;
+      margin-top: 1rem;
+      max-width: 32ch;
+    }
+    .cover-meta {
+      margin-top: 3.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 1.5rem;
+    }
+    .cover-meta dt { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #a5c2bd; }
+    .cover-meta dd { font-size: 1.15rem; color: #ffffff; font-weight: 600; margin-top: 0.2rem; }
+
+    @media print {
+      @page {
+        size: 1280px 720px;
+        margin: 0;
+      }
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        gap: 0 !important;
+      }
+      .slide {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        width: 1280px !important;
+        height: 720px !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== SLIDE 1: TITLE ==================== -->
+  <section class="slide slide-cover" id="slide-1">
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+      <span class="badge-pill" style="align-self: flex-start; background: rgba(220, 234, 231, 0.15); color: #dceae7; border-color: rgba(255,255,255,0.25); margin-bottom: 1.25rem;">
+        NASA International Space Apps Challenge 2026
+      </span>
+      <h1>EarthTrend Detective</h1>
+      <p class="subtitle">Investigate a place on Earth with real NASA Earth science data.</p>
+
+      <dl class="cover-meta">
+        <div>
+          <dt>Challenge</dt>
+          <dd>Tell Us a Climate Story / Earth Science</dd>
+        </div>
+        <div>
+          <dt>Team & Members</dt>
+          <dd>&lt;&lt;HUMANO: Team Name & Members&gt;&gt;</dd>
+        </div>
+        <div>
+          <dt>Prototype Focus</dt>
+          <dd>Arctic Sea Ice Extent vs. Antarctic Contrast</dd>
+        </div>
+        <div>
+          <dt>Deployment</dt>
+          <dd>Live Interactive App (100% Free & Open Access)</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 2: THE PROBLEM ==================== -->
+  <section class="slide" id="slide-2">
+    <div class="slide-header">
+      <div>
+        <div class="slide-eyebrow">The Challenge & Dilemma</div>
+        <div class="slide-title">Turning Students into Data Detectives</div>
+      </div>
+      <div class="slide-num">02 / 07</div>
+    </div>
+
+    <div class="slide-content grid-2">
+      <div>
+        <p class="lead" style="margin-bottom: 1.25rem;">
+          Climate headlines are everywhere, but verifying a claim currently requires downloading gigabytes of satellite NetCDF files, writing Python scripts, and modeling serial autocorrelation.
+        </p>
+
+        <div class="card" style="border-left: 4px solid var(--teal); margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.35rem;">The 4 Core Questions of the Challenge</h3>
+          <p style="font-size: 0.95rem;">Every investigation must answer transparently:</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.65rem;">
+            <div style="padding: 0.4rem 0.6rem; background: var(--teal-wash); border-radius: 3px; font-weight: 600; font-size: 0.9rem; color: var(--teal-ink);">1. What is changing?</div>
+            <div style="padding: 0.4rem 0.6rem; background: var(--teal-wash); border-radius: 3px; font-weight: 600; font-size: 0.9rem; color: var(--teal-ink);">2. Where on Earth?</div>
+            <div style="padding: 0.4rem 0.6rem; background: var(--teal-wash); border-radius: 3px; font-weight: 600; font-size: 0.9rem; color: var(--teal-ink);">3. How much per decade?</div>
+            <div style="padding: 0.4rem 0.6rem; background: var(--teal-wash); border-radius: 3px; font-weight: 600; font-size: 0.9rem; color: var(--teal-ink);">4. Is it significant?</div>
+          </div>
+        </div>
+
+        <p style="font-size: 0.95rem; color: var(--muted);">
+          Students and educators get trapped between alarmist headlines and inaccessible raw data archives. They need an honest, accessible tool.
+        </p>
+      </div>
+
+      <div class="card" style="background: var(--plate); padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; gap: 1rem;">
+        <h3 style="font-size: 1.25rem; color: var(--ink);">Our Scientific Solution</h3>
+        <ul class="bullet-list">
+          <li><strong>Direct Access to NASA Archives:</strong> Pull real observations from NASA POWER, GISS GISTEMP, NSIDC Sea Ice, and GES DISC Giovanni.</li>
+          <li><strong>No Synthetic Data:</strong> Zero hallucinated numbers or hardcoded trends. Every point reflects satellite and reanalysis records.</li>
+          <li><strong>Honest Statistical Rigor:</strong> Mann-Kendall with serial autocorrelation correction (Hamed & Rao 1998) + OLS t-test + Theil-Sen slope.</li>
+          <li><strong>No Guesswork:</strong> When trends are not yet statistically certain, we compute exactly how many more years of observation are needed (Weatherhead et al. 1998).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <div>Challenge: <strong>Tell Us a Climate Story</strong></div>
+      <div>NASA Space Apps Challenge 2026</div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 3: THE SOLUTION IN ONE VIEW ==================== -->
+  <section class="slide" id="slide-3">
+    <div class="slide-header">
+      <div>
+        <div class="slide-eyebrow">The Application</div>
+        <div class="slide-title">The Solution in One Clean Screen</div>
+      </div>
+      <div class="slide-num">03 / 07</div>
+    </div>
+
+    <div class="slide-content grid-2" style="align-items: stretch;">
+      <div class="img-frame" style="height: 100%;">
+        <img src="../media/verdict_view.png" alt="EarthTrend Detective Main Verdict Screen">
+      </div>
+
+      <div style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card">
+          <span class="badge-pill" style="margin-bottom: 0.5rem;">Interactive Exploration</span>
+          <h3 style="font-size: 1.25rem;">Interactive Map & Evidence Ladder</h3>
+          <p style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+            Click anywhere on Earth or search a location. The app immediately plots decades of monthly NASA observations with Theil-Sen trendlines and a 95% confidence fan.
+          </p>
+          <ul class="bullet-list" style="font-size: 0.9rem;">
+            <li><strong>5-Tier Evidence Ladder:</strong> From <em>Insufficient Data</em> to <em>Clear, Strong Trend</em>.</li>
+            <li><strong>Detectability Threshold:</strong> Visual bar shows observation length vs. required baseline.</li>
+            <li><strong>Tests Breakdown:</strong> Detailed modal explains test agreement and serial correlation.</li>
+          </ul>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-val">+0.158</div>
+            <div class="stat-lbl">°C/decade (Lima T2M)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">+0.713</div>
+            <div class="stat-lbl">°C total warming (45y)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">13.3</div>
+            <div class="stat-lbl">Years needed for certainty</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <div>Real NASA Observation: <strong>Lima, Peru Air Temperature (POWER MERRA-2, 540 months)</strong></div>
+      <div>Source: data/cases/lima-t2m/analysis.json</div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 4: NASA DATA & PROVENANCE ==================== -->
+  <section class="slide" id="slide-4">
+    <div class="slide-header">
+      <div>
+        <div class="slide-eyebrow">Data Architecture</div>
+        <div class="slide-title">Real NASA Earth Data & Verified Provenance</div>
+      </div>
+      <div class="slide-num">04 / 07</div>
+    </div>
+
+    <div class="slide-content grid-2-even">
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="card" style="border-left: 4px solid var(--teal);">
+          <h3>Integrated NASA Data Providers</h3>
+          <p style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--muted);">Direct API and verified open data access pipelines:</p>
+          <ul class="bullet-list" style="font-size: 0.92rem;">
+            <li><strong>NASA POWER v2.10.0:</strong> 540 continuous months (1981–2025) of MERRA-2 meteorology and CERES surface solar radiation at 0.5° × 0.625° resolution.</li>
+            <li><strong>NSIDC Sea Ice Index v4:</strong> 574 monthly records (1978–2026) for Arctic and Antarctic sea ice extent with authentic missing data masking.</li>
+            <li><strong>NASA GISTEMP v4:</strong> 1,762 months of global surface temperature anomalies (1880–2026) at 250 km smoothing.</li>
+            <li><strong>NASA GES DISC Giovanni:</strong> Support for user-uploaded CSV area averages (MERRA-2, 557 months).</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 1.1rem;">Full Cryptographic Provenance</h3>
+          <p style="font-size: 0.88rem; color: var(--ink-2);">
+            Every investigation result displays exact citation, raw API query URL, native grid resolution, and SHA-256 checksum verifying data integrity.
+          </p>
+        </div>
+      </div>
+
+      <div class="img-frame">
+        <img src="../media/cases_gallery.png" alt="Frozen NASA Benchmark Cases">
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <div>Cryptographic Verification: <strong>SHA-256 hashed series + official DOI citations</strong></div>
+      <div>Source: data/catalog/variables.json & docs/REFERENCES.md</div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 5: HONEST STATISTICS ==================== -->
+  <section class="slide" id="slide-5">
+    <div class="slide-header">
+      <div>
+        <div class="slide-eyebrow">Scientific Rigor</div>
+        <div class="slide-title">Honest Statistics: Arctic vs. Antarctic Contrast</div>
+      </div>
+      <div class="slide-num">05 / 07</div>
+    </div>
+
+    <div class="slide-content grid-2" style="align-items: stretch;">
+      <div class="img-frame" style="height: 100%;">
+        <img src="../media/not_significant_case.png" alt="Antarctic Sea Ice Honest Non-Significant Verdict">
+      </div>
+
+      <div style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card" style="border-left: 4px solid var(--teal);">
+          <span class="badge-pill" style="margin-bottom: 0.35rem;">Contrast Case 1: Arctic Sea Ice</span>
+          <h3 style="font-size: 1.15rem; color: var(--teal-ink);">Clear, Strong Downward Trend (5/5)</h3>
+          <p style="font-size: 0.9rem; line-height: 1.45;">
+            <strong>Theil-Sen Slope:</strong> −0.495 million km²/decade (−4.4%/dec, p &lt; 0.001).<br>
+            All 3 statistical tests agree across 48 years (1978–2026). Cumulative loss: −2.378 million km² of sea ice.
+          </p>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--ochre);">
+          <span class="badge-pill" style="background: var(--ochre-wash); color: var(--ochre); border-color: #eed6b3; margin-bottom: 0.35rem;">Contrast Case 2: Antarctic Sea Ice</span>
+          <h3 style="font-size: 1.15rem; color: var(--ochre);">No Trend Detectable So Far (2/5)</h3>
+          <p style="font-size: 0.9rem; line-height: 1.45;">
+            <strong>Theil-Sen Slope:</strong> −0.048 million km²/decade (p = 0.528).<br>
+            Changes correspond to natural interannual variability. Our tool honestly refuses to declare a false trend, calculating that <strong>84.8 more years of data</strong> are required.
+          </p>
+        </div>
+
+        <div class="card" style="background: var(--plate); padding: 0.85rem 1rem;">
+          <p style="font-size: 0.85rem; color: var(--muted);">
+            <strong>Weatherhead et al. (1998) Detectability Formula:</strong>
+            Accounts for observation variance, first-order autoregressive noise (&phi;), and magnitude of change. No overclaiming.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <div>Scientific Benchmark: <strong>Arctic (Sen −0.495, p &lt; 0.001) vs. Antarctic (Sen −0.048, p = 0.528)</strong></div>
+      <div>Source: data/cases/arctic-seaice and antarctic-seaice analysis.json</div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 6: SPATIAL & AI ==================== -->
+  <section class="slide" id="slide-6">
+    <div class="slide-header">
+      <div>
+        <div class="slide-eyebrow">Spatial & AI Intelligence</div>
+        <div class="slide-title">Spatial Atlas & Grounded AI Detective</div>
+      </div>
+      <div class="slide-num">06 / 07</div>
+    </div>
+
+    <div class="slide-content grid-2-even">
+      <div style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="img-frame" style="height: 250px;">
+          <img src="../media/trendmap_spatial.png" alt="Spatial TrendMap Atlas">
+        </div>
+        <div class="card">
+          <h3 style="font-size: 1.15rem;">Spatial TrendMap (FDR Control)</h3>
+          <p style="font-size: 0.88rem; color: var(--ink-2);">
+            759 grid cells across South America with Benjamini-Hochberg False Discovery Rate (q = 0.10) to control spatial false positives.
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="img-frame" style="height: 250px;">
+          <img src="../media/plan_attribution.png" alt="AI Detective Investigation Plan">
+        </div>
+        <div class="card" style="border-left: 4px solid var(--teal);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <h3 style="font-size: 1.15rem; margin: 0;">Grounded AI Assistant</h3>
+            <span class="badge-pill">49/50 (98%) Rules · 40/50 LoRA</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--ink-2); line-height: 1.45;">
+            Translates questions into structured plans. Grounded in 168 verified NASA documents. Strictly extractive citations with publisher links; <strong>never invents numbers</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <div>AI Evaluation: <strong>49/50 (98%) golden benchmark accuracy, strictly grounded in NASA literature</strong></div>
+      <div>Source: docs/EVAL_IA.md & data/atlas/T2M.json</div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 7: IMPACT & DEPLOYMENT ==================== -->
+  <section class="slide" id="slide-7">
+    <div class="slide-header">
+      <div>
+        <div class="slide-eyebrow">Impact & Delivery</div>
+        <div class="slide-title">Accessible Everywhere: Web, Mobile, Open Source</div>
+      </div>
+      <div class="slide-num">07 / 07</div>
+    </div>
+
+    <div class="slide-content grid-2">
+      <div style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card" style="border-left: 4px solid var(--teal);">
+          <h3>Real-World Impact for Education & Research</h3>
+          <ul class="bullet-list" style="font-size: 0.95rem; margin-top: 0.5rem;">
+            <li><strong>Zero Install, Zero Accounts:</strong> Runs directly in any modern browser on desktop or phone.</li>
+            <li><strong>Fully Bilingual:</strong> English and Spanish with native localized numbers and scientific terms.</li>
+            <li><strong>Mobile-Ready:</strong> Tested at 390 px viewport with zero horizontal scroll, responsive charts and Leaflet map.</li>
+            <li><strong>Printable Scientific Dossier:</strong> Generates formatted PDF lab reports with citations for classrooms.</li>
+          </ul>
+        </div>
+
+        <div class="card" style="background: var(--plate); padding: 1.25rem;">
+          <h3 style="font-size: 1.15rem; color: var(--ink); margin-bottom: 0.5rem;">Live Deployment & Links</h3>
+          <p style="font-size: 0.95rem; margin-bottom: 0.35rem;">
+            <strong>Live Public Web App:</strong><br>
+            <a href="https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./" target="_blank" style="color: var(--teal); font-weight: 600; word-break: break-all;">https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./</a>
+          </p>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem;">
+            Open source under MIT License. All data attribution to NASA POWER, GISS, NSIDC, and GES DISC.
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+        <div class="phone-mock" style="height: 520px;">
+          <img src="../media/mobile_390_overview.png" alt="Mobile 390px Viewport Demonstration">
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <div>License: <strong>MIT Open Source</strong> · NASA Space Apps Challenge 2026</div>
+      <div>EarthTrend Detective Team</div>
+    </div>
+  </section>
+
+</body>
+</html>

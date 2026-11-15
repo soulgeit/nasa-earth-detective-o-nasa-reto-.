@@ -6,7 +6,7 @@
 // from the real API endpoints (/api/analyze, /api/trendmap, /api/compare, etc.).
 // No synthetic or placeholder data generators exist in this codebase.
 
-const { t, applyTranslations } = window.__etdI18n;
+const { t, applyTranslations, formatUnit = (u) => u } = window.__etdI18n;
 
 const API_BASE = window.ETD_API_BASE || '';
 
@@ -156,9 +156,37 @@ function clearError() {
 function getCleanVariableName(varId) {
   if (!varId) return '';
   const card = state.catalog.find(v => v.id === varId);
-  if (!card) return varId;
-  const name = card.names?.[state.lang] || card.names?.es || card.names?.en || card.power_longname;
-  return name || varId;
+  if (card) {
+    const name = card.names?.[state.lang] || card.names?.es || card.names?.en || card.power_longname;
+    if (name) return name;
+  }
+  if (state.plannedCatalog) {
+    const pCard = state.plannedCatalog.find(v => v.id === varId);
+    if (pCard) {
+      const name = pCard.names?.[state.lang] || pCard.names?.es || pCard.names?.en;
+      if (name) return name;
+    }
+  }
+  // QA D8: Map raw Giovanni parameter identifiers to clean names
+  if (/T2M/i.test(varId)) {
+    return state.lang === 'es' ? 'Temperatura del aire a 2 m' : 'Air temperature at 2 m';
+  }
+  if (/PREC/i.test(varId)) {
+    return state.lang === 'es' ? 'Precipitación' : 'Precipitation';
+  }
+  if (/SOIL|GWET/i.test(varId)) {
+    return state.lang === 'es' ? 'Humedad del suelo' : 'Soil moisture';
+  }
+  if (/NDVI/i.test(varId)) {
+    return state.lang === 'es' ? 'Índice de vegetación NDVI' : 'NDVI vegetation index';
+  }
+  if (/AOD/i.test(varId)) {
+    return state.lang === 'es' ? 'Espesor óptico de aerosoles' : 'Aerosol optical depth';
+  }
+  if (/O3|OZONE/i.test(varId)) {
+    return state.lang === 'es' ? 'Ozono total en columna' : 'Total column ozone';
+  }
+  return varId;
 }
 
 function getCleanRegionName(analysis) {
@@ -184,10 +212,26 @@ function sanitizeText(txt, varId, regionName) {
     out = out.replace(new RegExp(`^${varId}\\s*se\\s*encuentra`, 'i'), `${cleanVar} se encuentra`);
     out = out.replace(new RegExp(`^${varId}\\s*presents`, 'i'), `${cleanVar} presents`);
     out = out.replace(new RegExp(`^${varId}:`, 'i'), `${cleanVar}:`);
+    if (varId.includes('M2SMNXSLV')) {
+      out = out.replaceAll(varId, cleanVar);
+    }
   }
   out = out.replace(/Observado en None/gi, `Observado en ${regionName}`);
   out = out.replace(/Observed in None/gi, `Observed in ${regionName}`);
   out = out.replace(/\bNone\b/g, regionName);
+
+  // Ronda 5: Spanish unit translations in all rendered text
+  if (state.lang === 'es') {
+    out = out.replace(/million km²/g, 'millones de km²')
+             .replace(/million km2/g, 'millones de km²')
+             .replace(/\bmillion\b/g, 'millones')
+             .replace(/mm\/day/g, 'mm/día')
+             .replace(/MJ\/m²\/day/g, 'MJ/m²/día')
+             .replace(/MJ\/m2\/day/g, 'MJ/m²/día')
+             .replace(/fraction \(0-1\)/g, 'fracción (0-1)')
+             .replace(/\bdimensionless\b/g, 'adimensional')
+             .replace(/°C \(anomaly vs 1951-1980\)/g, '°C (anomalía respecto a 1951-1980)');
+  }
   return out;
 }
 
@@ -363,7 +407,8 @@ function renderCatalog() {
   const optgroupAvail = el('optgroup', { label: state.lang === 'es' ? 'Variables disponibles' : 'Available variables' });
   for (const v of available) {
     const optName = v.names?.[state.lang] || v.names?.es || v.names?.en || v.power_longname || v.id;
-    const opt = el('option', { value: v.id }, `${optName} (${v.unit || ''})`);
+    const cleanU = formatUnit(v.unit || '', state.lang);
+    const opt = el('option', { value: v.id }, `${optName} (${cleanU})`);
     optgroupAvail.appendChild(opt);
   }
   select.appendChild(optgroupAvail);
@@ -640,6 +685,17 @@ function renderAnalysis(a) {
 
   renderProvenance(a);
   loadExplanation(a, currentExplainLevel);
+
+  // Update Period fields (From / To) to reflect actual analysis period (§2.14)
+  if (a.period?.start) {
+    const sYr = parseInt(String(a.period.start).slice(0, 4), 10);
+    if (!isNaN(sYr) && $('#period-start')) $('#period-start').value = sYr;
+  }
+  if (a.period?.end) {
+    const eYr = parseInt(String(a.period.end).slice(0, 4), 10);
+    if (!isNaN(eYr) && $('#period-end')) $('#period-end').value = eYr;
+  }
+
   $('#results').focus({ preventScroll: true });
 }
 
@@ -649,8 +705,19 @@ function renderFindings(a, cleanVar, cleanLoc) {
 
   const slope = a.trend?.sen_slope_per_decade;
   const ci = a.trend?.sen_ci95_per_decade;
-  $('#f-slope').textContent = signed(slope, 3);
-  $('#f-unit').textContent = `${a.variable?.unit || ''} ${t('measure.perDecade')}`.trim();
+
+  // Harmonize exact last digit between large number and explanation text (§2.16):
+  const rawHow = a.answers?.how_much?.[state.lang] || a.answers?.how_much?.es || a.answers?.how_much?.en || '';
+  const m = /([+-]\d+\.\d+)/.exec(rawHow);
+  let slopeStr = signed(slope, 3);
+  if (m) {
+    const rawVal = m[1];
+    slopeStr = rawVal.startsWith('-') ? '−' + rawVal.slice(1) : rawVal;
+  }
+  $('#f-slope').textContent = slopeStr;
+
+  const unitText = formatUnit(a.variable?.unit || '', state.lang);
+  $('#f-unit').textContent = `${unitText} ${t('measure.perDecade')}`.trim();
   $('#f-ci').textContent = Array.isArray(ci)
     ? `${t('measure.ci')}: ${signed(ci[0], 3)} … ${signed(ci[1], 3)}`
     : '';
@@ -736,7 +803,7 @@ function renderChart() {
   if (chart) chart.destroy();
 
   const s = a.series || {};
-  const unit = a.variable?.unit || '';
+  const unit = formatUnit(a.variable?.unit || '', state.lang);
   const colors = {
     ink: '#16272b', teal: '#125e5a', tealWash: 'rgba(18, 94, 90, 0.15)',
     ochre: '#a2610f', grid: '#e3eae8', muted: '#566967',
@@ -1646,6 +1713,6 @@ function boot() {
 
 document.addEventListener('DOMContentLoaded', boot);
 
-window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, setPoint, setPointA, setPointB, setBBox, onVariableChange, fmt, fmtP, signed, t };
+window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, setPoint, setPointA, setPointB, setBBox, onVariableChange, fmt, fmtP, signed, t, openCase };
 
 })();
