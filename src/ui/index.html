@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EarthTrend Detective</title>
+  <title>Huiracocha IA</title>
   <meta name="description" content="Investigate a place on Earth with real NASA Earth science data: what changes, where, how much, and whether it is significant.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23125e5a'/%3E%3Cpath d='M8 22 L14 16 L18 19 L24 10' stroke='%23f4e5ce' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='10' r='2.5' fill='%23a2610f'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="assets/huiracocha_ia_navbar_128.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3.5">
 </head>
 <body>
   <a class="skip-link" href="#results" data-i18n="nav.skip">Skip to results</a>
@@ -18,8 +18,15 @@
   <header class="masthead">
     <div class="masthead-inner">
       <div class="product">
-        <h1 data-i18n="app.title">EarthTrend Detective</h1>
-        <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
+        <div class="brand-header">
+          <div class="brand-logo-badge">
+            <img src="assets/huiracocha_ia_512_transparent.png?v=3.2" alt="Huiracocha IA" class="brand-logo" width="68" height="68">
+          </div>
+          <div class="brand-titles">
+            <h1 data-i18n="app.title">Huiracocha IA</h1>
+            <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
+          </div>
+        </div>
       </div>
             <nav class="mode-switch" role="tablist" aria-label="Investigation mode">
         <button type="button" role="tab" id="mode-single" class="mode-tab is-active" aria-selected="true" data-i18n="nav.mode.single">Single point</button>
@@ -63,20 +70,35 @@
     <form class="rail" id="investigate-form" novalidate>
             <!-- ============ ASK THE DETECTIVE (U4) ============ -->
       <section class="detective-box plate" id="detective-box">
-        <label for="detective-input" data-i18n="detective.title">Ask Huiracocha AI</label>
-        <div class="search-row">
-          <input type="text" id="detective-input" autocomplete="off"
-                 data-i18n-placeholder="detective.placeholder" placeholder="e.g. Is it raining less in Piura?">
-          <button type="button" class="btn btn-primary btn-small" id="detective-ask-btn" data-i18n="detective.ask">Ask</button>
+        <div class="detective-header">
+          <label for="detective-input" data-i18n="detective.title">Conversa con Huiracocha IA</label>
+          <span class="detective-live-badge">IA Activa</span>
+        </div>
+        <div class="detective-input-wrap">
+          <textarea id="detective-input" rows="3" autocomplete="off"
+                 data-i18n-placeholder="detective.placeholder"
+                 placeholder="Pregúntale a Huiracocha IA con total libertad sobre clima, lluvia, temperatura o ciudades (ej: ¿Cómo ha cambiado la lluvia en Huancayo en los últimos 20 años?)..."></textarea>
+          <div class="detective-action-row">
+            <div id="detective-chips" class="detective-chips">
+              <button type="button" class="chip-btn" data-q="¿Hace más calor en Lima?">Lima</button>
+              <button type="button" class="chip-btn" data-q="¿Llueve menos en Ica?">Ica</button>
+              <button type="button" class="chip-btn" data-q="¿Hay menos heladas en Huancayo?">Huancayo</button>
+              <button type="button" class="chip-btn" data-q="¿Cambió la lluvia en Ayacucho?">Ayacucho</button>
+              <button type="button" class="chip-btn" data-q="¿Cómo varía la precipitación en Andahuaylas?">Andahuaylas</button>
+            </div>
+            <button type="button" class="btn btn-primary" id="detective-ask-btn" data-i18n="detective.ask">Preguntar</button>
+          </div>
         </div>
         <div class="detective-plan-card" id="detective-plan-card" hidden>
           <div class="plan-header-row">
-            <p class="plan-heading" data-i18n="detective.plan.heading">Investigation Plan · Huiracocha AI</p>
-            <span class="plan-badge" id="plan-meta-badge"></span>
+            <p class="plan-heading" data-i18n="detective.plan.heading">Huiracocha IA</p>
+            <span class="plan-badge plan-badge-lora" id="plan-meta-badge">IA Activa</span>
           </div>
-          <p class="plan-intent" id="plan-intent-text"></p>
+          <div class="plan-intent" id="plan-intent-text"></div>
+          <div id="plan-sources-list" class="plan-sources" hidden></div>
+          <div id="plan-suggestions" class="plan-suggestions" hidden></div>
           <p class="plan-note" id="plan-note-text" hidden></p>
-          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run">Confirm & Investigate</button>
+          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run" hidden>Investigar en el mapa</button>
         </div>
       </section>
 
@@ -358,9 +380,9 @@
 
   <div id="glossary-pop" role="tooltip" hidden></div>
 
-  <script src="i18n.js"></script>
+  <script src="i18n.js?v=3.5"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=3.5"></script>
 </body>
 </html>

@@ -113,9 +113,14 @@ def retrieve(
     # words the student actually wrote. Measured before this split: the query
     # "Temperatura del aire a 2 m" did not return the T2M card at all.
     extra_terms = expansion_terms(query)
-    base_rank = [(i, s) for i, s in corpus.bm25.search(query, limit=max(k * 8, 60)) if keep(i)]
+    # RONDA_7: with a type filter the whole corpus is ranked and filtered afterwards.
+    # Cutting at the top 60 first let 600+ regional notes that repeat "Lima" or "aire"
+    # push every variable card out of the window ("el aire de Lima esta mas sucio"
+    # ended in RH2M instead of AOD_55).
+    window = len(corpus.docs) if wanted else max(k * 8, 60)
+    base_rank = [(i, s) for i, s in corpus.bm25.search(query, limit=window) if keep(i)]
     if extra_terms:
-        extra_rank = [(i, s) for i, s in corpus.bm25.search(extra_terms, limit=max(k * 8, 60)) if keep(i)]
+        extra_rank = [(i, s) for i, s in corpus.bm25.search(extra_terms, limit=window) if keep(i)]
         # The student's own words dominate; the expansion is a tie-breaker.
         # Measured: the expansion text is ~15x longer than a short question, so any
         # larger weight drowns the query ("Temperatura del aire a 2 m" stopped
@@ -145,7 +150,7 @@ def retrieve(
             id_to_idx = {d.id: i for i, d in enumerate(corpus.docs)}
             vec_rank = [
                 (id_to_idx[vector_index.doc_ids[i]], s)
-                for i, s in vector_index.search(qv, limit=max(k * 8, 60))
+                for i, s in vector_index.search(qv, limit=window)
                 if vector_index.doc_ids[i] in id_to_idx and keep(id_to_idx[vector_index.doc_ids[i]])
             ]
             backend = "rrf" if vec_rank else "bm25"
@@ -221,19 +226,31 @@ def retrieve(
     return results
 
 
+def _plannable_variable_ids() -> set[str]:
+    """Variables the app can really analyse today (their catalogue card is `available`)."""
+    return {v for doc in corpus_documents() if doc.type == "variable_card" and doc.available for v in doc.variables}
+
+
 def retrieve_for_plan(question: str, *, lang: str = "es", k: int = 6) -> list[dict[str, Any]]:
     """What the planner sees as candidate variables (contract R3: 6 cards).
 
     RONDA_4 rule 19: a ``planned`` variable is never a candidate — neither for the
-    rules nor for the LoRA. The retrieved cards are filtered to what the app can
-    actually fetch, so the plan either proposes a real variable or says "no_match".
+    rules nor for the LoRA. RONDA_7: that also holds for regional notes and data
+    notes written by the city lanes that are *about* a planned product (a note on
+    GPM IMERG carries ``variables: ["GPM_IMERG_PRECIP"]``): they stay in the corpus
+    for the explanations, but they cannot hand the planner a variable it cannot fetch.
     """
-    cards = retrieve(question, lang=lang, k=k, types=["variable_card"])
-    cards = [c for c in cards if c.get("available", True)]
+    usable = _plannable_variable_ids()
+
+    def ok(card: dict[str, Any]) -> bool:
+        variables = card.get("variables") or []
+        return bool(card.get("available", True)) and (not variables or variables[0] in usable)
+
+    cards = [c for c in retrieve(question, lang=lang, k=k * 3, types=["variable_card"]) if ok(c)][:k]
     if len(cards) < k:
-        extra = retrieve(question, lang=lang, k=k, types=["biome_profile", "region_note", "nasa_article"])
+        extra = retrieve(question, lang=lang, k=k * 3, types=["biome_profile", "region_note", "nasa_article"])
         seen = {c["id"] for c in cards}
-        cards.extend(d for d in extra if d["id"] not in seen)
+        cards.extend(d for d in extra if d["id"] not in seen and ok(d))
     return cards[:k]
 
 

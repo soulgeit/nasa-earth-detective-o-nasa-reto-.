@@ -179,3 +179,14 @@ def test_summaries_are_flagged_and_quotations_are_not():
     for doc in corpus_documents():
         if doc.summary_by:
             assert doc.is_quotation is False, f"{doc.id} is a summary but marked as a quotation"
+
+
+def test_school_and_university_levels_are_distinct(analysis_result):
+    school = explain(analysis_result, level="school", lang="es")
+    uni = explain(analysis_result, level="university", lang="es")
+    uni_alias = explain(analysis_result, level="uni", lang="es")
+    assert school["text"] != uni["text"]
+    assert uni["text"] == uni_alias["text"]
+    assert "Evaluación universitaria" in uni["text"]
+    assert school["guard"]["numbers_ok"] is True
+    assert uni["guard"]["numbers_ok"] is True

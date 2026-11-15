@@ -23,9 +23,15 @@ from .llm import AIUnavailable, chat
 from .rag import retrieve
 from .text_norm import fold
 
-VALID_LEVELS = ("school", "highschool", "university")
+VALID_LEVELS = ("school", "highschool", "university", "uni")
 MAX_PASSAGES = 5
 MAX_REGIONAL = 2  # regional documents cited next to the variable card
+
+def normalize_level(level: str | None) -> str:
+    lvl = str(level or "").lower().strip()
+    if lvl == "uni":
+        return "university"
+    return lvl if lvl in ("school", "highschool", "university") else "school"
 
 _LEVEL_HINT = {
     "school": "Explain for a 12-year-old: short sentences, no jargon.",
@@ -163,7 +169,6 @@ def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES)
             "type": doc["type"],
             "lang": doc.get("lang"),
             "publisher": doc.get("publisher"),
-            "is_quotation": doc.get("is_quotation", True),
             "role": role,
             "text": doc["text"],
         }
@@ -179,16 +184,7 @@ def _answer(analysis: dict[str, Any], key: str, lang: str) -> str:
     return str(block.get(lang) or block.get("en") or "").strip()
 
 
-def extractive_text(analysis: dict[str, Any], *, lang: str, passages: list[dict[str, Any]]) -> str:
-    """The app's own `answers`, then one plain sentence naming the sources.
-
-    RONDA_5 §2.15: the sources used to be listed twice — once inline with a raw URL
-    and again in the citations list — and every fragment sat between quotation marks
-    even when it was our own summary, not a literal quote. Now:
-      * the text names the sources once, by title, without URLs;
-      * the citations list carries the links (that is the UI's "sources" block);
-      * a fragment is quoted only when the document is a real quotation.
-    """
+def _school_first_paragraph(analysis: dict[str, Any], lang: str) -> str:
     parts = [p for p in (
         _answer(analysis, "what", lang),
         _answer(analysis, "where", lang),
@@ -196,28 +192,132 @@ def extractive_text(analysis: dict[str, Any], *, lang: str, passages: list[dict[
         _answer(analysis, "significant", lang),
         _answer(analysis, "detectability", lang),
     ) if p]
-    first = " ".join(parts) if parts else _fallback_summary(analysis, lang)
+    return " ".join(parts) if parts else _fallback_summary(analysis, lang)
 
+
+def _highschool_first_paragraph(analysis: dict[str, Any], lang: str) -> str:
+    period = analysis.get("period") or {}
+    trend = analysis.get("trend") or {}
+    if not trend or "sen_slope_per_decade" not in trend:
+        return _school_first_paragraph(analysis, lang)
+
+    var = (analysis.get("variable") or {}).get("names") or {}
+    var_name = var.get(lang) or var.get("es") or (analysis.get("variable") or {}).get("id") or "Variable"
+    reg = (analysis.get("region") or {}).get("name") or "la región"
+    unit = (analysis.get("variable") or {}).get("unit") or ""
+    sig = analysis.get("significance") or {}
+    det = analysis.get("detectability") or {}
+
+    start_y = str(period.get("start", ""))[:4]
+    end_y = str(period.get("end", ""))[:4]
+    years = period.get("years")
+    years_str = f"{int(years)}" if years and years == int(years) else f"{years}"
+    slope = trend.get("sen_slope_per_decade")
+    total_change = trend.get("total_change")
+    is_sig = sig.get("is_significant", False)
+    sig_level = sig.get("level") or ""
+    years_needed = det.get("years_needed")
+    years_needed_str = f"{int(years_needed)}" if years_needed and years_needed == int(years_needed) else f"{years_needed}"
+
+    if lang == "es":
+        sig_phrase = f"es estadísticamente significativa ({sig_level}), superando el ruido climático habitual" if is_sig else "no alcanza significancia estadística y puede deberse a variaciones naturales"
+        det_phrase = f"con {years_str} años de registro que superan el mínimo necesario ({years_needed_str} años)" if not det.get("more_years_needed") else f"aunque se proyectan necesarios {years_needed_str} años para una confirmación definitiva"
+        return (
+            f"Nivel secundaria: En {reg}, el registro de {var_name} de {start_y} a {end_y} ({years_str} años) "
+            f"indica un ritmo de cambio estimado en {slope} {unit} por década, acumulando una variación de {total_change} {unit}. "
+            f"La tendencia {sig_phrase}, {det_phrase}."
+        )
+    else:
+        sig_phrase = f"is statistically significant ({sig_level}), exceeding typical climate noise" if is_sig else "does not reach statistical significance and may reflect natural fluctuations"
+        det_phrase = f"with {years_str} years of record exceeding the required threshold ({years_needed_str} years)" if not det.get("more_years_needed") else f"although an estimated {years_needed_str} years are projected for definitive confirmation"
+        return (
+            f"High school level: In {reg}, the {var_name} record from {start_y} to {end_y} ({years_str} years) "
+            f"indicates an estimated rate of change of {slope} {unit} per decade, accumulating a variation of {total_change} {unit}. "
+            f"The trend {sig_phrase}, {det_phrase}."
+        )
+
+
+def _university_first_paragraph(analysis: dict[str, Any], lang: str) -> str:
+    period = analysis.get("period") or {}
+    trend = analysis.get("trend") or {}
+    if not trend or "sen_slope_per_decade" not in trend:
+        return _school_first_paragraph(analysis, lang)
+
+    var = (analysis.get("variable") or {}).get("names") or {}
+    var_name = var.get(lang) or var.get("es") or (analysis.get("variable") or {}).get("id") or "Variable"
+    reg = (analysis.get("region") or {}).get("name") or "la región"
+    unit = (analysis.get("variable") or {}).get("unit") or ""
+    tests = analysis.get("tests") or {}
+    sig = analysis.get("significance") or {}
+    det = analysis.get("detectability") or {}
+
+    start_y = str(period.get("start", ""))[:4]
+    end_y = str(period.get("end", ""))[:4]
+    years = period.get("years")
+    years_str = f"{int(years)}" if years and years == int(years) else f"{years}"
+    n_obs = period.get("n_obs")
+
+    slope = trend.get("sen_slope_per_decade")
+    ci = trend.get("sen_ci95_per_decade")
+    ci_str = f" (intervalo de confianza entre {ci[0]} y {ci[1]} {unit}/década)" if ci and len(ci) == 2 else ""
+    ci_str_en = f" (confidence interval between {ci[0]} and {ci[1]} {unit}/decade)" if ci and len(ci) == 2 else ""
+    total_change = trend.get("total_change")
+
+    mk = tests.get("mann_kendall") or {}
+    tau = mk.get("tau")
+    tau_str = f" (tau = {tau})" if tau is not None else ""
+    sig_level = sig.get("level") or ""
+    is_sig = sig.get("is_significant", False)
+
+    years_needed = det.get("years_needed")
+    years_needed_str = f"{int(years_needed)}" if years_needed and years_needed == int(years_needed) else f"{years_needed}"
+
+    if lang == "es":
+        sig_phrase = f"un comportamiento estadísticamente significativo con nivel {sig_level}" if is_sig else "una variación que no es estadísticamente significativa"
+        det_phrase = f"supera el umbral necesario de {years_needed_str} años" if not det.get("more_years_needed") else f"requiere {years_needed_str} años estimados"
+        return (
+            f"Evaluación universitaria y técnica: Para {var_name} en {reg} ({start_y} a {end_y}, {n_obs} observaciones), "
+            f"la regresión robusta de Theil-Sen estima una pendiente de {slope} {unit}/década{ci_str}, "
+            f"acumulando un cambio neto de {total_change} {unit} a lo largo de {years_str} años. "
+            f"En la inferencia no paramétrica de Mann-Kendall con corrección por autocorrelación serial, el análisis determina "
+            f"{sig_phrase}{tau_str}. "
+            f"En el marco de detectabilidad climática de Weatherhead et al., la longitud del registro ({years_str} años) "
+            f"{det_phrase} para emerger de la variabilidad natural."
+        )
+    else:
+        sig_phrase = f"statistically significant behavior at level {sig_level}" if is_sig else "variation that is not statistically significant"
+        det_phrase = f"exceeds the required threshold of {years_needed_str} years" if not det.get("more_years_needed") else f"requires an estimated {years_needed_str} years"
+        return (
+            f"University technical evaluation: For {var_name} in {reg} ({start_y} to {end_y}, {n_obs} observations), "
+            f"the robust Theil-Sen estimator yields a slope of {slope} {unit}/decade{ci_str_en}, "
+            f"with a net cumulative change of {total_change} {unit} across {years_str} years. "
+            f"Under non-parametric Mann-Kendall inference adjusted for serial autocorrelation, the analysis identifies "
+            f"{sig_phrase}{tau_str}. "
+            f"In the Weatherhead et al. climate detectability framework, the record length ({years_str} years) "
+            f"{det_phrase} to emerge from natural background noise."
+        )
+
+
+def extractive_text(analysis: dict[str, Any], *, level: str = "school", lang: str = "es", passages: list[dict[str, Any]]) -> str:
+    """The app's own `answers` (worded for the level), then one sentence naming the sources."""
+    norm_level = normalize_level(level)
+    if norm_level == "university":
+        first = _university_first_paragraph(analysis, lang)
+    elif norm_level == "highschool":
+        first = _highschool_first_paragraph(analysis, lang)
+    else:
+        first = _school_first_paragraph(analysis, lang)
+
+    # RONDA_5 §2.15: the sources are named once, by title, without raw URLs (the
+    # citations list carries the links) and a summary is never put between quotes.
     if not passages:
         return first
-
     titles = [str(p.get("title") or "").strip() for p in passages if p.get("title")]
     if lang == "es":
         lead = "Fuentes consultadas:" if len(titles) > 1 else "Fuente consultada:"
     else:
         lead = "Sources consulted:" if len(titles) > 1 else "Source consulted:"
     return f"{first}\n\n{lead} " + "; ".join(titles) + "."
-
-
-def _fragment_sentence(passage: dict[str, Any], *, lang: str) -> str:
-    """One sentence from the passage, quoted only when it is really a quotation."""
-    sentence = _first_sentence(passage.get("text", ""), limit=180)
-    if not sentence:
-        return ""
-    if passage.get("is_quotation", False):
-        return f"\"{sentence}\""
-    prefix = "Resumen: " if lang == "es" else "Summary: "
-    return f"{prefix}{sentence}"
 
 
 def _first_sentence(text: str, *, limit: int) -> str:
@@ -307,7 +407,7 @@ def _all_citations(passages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def explain(analysis: dict, *, level: str = "school", lang: str = "es") -> dict[str, Any]:
     """Two paragraphs the student can quote, with the guard's verdict attached."""
-    level = level if level in VALID_LEVELS else "school"
+    level = normalize_level(level)
     lang = lang if lang in ("es", "en") else "es"
     if not isinstance(analysis, dict) or not analysis:
         return {
@@ -353,7 +453,7 @@ def explain(analysis: dict, *, level: str = "school", lang: str = "es") -> dict[
                     ),
                 }
             ]
-        text = extractive_text(analysis, lang=lang, passages=passages)
+        text = extractive_text(analysis, level=level, lang=lang, passages=passages)
         verdict = run_guard(text, facts=facts, passages=passages, lang=lang,
                             is_significant=significant, retries=2)
         payload_guard = verdict.to_public()
@@ -366,7 +466,7 @@ def explain(analysis: dict, *, level: str = "school", lang: str = "es") -> dict[
             "mode": "extractive",
         }
 
-    text = extractive_text(analysis, lang=lang, passages=passages)
+    text = extractive_text(analysis, level=level, lang=lang, passages=passages)
     verdict = run_guard(text, facts=facts, passages=passages, lang=lang, is_significant=significant)
     return {
         "text": text,

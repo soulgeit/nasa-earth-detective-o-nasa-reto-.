@@ -30,6 +30,8 @@ VALID_TYPES = (
     "paper_abstract",
     "method_note",
     "glossary",
+    # RONDA_7: what a dataset (Giovanni, MERRA-2...) offers for one place.
+    "data_note",
 )
 
 POWER_PARAMS_URL = "https://power.larc.nasa.gov/parameters/"

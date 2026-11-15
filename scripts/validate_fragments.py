@@ -39,7 +39,7 @@ CITIES = {
 
 # folder -> (id prefix, allowed document types)
 LANES = {
-    "regions": ("region", {"region_note", "nasa_article", "paper_abstract"}),
+    "regions": ("region", {"region_note", "nasa_article", "paper_abstract", "data_note"}),
     "facts": ("fact", {"region_note"}),
     "resources": ("res", {"method_note", "nasa_article", "glossary", "paper_abstract"}),
 }
@@ -49,9 +49,9 @@ REQUIRED = (
     "variables", "license", "fetched_at", "sha256", "is_quotation",
 )
 TEXT_MIN, TEXT_MAX = 200, 1500
-ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+ID_RE = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
 DATE_RE = re.compile(r"^\d{4}(?:-\d{2}(?:-\d{2})?)?$")
-STAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+STAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$")
 
 
 def fold(text: str) -> str:
@@ -105,7 +105,13 @@ def check_row(row: dict, *, folder: str, stem: str, variables: set[str]) -> list
 
     doc_id = str(row["id"])
     expected = f"{prefix}-{stem}-"
-    if not doc_id.startswith(expected):
+    city_token = stem.split("-")[0]
+    # A data note may carry its source in the id ("giovanni-merra2-ica-tair-es") as
+    # long as the city is a whole token, so the lane that owns it stays identifiable.
+    token_ok = row.get("type") == "data_note" and re.search(
+        r"(?:^|-)" + re.escape(city_token) + r"(?:-|$)", doc_id
+    )
+    if not doc_id.startswith(expected) and not token_ok:
         problems.append(f"id must start with {expected!r}")
     if not ID_RE.match(doc_id):
         problems.append("id must be lowercase letters, digits and single hyphens")
@@ -136,12 +142,13 @@ def check_row(row: dict, *, folder: str, stem: str, variables: set[str]) -> list
     if not isinstance(row["variables"], list):
         problems.append("variables must be a list")
     else:
-        unknown = [v for v in row["variables"] if v not in variables]
+        # A data note names the dataset's own variables (Tair, Rainf...), not catalogue ids.
+        unknown = [] if row["type"] == "data_note" else [v for v in row["variables"] if v not in variables]
         if unknown:
             problems.append(f"variables not in the catalogue: {unknown}")
 
     if not STAMP_RE.match(str(row["fetched_at"])):
-        problems.append("fetched_at must look like 2026-11-15T19:30:00Z")
+        problems.append("fetched_at must be an ISO date or timestamp, e.g. 2026-11-15T19:30:00Z")
     if row.get("date") and not DATE_RE.match(str(row["date"])):
         problems.append("date must be YYYY, YYYY-MM or YYYY-MM-DD (or null)")
 

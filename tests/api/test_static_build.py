@@ -140,7 +140,7 @@ def test_shim_is_injected_before_app_js(staged_repo: Path) -> None:
     assert _build(staged_repo).returncode == 0
     html = (staged_repo / "dist" / "index.html").read_text(encoding="utf-8")
     shim = html.index("static-api.js")
-    app = html.index('<script src="app.js"')
+    app = html.index('<script src="app.js')  # with or without the ?v= cache-busting query
     assert shim < app, "static-api.js must load before app.js"
 
 

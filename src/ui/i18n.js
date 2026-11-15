@@ -6,7 +6,7 @@
 
 const STRINGS = {
   en: {
-    'app.title': 'EarthTrend Detective',
+    'app.title': 'Huiracocha IA',
     'app.tagline': 'Investigate a place on Earth with real NASA Earth science data.',
     'lang.label': 'Language',
     'nav.skip': 'Skip to results',
@@ -131,7 +131,7 @@ const STRINGS = {
     'compare.opposite.no': 'Similar trend direction in both locations',
     'compare.diffSig': 'The difference between both trends is statistically significant (z = {z}).',
     'detective.title': 'Ask Huiracocha AI',
-    'detective.placeholder': 'e.g. Is it raining less in Piura? or Is Arctic ice shrinking?',
+    'detective.placeholder': 'Ask any question about climate, rainfall, temperature, or cities (e.g. Is temperature rising in Lima?)...',
     'detective.ask': 'Ask',
     'detective.planning': 'Huiracocha AI is planning your investigation…',
     'detective.plan.heading': 'Investigation Plan · Huiracocha AI',
@@ -178,7 +178,7 @@ const STRINGS = {
   },
 
   es: {
-    'app.title': 'EarthTrend Detective',
+    'app.title': 'Huiracocha IA',
     'app.tagline': 'Investiga un lugar del planeta con datos reales de ciencias de la Tierra de la NASA.',
     'lang.label': 'Idioma',
     'nav.skip': 'Ir a los resultados',
@@ -303,7 +303,7 @@ const STRINGS = {
     'compare.opposite.no': 'Dirección de tendencia similar en ambas regiones',
     'compare.diffSig': 'La diferencia entre ambas tendencias es estadísticamente significativa (z = {z}).',
     'detective.title': 'Pregúntale a Huiracocha IA',
-    'detective.placeholder': 'p. ej. ¿Llueve menos en Piura? o ¿Se reduce el hielo del Ártico?',
+    'detective.placeholder': 'Escribe tu pregunta sobre clima, lluvia, temperatura o ciudades (ej: ¿Cómo ha cambiado la lluvia en Huancayo?)...',
     'detective.ask': 'Preguntar',
     'detective.planning': 'Huiracocha IA está planificando tu investigación…',
     'detective.plan.heading': 'Plan de Investigación · Huiracocha IA',

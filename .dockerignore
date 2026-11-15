@@ -4,11 +4,9 @@
 .git/
 .venv/
 .venv-ml/
-models/
 dist/
 data/cache/
 data/raw/
-data/lora/
 data/processed/
 tests/
 reports/

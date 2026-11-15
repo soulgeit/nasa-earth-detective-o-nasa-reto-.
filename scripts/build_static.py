@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 import urllib.error
@@ -404,12 +405,14 @@ def patch_index_html() -> None:
     html = index.read_text(encoding="utf-8")
     if "static-api.js" in html:
         return
-    marker = '<script src="app.js"></script>'
-    if marker not in html:
+    # The UI versions its assets for the browser cache ("app.js?v=3.5"): accept both.
+    match = re.search(r'<script src="app\.js(?:\?[^"]*)?"></script>', html)
+    if match is None:
         # Insert before </body> as a last resort.
         html = html.replace("</body>", "  <script src=\"static-api.js\"></script>\n</body>")
     else:
-        html = html.replace(marker, '<script src="static-api.js"></script>\n  ' + marker)
+        marker = match.group(0)
+        html = html.replace(marker, '<script src="static-api.js"></script>\n  ' + marker, 1)
     index.write_text(html, encoding="utf-8")
 
 
@@ -423,6 +426,9 @@ def copy_ui() -> None:
     for item in UI_DIR.iterdir():
         if item.is_file():
             shutil.copy2(item, DIST / item.name)
+        elif item.is_dir() and item.name != "__pycache__":
+            # assets/ (logo, favicon): index.html links them relatively.
+            shutil.copytree(item, DIST / item.name)
     # `index.html` referencia estos archivos; si falta uno el respaldo no carga.
     for name in ("index.html", "app.js", "styles.css", "i18n.js"):
         if not (DIST / name).exists():
