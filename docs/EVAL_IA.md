@@ -12,18 +12,17 @@ Fuente / Source: `data/knowledge/golden_questions.jsonl` (Hermes 1, 50 preguntas
 
 | Backend | Precision@1 | Precision@3 | MRR | Preguntas / Questions (k=6) |
 |---|---|---|---|---|
-| bm25 | 0.960 | 1.000 | 0.977 | 50 |
+| bm25 | 0.980 | 1.000 | 0.990 | 50 |
 | vectors | — | — | — | 0 |
-| fusion | 0.960 | 1.000 | 0.977 | 50 |
+| fusion | 0.980 | 1.000 | 0.990 | 50 |
 
-Medido el 14-nov-2026 a las 18:45 (hora de Perú) con `python -m src.detective.rag.eval`,
+Medido el 14-nov-2026 a las 21:40 (hora de Perú) con `python -m src.detective.rag.eval`,
 corpus de 166 documentos. `vectors` queda fuera de la media: no había servicio de
 embeddings en esta máquina (Ollama apagado). / `vectors` drops out of the means when
 no embedding service is available (contract §11).
 
-Los 2 aciertos que faltan en P@1 están a 1 posición: "¿La garúa de Lima se está
-volviendo más frecuente?" (esperado CLOUD_AMT/RH2M) y "Is Lake Titicaca losing water
-to more evaporation?" (esperado EVLAND/GWETTOP). Ambos caen en P@3.
+El único fallo en P@1 lo recupera P@3: "Is dust from the Sechura Desert travelling
+farther now?" (esperado AOD_55).
 <!-- TABLA_R2_FIN -->
 
 ### Qué se midió y con qué
@@ -99,3 +98,30 @@ python -m venv .venv && .venv/Scripts/pip install numpy scipy requests pytest
 python -m pytest tests/detective -q          # 98 tests
 python -m src.detective.rag.eval             # tabla de recuperación
 ```
+
+
+## 4-bis. Planificador sobre las 50 preguntas de oro (RONDA 3)
+
+Comando: `python -m src.detective.rag.eval_plan` (añade `--json` para uso automático).
+
+<!-- TABLA_PLAN_INICIO -->
+Medido el 2026-11-14 a las 21:35 (hora de Perú), `AI_MODE=extractive`, sin modelo.
+
+| Planificador / Planner | Acierto de variable / Variable accuracy | Preguntas |
+|---|---|---|
+| rules | 49/50 = 0.980 | 50 |
+
+Intenciones detectadas: `define` 1, `investigate` 49.
+Quién planificó: `rules` 50/50.
+
+Fallos:
+
+| Pregunta / Question | Idioma | Intención | Devuelto / Got | Esperado / Expected |
+|---|---|---|---|---|
+| Is dust from the Sechura Desert travelling farther now? | en | `investigate` | `GWETTOP` | `AOD_55` |
+
+**LoRA: no disponible.** El adaptador no existe en el repositorio, así que esta tabla
+**no tiene columna de LoRA**: un modelo sin entrenar no tiene número. Cuando Antigravity 2
+publique el adaptador, `python -m src.detective.rag.eval_plan --planner local-lora`
+rellena esa columna con inferencia real.
+<!-- TABLA_PLAN_FIN -->
