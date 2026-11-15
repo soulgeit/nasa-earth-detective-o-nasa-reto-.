@@ -4273,5 +4273,97 @@
    "URL to Reproduce Results:,\"https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71,0.85,-69.84,1.7&data=M2TMNXLND_5_12_4_PRECTOTLAND%2CM2TMNXFLX_5_12_4_PRECTOTCORR(units%3Dmm%2Fday)&dataKeyword=Precipitation&portal=GIOVANNI&format=json\"",
    "Fill Value (M2TMNXFLX_5_12_4_PRECTOTCORR):, 1000000000000000"
   ]
+ },
+ "variable": {
+  "id": "PRECTOTCORR",
+  "connector": "power",
+  "connector_param": "PRECTOTCORR",
+  "names": {
+   "es": "Precipitación corregida",
+   "en": "Precipitation (corrected)"
+  },
+  "simple_definition": {
+   "es": "Cuánta lluvia o nieve cae al día, en promedio, con una corrección aplicada por los científicos.",
+   "en": "How much rain or snow falls per day, on average, with a scientific correction applied."
+  },
+  "unit": "mm/day",
+  "ratio_scale": true,
+  "sphere": "atmosphere",
+  "source": {
+   "model_or_mission": "MERRA-2",
+   "instrument": null,
+   "via": "NASA POWER",
+   "challenge_named_source": "MERRA-2",
+   "native_resolution": "0.5 x 0.625 degrees",
+   "start": "1981-01",
+   "homogeneous_since": null,
+   "doi": null,
+   "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/",
+   "_power_declared_sources": [
+    "geosit",
+    "merra2",
+    "nexgddp"
+   ]
+  },
+  "what_up_means": {
+   "es": "Puede indicar temporadas más lluviosas, más riesgo de inundaciones y recarga de acuíferos.",
+   "en": "May point to wetter seasons, more flood risk and aquifer recharge."
+  },
+  "what_down_means": {
+   "es": "Puede indicar sequías más frecuentes, menos agua para cultivos y ciudades.",
+   "en": "May indicate more frequent droughts and less water for farms and cities."
+  },
+  "typical_drivers": {
+   "es": [
+    "El Niño y La Niña",
+    "Humedad que llega del océano",
+    "Relieve de montañas",
+    "Cambios en los vientos"
+   ],
+   "en": [
+    "El Nino and La Nina",
+    "Moisture arriving from the ocean",
+    "Mountain relief",
+    "Changes in winds"
+   ]
+  },
+  "caveats": {
+   "es": [
+    "La lluvia es muy variable de un año a otro: hacen falta muchas décadas para ver una tendencia clara.",
+    "En zonas de montaña la rejilla suaviza los máximos locales."
+   ],
+   "en": [
+    "Rain varies a lot from year to year: many decades are needed to see a clear trend.",
+    "In mountains the grid smooths out local extremes."
+   ]
+  },
+  "keywords": {
+   "es": [
+    "lluvia",
+    "llover",
+    "precipitación",
+    "sequía",
+    "garúa",
+    "aguacero",
+    "inundación",
+    "nieve",
+    "temporada"
+   ],
+   "en": [
+    "rain",
+    "rainfall",
+    "precipitation",
+    "drought",
+    "shower",
+    "flood",
+    "snow",
+    "wet season"
+   ]
+  },
+  "verified": {
+   "by": "hermes-1",
+   "at": "2026-11-14",
+   "evidence_url": "https://power.larc.nasa.gov/api/website/metadata/parameters"
+  }
  }
 }

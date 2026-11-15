@@ -2,7 +2,7 @@
  "schema": "analysis/2",
  "region": {
   "kind": "named",
-  "name": null,
+  "name": "Antarctic sea ice",
   "lat": null,
   "lon": null,
   "bbox": null
@@ -4401,12 +4401,12 @@
   "underlying": "NSIDC-0051, NSIDC-0051,NSIDC-0081, NSIDC-0803",
   "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
   "request_urls_pattern": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_{MM}_extent_v4.0.csv",
-  "retrieved_at": "2026-11-15T04:16:50Z",
+  "retrieved_at": "2026-11-15T04:45:32Z",
   "sha256": "298b650b323683d91ded11e5530af014bb54603ff22b890e49dbce59540699b3",
   "native_resolution": "hemispheric monthly index",
   "citation": "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135",
   "files_fetched": 12,
-  "files_retrieved_at": "2026-11-15T04:16:49Z",
+  "files_retrieved_at": "2026-11-14T18:59:38Z",
   "n_missing": 2,
   "source_splice": [
    "NSIDC-0051",
@@ -4414,5 +4414,91 @@
    "NSIDC-0803"
   ],
   "source_splice_note": "the NSIDC monthly files change source_dataset mid-series; no data were adjusted"
+ },
+ "variable": {
+  "id": "SEAICE_EXTENT_S",
+  "connector": "nsidc_seaice",
+  "connector_param": "south",
+  "names": {
+   "es": "Extensión del hielo marino del Antártico",
+   "en": "Antarctic sea ice extent"
+  },
+  "simple_definition": {
+   "es": "Cuánta superficie del océano Antártico está cubierta al menos en un 15 % por hielo.",
+   "en": "How much of the Southern Ocean is at least 15 % covered by ice."
+  },
+  "unit": "million km²",
+  "ratio_scale": true,
+  "sphere": "cryosphere",
+  "source": {
+   "model_or_mission": "Sea Ice Index Version 4",
+   "instrument": "Nimbus-7 SMMR and DMSP SSM/I-SSMIS passive microwave",
+   "via": "NSIDC",
+   "challenge_named_source": "other",
+   "native_resolution": "25 km passive-microwave grid",
+   "start": "1978-11",
+   "homogeneous_since": null,
+   "doi": "10.7265/a98x-0f50",
+   "url": "https://nsidc.org/data/g02135/versions/4"
+  },
+  "what_up_means": {
+   "es": "Puede indicar más hielo alrededor de la Antártida, típico de vientos y mares fríos.",
+   "en": "May point to more ice around Antarctica, typical of cold winds and seas."
+  },
+  "what_down_means": {
+   "es": "Puede indicar pérdida de hielo antártico y más calor en el océano austral.",
+   "en": "May indicate Antarctic ice loss and more heat in the Southern Ocean."
+  },
+  "typical_drivers": {
+   "es": [
+    "Vientos del oeste",
+    "Temperatura del océano",
+    "Circulación del mar de Weddell",
+    "Nieve sobre el hielo"
+   ],
+   "en": [
+    "Westerly winds",
+    "Ocean temperature",
+    "Weddell Sea circulation",
+    "Snow on the ice"
+   ]
+  },
+  "caveats": {
+   "es": [
+    "Febrero es el mínimo anual del Antártico, al revés que en el Ártico.",
+    "Las tendencias antárticas han cambiado de signo en las últimas décadas."
+   ],
+   "en": [
+    "February is the Antarctic yearly minimum, the opposite of the Arctic.",
+    "Antarctic trends have changed sign in recent decades."
+   ]
+  },
+  "keywords": {
+   "es": [
+    "hielo marino",
+    "antártida",
+    "polo sur",
+    "deshielo",
+    "océano austral",
+    "pingüinos",
+    "glaciar antártico",
+    "invierno austral"
+   ],
+   "en": [
+    "sea ice",
+    "Antarctica",
+    "south pole",
+    "melting",
+    "Southern Ocean",
+    "penguins",
+    "antarctic glacier",
+    "austral winter"
+   ]
+  },
+  "verified": {
+   "by": "hermes-1",
+   "at": "2026-11-14",
+   "evidence_url": "https://nsidc.org/data/g02135/versions/4"
+  }
  }
 }

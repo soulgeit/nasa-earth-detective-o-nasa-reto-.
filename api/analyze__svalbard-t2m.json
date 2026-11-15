@@ -2,7 +2,7 @@
  "schema": "analysis/2",
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Svalbard, Norway",
   "lat": 78.22,
   "lon": 15.65,
   "bbox": null
@@ -4135,5 +4135,99 @@
   "sha256": "6d5fac4f95cfd6f3a4d26ddbad074854fb12895929fe05931d6484d92f206286",
   "native_resolution": "0.5° x 0.625°",
   "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+ },
+ "variable": {
+  "id": "T2M",
+  "connector": "power",
+  "connector_param": "T2M",
+  "names": {
+   "es": "Temperatura del aire a 2 m",
+   "en": "Air temperature at 2 m"
+  },
+  "simple_definition": {
+   "es": "Cuánto calor hace en el aire a la altura de nuestra cara, en promedio.",
+   "en": "How warm the air is at the height of our face, on average."
+  },
+  "unit": "°C",
+  "ratio_scale": false,
+  "sphere": "atmosphere",
+  "source": {
+   "model_or_mission": "MERRA-2",
+   "instrument": null,
+   "via": "NASA POWER",
+   "challenge_named_source": "MERRA-2",
+   "native_resolution": "0.5 x 0.625 degrees",
+   "start": "1981-01",
+   "homogeneous_since": null,
+   "doi": null,
+   "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/",
+   "_power_declared_sources": [
+    "geosit",
+    "hydroscs",
+    "merra2",
+    "nexgddp"
+   ]
+  },
+  "what_up_means": {
+   "es": "Puede indicar más calor acumulado, más olas de calor y noches menos frescas.",
+   "en": "May point to more stored heat, more heat waves and less cool nights."
+  },
+  "what_down_means": {
+   "es": "Puede indicar enfriamiento local, más heladas o más nieve persistente.",
+   "en": "May indicate local cooling, more frosts or longer-lasting snow."
+  },
+  "typical_drivers": {
+   "es": [
+    "Cambios en la radiación solar que llega",
+    "El Niño y La Niña",
+    "Ciudades y pérdida de vegetación",
+    "Viento y nubosidad"
+   ],
+   "en": [
+    "Changes in incoming sunlight",
+    "El Nino and La Nina",
+    "Cities and loss of vegetation",
+    "Wind and cloud cover"
+   ]
+  },
+  "caveats": {
+   "es": [
+    "Es un promedio de una rejilla de ~50 km: no distingue la cima de un cerro del valle.",
+    "Los cambios en cómo se toman las observaciones pueden afectar la tendencia."
+   ],
+   "en": [
+    "It averages a ~50 km grid cell: it cannot tell a mountain top from the valley.",
+    "Changes in how observations are made can affect the trend."
+   ]
+  },
+  "keywords": {
+   "es": [
+    "calor",
+    "temperatura",
+    "calentamiento",
+    "bochorno",
+    "frío",
+    "grados",
+    "termómetro",
+    "verano",
+    "invierno"
+   ],
+   "en": [
+    "heat",
+    "temperature",
+    "warming",
+    "hot",
+    "cold",
+    "degrees",
+    "thermometer",
+    "summer",
+    "winter"
+   ]
+  },
+  "verified": {
+   "by": "hermes-1",
+   "at": "2026-11-14",
+   "evidence_url": "https://power.larc.nasa.gov/api/website/metadata/parameters"
+  }
  }
 }
