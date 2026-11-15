@@ -26,7 +26,7 @@ data/knowledge/resources/<tema>.jsonl      portales de datos, métodos y tutoria
 ```
 
 **Un archivo = un único carril que escribe.** Como nadie comparte archivo, un
-`rebase` sobre `main` nunca puede dar conflicto. Si te da conflicto, tocaste algo
+`rebase` sobre la rama de la ronda nunca puede dar conflicto. Si te da conflicto, tocaste algo
 que no es tuyo: `git rebase --abort` y deshaz ese cambio.
 
 La app carga estos archivos a la defensiva (una fila mala se salta y no tumba la
@@ -191,7 +191,7 @@ no cambia»), cada una con fuente primaria abierta (NASA, NOAA, USGS, OMM).
    total, español e inglés) con la ciudad, la variable y el tema esperados.
 2. `scripts/eval_cities.py`: mide por ciudad si `retrieve()` devuelve entre los
    tres primeros un documento de esa ciudad y de ese tema; tabla en el reporte
-   después de cada tanda de `main`.
+   después de cada tanda.
 3. Muestreo de veracidad: 10 documentos por carril y tanda; abrir la `url` y
    comprobar que la cifra está ahí. Lo que falle va al dueño por `handoff`.
 4. Duplicados y contradicciones entre carriles (dos cifras distintas para lo
@@ -205,7 +205,7 @@ Cada carril en **su propia carpeta de trabajo** (nunca dos agentes en la misma):
 
 ```
 git fetch origin
-git worktree add ../etd-<carril> -b rag/<carril> origin/main    # p. ej. ../etd-rag-ica
+git worktree add ../etd-<carril> -b rag/<carril> origin/integracion/ronda7    # p. ej. ../etd-rag-ica
 ```
 
 Tandas pequeñas y frecuentes, no una entrega al final:
@@ -215,29 +215,31 @@ python scripts/validate_fragments.py <carpeta>/<archivo>     # p. ej. regions/ic
 python -m pytest tests/detective/test_fragments.py -q
 git add <solo tus archivos, con su ruta>        # nunca "git add ." ni "-A"
 git commit -m "rag(<carril>): <qué añade> (<n> documentos)"
-git fetch origin && git rebase origin/main
+git fetch origin && git rebase origin/integracion/ronda7
 git push origin HEAD:refs/heads/rag/<carril>
-git push origin HEAD:main                       # si lo rechaza: fetch, rebase, validar, push
+git push origin HEAD:integracion/ronda7         # si lo rechaza: fetch, rebase, validar, push
 ```
 
-Prohibido `--force`, prohibido mezclar con commits de fusión, prohibido tocar
-`main` con el validador en rojo.
+**La rama de integración de esta ronda es `integracion/ronda7`, no `main`.**
+`main` se queda como está (es lo entregable de la Ronda 6) hasta que el dueño
+diga «integra»; nadie empuja a `main` en esta ronda. Prohibido `--force`,
+prohibido mezclar con commits de fusión, prohibido empujar con el validador en rojo.
 
 Después de cada push: bloque `ESTADO` en `reports/<carril>.md` (formato de
 `RONDA_2.md` §4) y una línea en `#general`:
-`[rag-ica] 15:12 tanda 1: 18 documentos, 7 fuentes — main@<commit>`.
+`[rag-ica] 15:12 tanda 1: 18 documentos, 7 fuentes — ronda7@<commit>`.
 
 ## 7. Horario
 
 | Hora | Hito |
 |---|---|
 | 14:15 | Arranque: worktree, primer documento válido en el archivo propio |
-| 15:15 | Tanda 1 en `main`: ≥ 15 documentos por ciudad; `rag-datos` con las 5 ciudades calculadas |
+| 15:15 | Tanda 1 en `integracion/ronda7`: ≥ 15 documentos por ciudad; `rag-datos` con las 5 ciudades calculadas |
 | 16:30 | Tanda 2: ≥ 35 por ciudad; `rag-recursos` con todos los recursos de §8 |
 | 17:30 | Tanda 3: ≥ 50 por ciudad y los doce temas cubiertos; refuerzos cruzados |
 | 18:30 | **Congelación de datos**: solo correcciones, solo `rag-qa` |
 | 18:45 | Informe final de `rag-qa`; `rag-datos` regenera los hechos con el catálogo final |
-| 19:00 | Despliegue a producción (lo hace quien el dueño autorice) y recorrido de comprobación |
+| 19:00 | El dueño dice «integra» (`integracion/ronda7` → `main`) y «despliega»; recorrido de comprobación en producción |
 | 20:00 | Submit |
 
 ## 8. Recursos del reto que hay que cubrir (`rag-recursos`)
