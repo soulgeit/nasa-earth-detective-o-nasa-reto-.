@@ -34,7 +34,7 @@ say() { printf '\n[%s] %s\n' "$1" "$2"; }
 say "1/6" "the image must be the light one (no torch, rules + RAG)"
 grep -q '^FROM python:3.12-slim' Dockerfile
 grep -q 'AI_MODE=extractive' Dockerfile
-if grep -qiE 'torch|transformers|peft' Dockerfile; then
+if grep -vE '^[[:space:]]*#' Dockerfile | grep -qiE 'torch|transformers|peft'; then
   echo "Dockerfile pulls the ML stack: that is the image that hung production. Use Dockerfile.lora only on a machine with a GPU." >&2
   exit 1
 fi
