@@ -132,5 +132,26 @@ def has_connector(card: dict[str, Any], connector: str) -> bool:
     return (card.get("connector") or "") == connector
 
 
+#: Conectores que la API puede servir hoy. El resto son variables `planned`
+#: (Giovanni): existen en el catálogo para que el detective pueda decir «esa no
+#: la tenemos, se carga subiendo el CSV», y nunca se ofrecen para analizar
+#: (docs/RONDA_3.md §4, claude-omni-1b).
+SERVABLE_CONNECTORS = frozenset({"power", "gistemp", "nsidc_seaice"})
+
+
+def with_availability(card: dict[str, Any]) -> dict[str, Any]:
+    """Añade `available` y `planned` explícitos si el catálogo no los trae.
+
+    Regla 16 de la Ronda 3: lo `planned` nunca se cuenta como disponible. Si el
+    catálogo ya declara `available`, se respeta su valor.
+    """
+    item = dict(card)
+    if "planned" not in item:
+        item["planned"] = (item.get("connector") not in SERVABLE_CONNECTORS)
+    if "available" not in item:
+        item["available"] = (item.get("connector") in SERVABLE_CONNECTORS) and not item["planned"]
+    return item
+
+
 def reload() -> None:
     _load.cache_clear()

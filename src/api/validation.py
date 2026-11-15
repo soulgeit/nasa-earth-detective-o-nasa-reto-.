@@ -102,13 +102,34 @@ def check_variable(variable_id: str) -> dict[str, Any]:
     return catalog.get_variable(variable_id)
 
 
+#: Conectores cuya serie es global o hemisférica: no se piden coordenadas.
+#: GISTEMP publica la anomalía del planeta entero; NSIDC, la extensión de hielo
+#: por hemisferio. Exigir lat/lon para ellas era un 400 artificial (RONDA_3 §2.4).
+PLACELESS_CONNECTORS = frozenset({"gistemp", "nsidc_seaice"})
+
+
+def is_placeless(card: dict[str, Any]) -> bool:
+    """¿La variable se analiza sin lugar? Se deduce del conector, no del nombre."""
+    return card.get("connector") in PLACELESS_CONNECTORS
+
+
 def point_or_bbox(
-    lat: float | None, lon: float | None, bbox: str | list[float] | None
+    lat: float | None,
+    lon: float | None,
+    bbox: str | list[float] | None,
+    *,
+    card: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], str]:
-    """Devuelve (kwargs para el ETL, etiqueta del modo) exigiendo uno de los dos."""
+    """Devuelve (kwargs para el ETL, etiqueta del modo).
+
+    Exige coordenadas salvo para las variables sin lugar (GISTEMP, hielo
+    marino): ahí se devuelve el modo `global` y el conector decide el alcance.
+    """
     box = check_bbox(bbox)
     if box is not None:
         return {"bbox": box}, "bbox"
+    if lat is None and lon is None and card is not None and is_placeless(card):
+        return {}, "global"
     plat, plon = check_point(lat, lon)
     return {"lat": plat, "lon": plon}, "point"
 
