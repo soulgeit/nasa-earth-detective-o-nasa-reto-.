@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — antigravity-1 — 2026-11-15 07:18 hora de Perú
-Rama@commit: feature/data-pipeline@HEAD · empujado: sí
+Rama@commit: feature/data-pipeline@69d679e · empujado: sí
 VERIFICADO: docs/COMPARACION_POWER_GIOVANNI.md y scripts/compare_power_giovanni.py: comparación cuantitativa de MERRA-2 POWER vs. Giovanni en la Amazonía (bbox [-71.0, 0.85, -69.84, 1.7], 540 meses, 1981-01 a 2025-12). T2M: Dif media +0.0159 °C, MAE 0.0483 °C, r=0.9927, Sen slope Giovanni +0.1964 vs POWER +0.1887 °C/década (dif -0.0077), veredicto idéntico SIGNIFICANT_STRONG. PRECTOTCORR: Dif media -0.0501 mm/día, MAE 0.2748 mm/día, r=0.9938, Sen slope Giovanni -0.0867 vs POWER -0.0122 mm/día/década, veredicto idéntico NOT_SIGNIFICANT. Frase de síntesis en inglés lista para claude-omni-1b y README (Ronda 5 Tarea 1).
 VERIFICADO: Conector NSIDC (src/etl/nsidc_seaice.py) corregido: «Based on» desduplica fuentes compuestas (ej. NSIDC-0051,NSIDC-0081 -> NSIDC-0051, NSIDC-0081, NSIDC-0803) y añade espacios tras cada coma. Prueba unitaria test_nsidc_underlying_sources_deduplicated_and_spaced pasando en tests/etl/test_additional_sources.py (Ronda 5 Tarea 3).
 VERIFICADO: Comprobado scripts/validate_datasets.py con expansión de comodines en PowerShell; validate_datasets.py "data/cases/*/series.json" pasa 7/7 casos válidos (Ronda 5 Tarea 4).
