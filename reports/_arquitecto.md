@@ -1,16 +1,14 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-15 12:05 hora de Perú
-Rama@commit: `main@5361f79` · empujado: sí
-VERIFICADO: Suite completa sobre `main` → **289 passed, 0 failed, 9 skipped** en 271s (incluye la prueba nueva de H1)
-VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (6/6)
-VERIFICADO: **Producción en Railway viva**: `https://nasa-earth-detective-o-nasa-reto-production.up.railway.app` → `/api/health` 200 `status ok` `ai_mode=extractive`, ETL/stats/detective disponibles; `scripts/smoke_api.py` contra ella → **17/17 passed, 0 skipped, 0 failed** (incluye analyze Lima 540 obs, trendmap 63 celdas, cases 7, planned 15+10, UI 200)
-VERIFICADO: `gh-pages@10c7e16` (rebuild desde main@6597f48) sirve el respaldo estático con H1 aplicado: 7/7 casos 200, Lima «+0.159» en vivo, `Last-Modified` 16:50 GMT
-VERIFICADO: Láminas alineadas con H1 — `slides.html` y `FUENTES.md` corregidos (+0.159, rules 50/50 según `docs/EVAL_IA.md`) y PDF regenerado (2.405.519 bytes, `/Count 7`, 1280×720 por diseño)
-VERIFICADO: SUBMISSION y README con la URL de Railway en «Live links»; equipo «Angel Fernando Reyes Moreno»; demo = láminas 7 págs
-ROTO / NO HECHO: informes R6 de claude-omni-1 y claude-omni-e (informe-3 QA) — los redacta el arquitecto con evidencia propia (el peer user41-73 confirmó que no los escribe)
-Siguiente paso: pasada de QA final sobre la URL pública; «Submit for Judging» a las 20:00 es del humano
-Necesito de: humano: enviar el formulario a las 20:00 con la URL de Railway como app completa y la de GitHub Pages como respaldo estático
-Avisos para otros carriles: main@5361f79 en verde con producción viva; no hace falta tocar nada más salvo los dos informes de cierre
+## ESTADO — cfable (arquitecto) — 2026-11-15 13:10 hora de Perú
+Rama@commit: `main@46cb20c` · empujado: sí
+VERIFICADO: Suite completa sobre `main` → **290 passed, 0 failed, 9 skipped** (incluye H1, D12 y D14)
+VERIFICADO: **D12 cerrado en el backend** (`f615459`): `compare()` reproducido contra producción decía «between None and None» para puntos sin nombre del gazetteer; ahora usa `_resolve_region_name` → «coordinates (-12.04°, -77.03°)». Prueba `test_compare_never_prints_none_for_arbitrary_points` (falla sin el cambio).
+VERIFICADO: **D14 cerrado** (`f615459`): la URL de IPCC AR6 WG1 de la tabla «published vs computed» daba 403 (WAF); sustituida por el PDF del SPM (`.../downloads/report/IPCC_AR6_WGI_SPM.pdf`, HTTP 200, 3.3 MB, sección SPM.A.1.2 citada).
+VERIFICADO: Informe 3 de QA actualizado con esa evidencia real (`reports/qa/informe-3.md`).
+ROTO / NO HECHO: **Railway sigue en el código anterior al fix D12** — el redespliegue necesita aprobación del humano (`railway up` desde `46cb20c`). En el árbol de trabajo hay un rebrand en curso (detective → «Huiracocha AI») de otra sesión, sin confirmar.
+Siguiente paso: humano aprueba `railway up` para que la producción sirva D12; «Submit for Judging» a las 20:00.
+Necesito de: humano: autorizar el redespliegue de Railway y enviar el formulario a las 20:00.
+Avisos para otros carriles: main@46cb20c en verde con D12/D14 cerrados; las láminas y SUBMISSION apuntan a Railway como app completa.
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
