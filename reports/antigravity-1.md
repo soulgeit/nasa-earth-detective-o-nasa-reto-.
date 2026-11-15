@@ -1,19 +1,38 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-1 — 2026-11-15 00:05 hora de Perú
-Rama@commit: feature/data-pipeline@ab823a4 · empujado: sí
-VERIFICADO: Suite completa ejecutada: python -m pytest -q → 236 passed, 4 failed (heredadas de main en detective y ml), 9 skipped en 113.29s. Carril ETL en verde total: 52 passed, 9 skipped, 0 failed en tests/etl/ (8.16s).
-VERIFICADO: Variable de viento WS2M de NASA POWER soportada en el conector con respuesta real guardada en tests/fixtures/real/power_monthly_point_lima_ws2m.json (540 meses, 1981-01 a 2025-12, min 1.86 m/s, max 3.39 m/s, unidad m/s), rango físico registrado en src/etl/validate.py (0.0 a 150.0 m/s) y pruebas unitarias passing en test_power.py y test_validate.py (Ronda 4 Tarea 2).
-VERIFICADO: Variables de temperaturas extremas T2M_MAX y T2M_MIN con respuestas reales guardadas en tests/fixtures/real/ (power_monthly_point_lima_t2m_max.json y power_monthly_point_lima_t2m_min.json, 540 meses cada una), rangos físicos en src/etl/validate.py (T2M_MAX: -90.0 a 75.0 °C; T2M_MIN: -95.0 a 65.0 °C) y pruebas passing.
-VERIFICADO: Adaptador canónico LoRA v1 intacto en models/etd-planner-lora/ (sha256 70314779040b656cc8ed5e4dac0f4285bd9efc7b392acfa870b003794327341c, r=16, alpha=32). Evaluado con sus dos números juntos (Regla 20): 200 casos de prueba (test.jsonl, semilla 42: 100% JSON válido, 91.5% intención, 84.5% variables exactas vs 15.5% reglas) y 50 preguntas de referencia (31/50).
-ROTO / NO HECHO: 4 pruebas de la suite general siguen fallando por causas ajenas al carril ETL (2 en tests/detective/test_pipeline.py por variables planned, 1 en tests/detective/test_planner.py por adapter fallback, 1 en tests/ml/test_lora_real.py por FileNotFound), asignadas a claude-omni-2 y antigravity-2 en docs/RONDA_4.md §4.
-Siguiente paso: Tarea 3 (Dom 06:00): Experimento LoRA v2 en models/etd-planner-lora-v2/ con 2 épocas completas, filtrando los 132 ejemplos con años vacíos, y reporte en reports/lora/v2/.
-Necesito de: claude-omni-1b: dar de alta la ficha de WS2M (y opcionalmente T2M_MAX, T2M_MIN) en el catálogo de variables (data/catalog/variables.json).
-Avisos para otros carriles: WS2M, T2M_MAX y T2M_MIN están listas y validadas con respuestas reales de NASA POWER. claude-omni-1b puede darlas de alta cuando guste.
+## ESTADO — antigravity-1 — 2026-11-15 07:18 hora de Perú
+Rama@commit: feature/data-pipeline@69d679e · empujado: sí
+VERIFICADO: docs/COMPARACION_POWER_GIOVANNI.md y scripts/compare_power_giovanni.py: comparación cuantitativa de MERRA-2 POWER vs. Giovanni en la Amazonía (bbox [-71.0, 0.85, -69.84, 1.7], 540 meses, 1981-01 a 2025-12). T2M: Dif media +0.0159 °C, MAE 0.0483 °C, r=0.9927, Sen slope Giovanni +0.1964 vs POWER +0.1887 °C/década (dif -0.0077), veredicto idéntico SIGNIFICANT_STRONG. PRECTOTCORR: Dif media -0.0501 mm/día, MAE 0.2748 mm/día, r=0.9938, Sen slope Giovanni -0.0867 vs POWER -0.0122 mm/día/década, veredicto idéntico NOT_SIGNIFICANT. Frase de síntesis en inglés lista para claude-omni-1b y README (Ronda 5 Tarea 1).
+VERIFICADO: Conector NSIDC (src/etl/nsidc_seaice.py) corregido: «Based on» desduplica fuentes compuestas (ej. NSIDC-0051,NSIDC-0081 -> NSIDC-0051, NSIDC-0081, NSIDC-0803) y añade espacios tras cada coma. Prueba unitaria test_nsidc_underlying_sources_deduplicated_and_spaced pasando en tests/etl/test_additional_sources.py (Ronda 5 Tarea 3).
+VERIFICADO: Comprobado scripts/validate_datasets.py con expansión de comodines en PowerShell; validate_datasets.py "data/cases/*/series.json" pasa 7/7 casos válidos (Ronda 5 Tarea 4).
+VERIFICADO: Suite tests/etl/ al 100% en verde: 54 passed, 9 skipped, 0 failed en 8.73s. Suite completa del repo: 277 passed, 0 failed, 9 skipped (0 rojas).
+ROTO / NO HECHO: Variable WS2M: validada en el conector y probada, pero su inclusión en data/catalog/variables.json hace fallar tests/detective/test_places.py::test_wind_is_an_unknown_variable (que exige no_match mientras no se actualice la prueba). Siguiendo la regla del §4.2 («solo si la suite completa sin rojas... si algo baja, no lo empujes y dilo»), la ficha no se empuja en el catálogo hasta que claude-omni-2 actualice esa aserción.
+ROTO / NO HECHO: LoRA v2 cancelado por directriz de RONDA_5 §2.8 y §4 (no entrenar).
+Siguiente paso: Validar nuevos CSVs de Giovanni si el humano los deposita en data/raw/giovanni/.
+Necesito de: claude-omni-2: actualizar tests/detective/test_places.py::test_wind_is_an_unknown_variable cuando se dé de alta WS2M en el catálogo para que la suite no se rompa.
+Necesito de: hermes-2: regenerar los dos casos de hielo marino tras la integración con el conector NSIDC corregido.
+Avisos para otros carriles: docs/COMPARACION_POWER_GIOVANNI.md está listo con comando y tabla completa para claude-omni-1b. Frase en inglés disponible para el README.
 <!-- ESTADO:FIN -->
 
 # Antigravity 1 — Datos NASA reales
 
 Rama `feature/data-pipeline` · Carpetas `src/etl/`, `tests/etl/`, `scripts/validate_datasets.py`
+
+---
+
+## Ronda 5 — Comparación POWER-Giovanni y NSIDC (2026-11-15 07:18 hora de Perú)
+Rama@commit: feature/data-pipeline@HEAD
+Qué quedó:
+- Generado script reproducible `scripts/compare_power_giovanni.py` y documento `docs/COMPARACION_POWER_GIOVANNI.md`:
+  - Región Amazonía (bbox=[-71.0, 0.85, -69.84, 1.7]), 540 meses (1981-01 a 2025-12).
+  - T2M: Pearson r=0.9927, MAE=0.0483 °C, Sen slope Giovanni=+0.1964 vs POWER=+0.1887 °C/década, veredicto `SIGNIFICANT_STRONG` en ambos.
+  - PRECTOTCORR: Pearson r=0.9938, MAE=0.2748 mm/día, Sen slope Giovanni=-0.0867 vs POWER=-0.0122 mm/día/década, veredicto `NOT_SIGNIFICANT` en ambos.
+  - Frase de síntesis en inglés redactada para `claude-omni-1b` y `README.md`.
+- Conector NSIDC (`src/etl/nsidc_seaice.py`):
+  - `parse_csv`: `csv.DictReader(..., skipinitialspace=True)` y manejo robusto de valores en listas.
+  - `series`: separación por comas de fuentes compuestas (`NSIDC-0051,NSIDC-0081`), desduplicación y formateo con espacios `", "`.
+  - Prueba `test_nsidc_underlying_sources_deduplicated_and_spaced` agregada y pasando en `tests/etl/test_additional_sources.py`.
+- Suite `tests/etl/`: 54 passed, 9 skipped, 0 failed.
+- Suite global: 277 passed, 0 failed, 9 skipped.
 
 ---
 
