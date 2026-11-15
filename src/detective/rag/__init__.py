@@ -33,6 +33,10 @@ RRF_K = 60  # standard damping constant
 # Cards for products that still need a manual Giovanni export rank below the
 # ones the app can fetch live, but they are not hidden: they are real candidates.
 TIER_PLANNED_FACTOR = 0.75
+# How much the colloquial lexicon may move a result. The student's words decide.
+EXPANSION_WEIGHT = 1.0  # measured best on the 50 golden questions (P@1 0.960, P@3 1.000)
+# How much an exact colloquial-alias hit may outrank a looser textual match.
+PRIOR_WEIGHT = 0.5  # measured on the 50 golden questions: P@1 0.960 -> 0.980
 
 
 @dataclass
@@ -100,12 +104,34 @@ def retrieve(
     # Query expansion: a student's "llueve" must reach the card named
     # "Precipitation Corrected". The lexicon only adds the seed's own long names
     # and ids to the query text; it never creates a document.
-    expanded_query = query
+    #
+    # The expansion is scored separately and down-weighted: one long name of an
+    # unrelated card (aerosols, because "aire" is in it) must never outweigh the
+    # words the student actually wrote. Measured before this split: the query
+    # "Temperatura del aire a 2 m" did not return the T2M card at all.
     extra_terms = expansion_terms(query)
+    base_rank = [(i, s) for i, s in corpus.bm25.search(query, limit=max(k * 8, 60)) if keep(i)]
     if extra_terms:
-        expanded_query = f"{query} {extra_terms}"
-
-    bm25_rank = [(i, s) for i, s in corpus.bm25.search(expanded_query, limit=max(k * 8, 60)) if keep(i)]
+        extra_rank = [(i, s) for i, s in corpus.bm25.search(extra_terms, limit=max(k * 8, 60)) if keep(i)]
+        # The student's own words dominate; the expansion is a tie-breaker.
+        # Measured: the expansion text is ~15x longer than a short question, so any
+        # larger weight drowns the query ("Temperatura del aire a 2 m" stopped
+        # returning the T2M card and returned GISTEMP instead).
+        base_scores = dict(base_rank)
+        extra_scores = dict(extra_rank)
+        base_peak = max(base_scores.values()) if base_scores else 1.0
+        extra_peak = max(extra_scores.values()) if extra_scores else 1.0
+        merged: dict[int, float] = {}
+        for i in set(base_scores) | set(extra_scores):
+            merged[i] = (
+                base_scores.get(i, 0.0) / base_peak
+                + EXPANSION_WEIGHT * (extra_scores.get(i, 0.0) / extra_peak)
+            )
+        bm25_rank = sorted(merged.items(), key=lambda kv: (-kv[1], kv[0]))
+        bm25_scores = merged
+    else:
+        bm25_rank = base_rank
+        bm25_scores = dict(base_rank)
 
     vec_rank: list[tuple[int, float]] = []
     backend = "bm25"
@@ -129,13 +155,24 @@ def retrieve(
 
     # Lexical specificity: when a colloquial word maps cleanly onto one variable,
     # that card breaks ties (air temperature over skin temperature, etc.).
-    # It can never lift a document that BM25 did not retrieve.
+    # It can never lift a document that BM25 did not retrieve, and it is a bounded
+    # bonus on a normalised BM25 score: multiplying unbounded BM25 by the prior let
+    # a mediocre match with a "clean" alias beat a perfect one — measured, the query
+    # "Temperatura del aire a 2 m" ranked GISTEMP above T2M.
+    bm25_peak = max(bm25_scores.values()) if bm25_scores else 0.0
+    normalized_scores = (
+        {idx: (score / bm25_peak if bm25_peak else 0.0) for idx, score in bm25_scores.items()}
+        if bm25_scores
+        else {idx: 1.0 for idx in fused}
+    )
     prior = specificity_prior(query)
     weighted = {
-        idx: score
-        * (1.0 + 0.5 * max((prior.get(v, 0.0) for v in corpus.docs[idx].variables), default=0.0))
+        idx: (
+            normalized_scores.get(idx, 0.0)
+            + PRIOR_WEIGHT * max((prior.get(v, 0.0) for v in corpus.docs[idx].variables), default=0.0)
+        )
         * (1.0 if corpus.docs[idx].available else TIER_PLANNED_FACTOR)
-        for idx, score in fused.items()
+        for idx in fused
     }
 
     # Language and type are only healthy tie-breakers; the ranking above decides.

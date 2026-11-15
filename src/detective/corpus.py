@@ -173,17 +173,30 @@ def _card_to_doc(card: dict[str, Any], lang: str, *, derived_from: str, availabl
 
 
 def load_catalog_cards() -> list[tuple[dict[str, Any], bool]]:
-    """(card, available) pairs. `available` is False for planned Giovanni products."""
+    """(card, available) pairs. ``available`` is False for planned Giovanni products.
+
+    RONDA_3 §4 (claude-omni-1b's approved proposal): the full catalogue carries a
+    ``planned`` section for the mission products we do not have yet. We read it so
+    the detective can say "that variable exists but is not loaded — upload the
+    Giovanni CSV" instead of pretending it does not exist. A catalogue without the
+    section (the current 15-variable file) keeps working unchanged.
+    """
     full = SETTINGS.catalog_dir / "variables.json"
     seed = SETTINGS.catalog_dir / "variables.seed.json"
     if full.exists():
         payload = json.loads(full.read_text(encoding="utf-8"))
         cards = payload.get("variables") if isinstance(payload, dict) else payload
-        return [(c, True) for c in (cards or []) if c.get("id")]
+        available = [(c, True) for c in (cards or []) if c.get("id")]
+        planned = [
+            (dict(c, available=False), False)
+            for c in ((payload.get("planned") if isinstance(payload, dict) else None) or [])
+            if c.get("id")
+        ]
+        return available + planned
     if seed.exists():
         payload = json.loads(seed.read_text(encoding="utf-8"))
         live = [(c, True) for c in (payload.get("live") or [])]
-        planned = [(c, False) for c in (payload.get("planned_giovanni") or [])]
+        planned = [(dict(c, available=False), False) for c in (payload.get("planned_giovanni") or [])]
         return live + planned
     return []
 

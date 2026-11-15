@@ -78,6 +78,7 @@ def _empty_plan(intent: str, lang: str, mode: str, *, reason: str | None = None)
         "hypothesis": "unknown",
         "lang": lang,
         "mode": mode,
+        "planner": "rules",
     }
     if reason:
         plan["note"] = reason
@@ -158,6 +159,7 @@ def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: 
         "hypothesis": _hypothesis(question),
         "lang": lang,
         "mode": mode,
+        "planner": "lora" if mode == "lora" else "rules",
     }
     if cards:
         plan["why"] = cards[0].get("title")
@@ -170,9 +172,11 @@ def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: 
 # must say that the data the student asked for is not in the catalogue.
 MISSING_TOPICS: dict[str, dict[str, tuple[str, ...]]] = {
     "MODIS_NDVI": {
+        # "selva"/"bosque" alone are places, not a request for vegetation data:
+        # "¿Qué ha pasado con la lluvia en la selva de Madre de Dios?" is a rain
+        # question. Only an explicit vegetation word makes it a NDVI question.
         "terms": ("ndvi", "vegetacion", "vegetation", "deforestacion", "deforestation",
-                  "selva", "bosque", "forest", "verdor", "greenness", "plantas", "plants",
-                  "cultivos", "crops", "biomasa", "biomass"),
+                  "verdor", "greenness", "plantas", "plants", "biomasa", "biomass"),
         "names": {"es": "NDVI / vegetación (MODIS)", "en": "NDVI / vegetation (MODIS)"},
         # Physically related variables we do carry: water/energy balance of the land
         # surface is what MODIS NDVI would have shown the greenness of.
@@ -208,9 +212,44 @@ MISSING_TOPICS: dict[str, dict[str, tuple[str, ...]]] = {
 
 def _catalog_variable_ids() -> set[str]:
     """Variables the app can actually fetch today (the live catalogue)."""
-    from .rag import corpus_documents
+    from .corpus import load_catalog_cards
 
-    return {v for doc in corpus_documents() for v in doc.variables if v}
+    return {str(card["id"]) for card, available in load_catalog_cards() if available and card.get("id")}
+
+
+def _planned_card(variable_id: str) -> dict[str, Any] | None:
+    """The catalogue's `planned` entry for an id we know about but do not carry."""
+    from .corpus import load_catalog_cards
+
+    for card, available in load_catalog_cards():
+        if not available and str(card.get("id")) == variable_id:
+            return card
+    return None
+
+
+def _load_instructions(variable_id: str, lang: str) -> str | None:
+    """Plain-language 'how do I get this variable', from the catalogue entry.
+
+    RONDA_3 §4 (claude-omni-2, task 2): the answer must name the variable and say
+    how to load it, not just "no match".
+    """
+    card = _planned_card(variable_id)
+    if not card:
+        return None
+    definition = card.get("simple_definition") or {}
+    if isinstance(definition, dict):
+        text = definition.get(lang) or definition.get("en") or ""
+        if text:
+            return str(text)
+    source = card.get("source") or {}
+    url = source.get("url") if isinstance(source, dict) else None
+    if url:
+        return (
+            f"Se carga subiendo el CSV de Giovanni ({url})."
+            if lang == "es"
+            else f"Load it by uploading the Giovanni CSV ({url})."
+        )
+    return None
 
 
 def _coverage(question: str, plan: dict[str, Any], lang: str) -> dict[str, Any]:
@@ -254,15 +293,30 @@ def _coverage(question: str, plan: dict[str, Any], lang: str) -> dict[str, Any]:
         # unless it silently swapped the topic.
         if plan.get("variable_ids") and set(plan["variable_ids"]) <= available:
             return {"missing": [MISSING_TOPICS[v]["names"][lang] for v in wanted]}
+
+    # Name it the way the catalogue names it, and say how to load it.
+    missing_names: list[str] = []
+    instructions: list[str] = []
+    for variable_id in wanted:
+        card = _planned_card(variable_id)
+        names = (card or {}).get("names") or {}
+        name = names.get(lang) or names.get("en") or MISSING_TOPICS[variable_id]["names"][lang]
+        missing_names.append(str(name))
+        how = _load_instructions(variable_id, lang)
+        if how and how not in instructions:
+            instructions.append(how)
+
     return {
         "intent": "no_match" if plan.get("intent") in ("investigate", "compare") else plan.get("intent"),
         "variable_ids": [],
-        "missing": [MISSING_TOPICS[v]["names"][lang] for v in wanted],
+        "missing": missing_names,
         "missing_ids": wanted,
+        "available": False,
+        "how_to_load": instructions or None,
         "alternatives": available_cards[:3],
         "note": (
             "missing_variable: " + ", ".join(wanted)
-            + " — the catalogue does not carry it yet (Giovanni CSV pending)"
+            + " — planned product, not loaded yet (Giovanni CSV pending)"
         ),
     }
 
@@ -306,6 +360,14 @@ def _catalog_cards_by_id() -> dict[str, dict[str, Any]]:
 
 def _catalog_card(variable_id: str) -> dict[str, Any] | None:
     return _catalog_cards_by_id().get(variable_id)
+
+
+
+def _catalog_entry_text(variable_id: str, lang: str) -> str:
+    """The CANDIDATES payload without the leading "- ID: ", as serve.py expects."""
+    line = _catalog_line(variable_id, lang)
+    prefix = f"- {variable_id}: "
+    return line[len(prefix):] if line.startswith(prefix) else line
 
 
 def _user_message(question: str, cards: list[dict[str, Any]], *, lang: str = "es") -> str:
@@ -391,36 +453,39 @@ def validate_plan(raw: Any, *, question: str, candidates: set[str], lang: str) -
 def _local_lora(question: str, lang: str, cards: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Call the locally trained adapter through ``src/ml/serve.py`` (Antigravity 2).
 
-    RONDA_2 §9.2.5: ``PLANNER_MODEL=local-lora`` means "use the adapter this
-    machine trained", not "use an Ollama tag called local-lora". If the serving
-    module or the adapter is not there yet we return None and the caller falls
-    back to rules with a note; we never fake a lora answer.
+    RONDA_2 §9.2.5 / RONDA_3 §4.3: ``PLANNER_MODEL=local-lora`` means "use the
+    adapter this machine trained", not "use an Ollama tag called local-lora".
+    The adapter is called through ``plan_with_lora(question, candidates, lang)``,
+    which is the API Antigravity 2 published. If the module, the adapter or the
+    GPU is missing we fall back to rules with an explicit note; we never fake it.
     """
-    system = _system_prompt()
-    if system is None:
-        return None
     try:
-        from src.ml.serve import generate  # type: ignore
+        from src.ml import serve as serving  # type: ignore
     except Exception:
         return None
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": _user_message(question, cards, lang=lang)},
+    if not hasattr(serving, "plan_with_lora"):
+        return None
+    # The serving module builds CANDIDATES itself from these entries, so give it
+    # exactly the text the dataset used: "ID: nombre (unidad) - definición".
+    candidates = [
+        {"variable_id": vid, "title": _catalog_entry_text(vid, lang)}
+        for vid in dict.fromkeys((c.get("variables") or [None])[0] for c in cards)
+        if vid
     ]
     try:
-        raw = generate(messages)
-    except Exception as exc:  # model not loaded, CUDA busy, adapter missing
+        raw = serving.plan_with_lora(question, candidates=candidates, lang=lang)
+    except Exception as exc:  # adapter missing, CUDA busy, no transformers
         return _rules_plan(question, lang, cards, mode="rules") | {
             "note": f"local_lora_unavailable: {type(exc).__name__}: {exc}"[:160]
         }
-    candidates = {(c.get("variables") or [None])[0] for c in cards}
-    candidates = {c for c in candidates if c}
-    plan, reason = validate_plan(raw, question=question, candidates=candidates, lang=lang)
+    allowed = {c["variable_id"] for c in candidates}
+    plan, reason = validate_plan(raw, question=question, candidates=allowed, lang=lang)
     if plan is None:
         fallback = _rules_plan(question, lang, cards, mode="rules")
         fallback["note"] = f"lora_rejected: {reason}"[:160]
         return fallback
     plan["mode"] = "lora"
+    plan["planner"] = "lora"
     return plan
 
 
@@ -451,6 +516,7 @@ def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: st
         plan, reason = validate_plan(raw, question=question, candidates=candidates, lang=lang)
         if plan is not None:
             plan["mode"] = mode
+            plan["planner"] = "rules" if mode == "rules" else "lora"
             return plan
         last_reason = reason
         messages = messages[:2] + [

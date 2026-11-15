@@ -182,3 +182,56 @@ def test_local_lora_without_serving_falls_back_to_rules(monkeypatch):
     result = _plan("¿está lloviendo menos en Piura?", lang="es")
     assert result["mode"] == "rules"
     assert "local_lora" in result.get("note", "") or "rejected" in result.get("note", "")
+
+
+# --- RONDA_3 §4.2: planned variables from the catalogue ---------------------
+
+def test_planned_variable_is_named_and_explained(monkeypatch, tmp_path):
+    """A product in the catalogue's `planned` section must be named, not just refused."""
+    import json as _json
+    from src.detective import corpus as corpus_module
+
+    catalog = {
+        "schema": "catalog/2",
+        "variables": [{"id": "T2M", "names": {"es": "Temperatura", "en": "Temperature"}, "unit": "°C"}],
+        "planned": [{
+            "id": "MODIS_NDVI",
+            "available": False,
+            "names": {"es": "NDVI (MODIS)", "en": "NDVI (MODIS)"},
+            "simple_definition": {
+                "es": "Se carga subiendo el CSV de NDVI exportado de Giovanni.",
+                "en": "Load it by uploading the NDVI CSV exported from Giovanni.",
+            },
+            "source": {"via": "Giovanni (GES DISC)", "url": "https://giovanni.gsfc.nasa.gov/giovanni/"},
+        }],
+    }
+    path = tmp_path / "variables.json"
+    path.write_text(_json.dumps(catalog), encoding="utf-8")
+    monkeypatch.setattr(corpus_module.SETTINGS.__class__, "catalog_dir", property(lambda self: tmp_path), raising=False)
+    monkeypatch.setattr(corpus_module, "SETTINGS", corpus_module.SETTINGS, raising=False)
+
+    from src.detective import planner as planner_module
+
+    monkeypatch.setattr(planner_module, "_catalog_variable_ids", lambda: {"T2M"})
+    monkeypatch.setattr(
+        planner_module,
+        "_planned_card",
+        lambda vid: next((c for c in catalog["planned"] if c["id"] == vid), None),
+    )
+
+    result = planner_module._coverage(
+        "¿la selva pierde vegetación?", {"intent": "investigate", "mode": "rules", "variable_ids": []}, "es"
+    )
+    assert result["intent"] == "no_match"
+    assert result["missing"] == ["NDVI (MODIS)"]
+    assert result["how_to_load"] and "Giovanni" in result["how_to_load"][0]
+    assert result["available"] is False
+
+
+def test_planned_cards_are_read_from_the_catalog():
+    from src.detective.corpus import load_catalog_cards
+
+    cards = load_catalog_cards()
+    planned = [c for c, available in cards if not available]
+    for card in planned:
+        assert card.get("available") is False, "a planned card must say so in its payload"

@@ -28,7 +28,7 @@
    "TODO_HUMANO"
   ]
  },
- "frozen_at": "2026-11-15T00:09:17Z",
+ "frozen_at": "2026-11-15T00:49:44Z",
  "verdict_code": "NOT_SIGNIFICANT",
  "provenance": {
   "kind": "nasa_file",
@@ -36,12 +36,12 @@
   "underlying": "-9999, NSIDC-0051, NSIDC-0051,NSIDC-0081, NSIDC-0803",
   "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
   "request_urls_pattern": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_{MM}_extent_v4.0.csv",
-  "retrieved_at": "2026-11-15T00:09:23Z",
+  "retrieved_at": "2026-11-15T00:49:47Z",
   "sha256": "298b650b323683d91ded11e5530af014bb54603ff22b890e49dbce59540699b3",
   "native_resolution": "hemispheric monthly index",
   "citation": "NSIDC Sea Ice Index, Version 4; https://nsidc.org/data/g02135",
   "files_fetched": 12,
-  "files_retrieved_at": "2026-11-15T00:09:22Z",
+  "files_retrieved_at": "2026-11-14T18:59:38Z",
   "source_splice": [
    "-9999",
    "NSIDC-0051",

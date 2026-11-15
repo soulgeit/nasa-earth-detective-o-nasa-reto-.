@@ -70,6 +70,22 @@ def _variable_terms(analysis: dict[str, Any], lang: str) -> list[str]:
     return [t for i, t in enumerate(dict.fromkeys(terms)) if t]
 
 
+def _documents_for_variable(variable_id: str, lang: str) -> list[dict[str, Any]]:
+    """The analysed variable's own cards, in the requested language first.
+
+    This is a direct corpus lookup, not a ranked search: when we know the id we do
+    not need BM25 to guess, and the explanation must never quote the English card
+    of a variable while answering in Spanish (RONDA_3 §4.1).
+    """
+    from .rag import corpus_documents
+
+    if not variable_id:
+        return []
+    docs = [d for d in corpus_documents() if variable_id in d.variables]
+    docs.sort(key=lambda d: (0 if d.lang == lang else 1, d.type != "variable_card", d.id))
+    return [d.to_public(1.0) for d in docs]
+
+
 def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES) -> list[dict[str, Any]]:
     """Sources that are actually about the variable that was analysed.
 
@@ -99,30 +115,29 @@ def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES)
         chosen.append((doc, role))
         return True
 
-    # 1) The variable's own cards, in the requested language first.
-    for term in _variable_terms(analysis, lang):
-        if not term:
+    # 1) The variable's own cards, in the requested language (direct lookup).
+    for doc in _documents_for_variable(variable_id, lang):
+        if doc["type"] != "variable_card":
             continue
-        for doc in retrieve(term, lang=lang, k=6, types=["variable_card"]):
-            if variable_id and variable_id not in (doc.get("variables") or []):
-                continue
-            _take(doc, "variable")
-            if sum(1 for _d, r in chosen if r == "variable") >= 2:
-                break
-
-    # 2) One regional/context document, only if it is about this variable or region.
-    if region_name:
-        for doc in retrieve(f"{region_name} {lang == 'en' and 'and' or 'y'} {variable_id or ''}".strip(),
-                            lang=lang, k=6, types=["nasa_article", "region_note", "biome_profile"]):
-            if variable_id and variable_id not in (doc.get("variables") or []):
-                # Keep regional articles only when they belong to the same region.
-                if not region_name.lower().split(",")[0] in (doc.get("title") or "").lower():
-                    continue
-            _take(doc, "context")
+        _take(doc, "variable")
+        if sum(1 for _d, r in chosen if r == "variable") >= 1:
             break
 
-    # 3) A method note fits any variable and is always on-topic for a trend.
-    for doc in retrieve("trend significance method Mann-Kendall", lang=lang, k=4, types=["method_note"]):
+    # 2) A regional article, only from the requested language and the same region.
+    if region_name:
+        region_key = region_name.lower().split(",")[0].strip()
+        for doc in retrieve(region_name, lang=lang, k=8, types=["nasa_article", "region_note"]):
+            if region_key not in (doc.get("title") or "").lower():
+                continue
+            if variable_id and variable_id not in (doc.get("variables") or []):
+                continue
+            if _take(doc, "context"):
+                break
+
+    # 3) A method note in the requested language fits any variable.
+    for doc in retrieve("trend significance Mann-Kendall", lang=lang, k=6, types=["method_note"]):
+        if doc.get("lang") != lang:
+            continue
         _take(doc, "method")
         break
 
@@ -133,6 +148,7 @@ def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES)
             "title": doc["title"],
             "url": doc["url"],
             "type": doc["type"],
+            "lang": doc.get("lang"),
             "publisher": doc.get("publisher"),
             "role": role,
             "text": doc["text"],
