@@ -1,0 +1,22 @@
+# SI-assisted: claude-omni-3 (Claude Opus 5.5)
+# Contexto de construcción mínimo: 218 MB -> ~14 MB. Sin esto, cada `fly deploy`
+# sube el .venv (196 MB) y el historial de git.
+.git/
+.venv/
+.venv-ml/
+models/
+dist/
+data/cache/
+data/raw/
+data/lora/
+data/processed/
+tests/
+reports/
+docs/
+prompts/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+*.token

@@ -87,7 +87,17 @@ def _startup() -> None:
 
 
 def _client_key(request: Request) -> str:
-    """IP del cliente para el límite de peticiones. Sin datos personales."""
+    """IP del cliente para el límite de peticiones. Sin datos personales.
+
+    Detrás del proxy de la nube (Fly, Render, Koyeb) `request.client.host` es la
+    IP del proxy, así que todos los visitantes compartirían el mismo cupo de 120
+    peticiones por minuto y la demo se bloquearía sola. Se prefiere la primera
+    entrada de `X-Forwarded-For`, que el proxy antepone.
+    """
+    forwarded = request.headers.get("x-forwarded-for", "")
+    first = forwarded.split(",")[0].strip()
+    if first:
+        return first
     return request.client.host if request.client else "unknown"
 
 

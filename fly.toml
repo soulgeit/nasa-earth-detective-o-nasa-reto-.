@@ -1,0 +1,42 @@
+# SI-assisted: claude-omni-3 (Claude Opus 5.5)
+# Fly.io — API + UI de EarthTrend Detective en un solo servicio.
+# 512 MB es lo mínimo razonable: Theil-Sen sobre 540 puntos más el motor v2
+# no caben con holgura en 256 MB. `shared-cpu-1x` ~ $3.5/mes.
+
+app = "earthtrend-detective"
+primary_region = "iad"   # Ashburn: el más barato y cerca de los servicios de la NASA
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  AI_MODE = "extractive"
+  ALLOW_FIXTURES = "0"
+  DATA_CACHE_DIR = "/data/cache"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Sin auto-stop: un arranque en frío de 20 s delante de un juez es una página
+  # rota. Con una máquina de 512 MB el coste queda por debajo de los $5/mes que
+  # Fly condona en cuentas personales.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+[[http_service.checks]]
+  grace_period = "20s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/api/health/live"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
