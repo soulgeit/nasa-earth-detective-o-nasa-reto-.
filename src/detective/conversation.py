@@ -626,6 +626,9 @@ def _plan_reply(plan: dict[str, Any], lang: str, *, inherited: list[str]) -> dic
         text += " " + _t(lang, f"(Sigo en {place}, el lugar de antes.)", f"(Staying in {place}, the previous place.)")
     if "variable" in inherited:
         text += " " + _t(lang, "(Mantengo la variable de antes.)", "(Keeping the previous variable.)")
+    if plan.get("mode") == "lora":
+        text += " " + _t(lang, "(Plan propuesto por el planificador LoRA y verificado por reglas.)",
+                         "(Plan proposed by the LoRA planner and checked by rules.)")
     definition = _pick((_card(variable_id) or {}).get("simple_definition"), lang)
     if definition:
         text += "\n" + _t(lang, f"Qué mide: {definition}", f"What it measures: {definition}")
@@ -695,6 +698,27 @@ def _small_talk(folded: str, lang: str, *, has_topic: bool) -> dict[str, Any] | 
     return None
 
 
+def _verify_lora_plan(plan: dict[str, Any], text: str, language: str, named: list[str], make_plan: Any, cue_intent: Any) -> dict[str, Any]:
+    """The adapter proposes, the verified rules decide (RONDA_4 §5.2).
+
+    Measured on the 50 reference questions the rules answer 50/50 and the adapter 40/50, and
+    in the live product test it dropped "heladas en Huancayo" and a two-city comparison. A
+    LoRA plan is kept only when its variable is one the student's own words point at and it
+    agrees with the comparison cue; otherwise the rules plan the question, and the note says so.
+    """
+    if plan.get("mode") != "lora" or plan.get("intent") not in ("investigate", "compare"):
+        return plan
+    padded = " ".join(fold(text).replace("?", " ").replace("!", " ").replace(",", " ").replace(".", " ").split())
+    verified = [v for v in (plan.get("variable_ids") or []) if _card(v) and _names_variable(padded, v, named)]
+    wants_compare = cue_intent(text) == "compare"
+    if verified and (plan.get("intent") == "compare" or not wants_compare):
+        return plan
+    rules = dict(make_plan(text, lang=language, use_lora=False))
+    rules["note"] = (f"lora_overruled: it proposed {plan.get('variable_ids') or []} ({plan.get('intent')}); "
+                     "the verified rules planned instead")[:160]
+    return rules
+
+
 def chat(message: str, *, lang: str | None = None, context: dict[str, Any] | None = None) -> dict[str, Any]:
     """One conversational turn. Stateless: the client sends the context back."""
     from .planner import _intent as cue_intent
@@ -729,6 +753,7 @@ def chat(message: str, *, lang: str | None = None, context: dict[str, Any] | Non
         return _method(text, language)
 
     plan = make_plan(text, lang=language)
+    plan = _verify_lora_plan(plan, text, language, named_variables, make_plan, cue_intent)
     intent = plan.get("intent")
 
     if intent == "out_of_scope":

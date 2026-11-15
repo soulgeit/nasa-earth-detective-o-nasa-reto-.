@@ -287,6 +287,8 @@ vale si una cifra no se puede seguir hasta su origen.
   el del texto, ciudad sin nombrar, duplicados.
 - **Producción:** la imagen pesada de `feature/ui` colgó el servicio a las 17:50 (SmolLM2 en CPU
   dentro de la petición). El despliegue correcto es la imagen ligera de `Dockerfile`
-  (`scripts/deploy_railway.sh`). `Dockerfile.lora` queda como experimental.
+  (`scripts/deploy_railway.sh`). `Dockerfile.lora` queda como experimental; el camino LoRA ya
+  está resguardado (`planner._guarded_lora_call`: una inferencia a la vez, tope de 25 s, precarga
+  en segundo plano, reglas mientras tanto) y la nota de la app muestra su estado real.
 - **Congelación:** desde este punto no se tocan `src/`, `data/catalog/` ni `docs.jsonl`. Los
   carriles de datos solo corrigen sus archivos y pasan siempre `validate_fragments.py`.

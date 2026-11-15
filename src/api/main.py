@@ -79,6 +79,15 @@ async def _validation_handler(_request: Request, exc: RequestValidationError) ->
 @app.on_event("startup")
 def _startup() -> None:
     log.info("EarthTrend Detective API %s starting (ai_mode=%s)", API_VERSION, AI_MODE)
+    # With AI_MODE=full and PLANNER_MODEL=local-lora the adapter is loaded in the
+    # background: no request ever waits for the load (see planner._guarded_lora_call).
+    try:
+        from src.detective.planner import start_lora_warmup
+
+        if start_lora_warmup():
+            log.info("LoRA adapter: loading in the background")
+    except Exception as exc:  # the app must start without the AI layer
+        log.warning("LoRA warm-up not started: %s", exc)
 
 
 # --------------------------------------------------------------------------
@@ -519,7 +528,7 @@ def ai_about(request: Request, lang: str = Query("es")) -> JSONResponse:
     _limit(request)
     lang = validation.check_lang(lang)
     result = _detective_call("about", lambda fn: fn(lang=lang))
-    return JSONResponse(result, headers={"Cache-Control": "public, max-age=300"})
+    return JSONResponse(result, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/api/scan", tags=["data"])

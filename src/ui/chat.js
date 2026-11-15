@@ -78,6 +78,7 @@ const EN = {
   'intro.mode': 'Mode of this server',
   'intro.mode.rules': 'verified rules + RAG (the LoRA planner is not loaded here)',
   'intro.mode.lora': 'LoRA planner + RAG, every plan verified by rules',
+  'intro.mode.loading': 'verified rules + RAG while the LoRA planner finishes loading into memory',
   'intro.how.title': 'Before you start: how Huiracocha AI works',
   'intro.how.toggle': 'open / close',
   'intro.pipeline': 'From question to answer',
@@ -191,6 +192,7 @@ const ES = {
   'intro.mode': 'Modo de este servidor',
   'intro.mode.rules': 'reglas verificadas + RAG (aquí no está cargado el planificador LoRA)',
   'intro.mode.lora': 'planificador LoRA + RAG, cada plan verificado por reglas',
+  'intro.mode.loading': 'reglas verificadas + RAG mientras el planificador LoRA termina de cargarse en memoria',
   'intro.how.title': 'Antes de empezar: cómo funciona Huiracocha IA',
   'intro.how.toggle': 'abrir / cerrar',
   'intro.pipeline': 'De la pregunta a la respuesta',
@@ -255,6 +257,7 @@ let ctx = {};
 let busy = false;
 let about = null;
 let aboutFailed = false;
+let aboutPolls = 0;
 let els = {};
 
 const $ = (sel) => document.querySelector(sel);
@@ -808,7 +811,9 @@ function renderNote() {
   }
   els.note.append(document.createTextNode(`${t('intro.note', { docs: num(about.corpus.documents) })} `));
   const mode = el('span', 'mode-line');
-  mode.append(el('strong', null, `${t('intro.mode')}: `), document.createTextNode(t(about.deployment.engine === 'lora+rag' ? 'intro.mode.lora' : 'intro.mode.rules')));
+  const loading = about.deployment.lora && about.deployment.lora.state === 'loading';
+  const modeKey = about.deployment.engine === 'lora+rag' ? 'intro.mode.lora' : (loading ? 'intro.mode.loading' : 'intro.mode.rules');
+  mode.append(el('strong', null, `${t('intro.mode')}: `), document.createTextNode(t(modeKey)));
   els.note.append(mode);
 }
 
@@ -918,6 +923,10 @@ async function loadAbout() {
   renderBadge();
   renderNote();
   renderIntro();
+  if (about && about.deployment.lora && about.deployment.lora.state === 'loading' && aboutPolls < 12) {
+    aboutPolls += 1;
+    setTimeout(loadAbout, 8000);
+  }
 }
 
 function openIntro() {

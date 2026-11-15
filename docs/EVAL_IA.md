@@ -174,3 +174,28 @@ The numbers above are the reason: 50/50 rules vs 40/50 LoRA on the hand-written
 questions. The LoRA is shown as what it is — a working fine-tune with published
 results — not as the default planner.
 <!-- TABLA_PLAN_FIN -->
+
+## Comprobación en vivo del camino conversacional (Ronda 7, 15-nov-2026)
+
+Medido en la RTX 4070 SUPER del PC1 con `AI_MODE=full PLANNER_MODEL=local-lora`: el adaptador
+`etd-planner-lora` se carga en segundo plano (≈8 s) y se hicieron 6 preguntas reales a
+`POST /api/ai/chat`. **No es un benchmark**: son 6 preguntas, solo para comprobar cómo se
+comporta el producto con el adaptador encendido.
+
+| Pregunta | Latencia | Plan que propuso el LoRA | Resultado |
+|---|---|---|---|
+| ¿Llueve menos en Ica? | 3,1 s | PRECTOTCORR · Ica | conservado |
+| Is Lima getting hotter? | 2,4 s | T2M · Lima | conservado |
+| heladas en Huancayo | 2,5 s | T2M | **corregido por las reglas** → FROST_DAYS |
+| Compara la lluvia de Andahuaylas y Lima | 2,6 s | PRECSNOLAND (comparar) | **corregido por las reglas** → PRECTOTCORR |
+| viento en Ica | 2,4 s | WS2M · Ica | conservado |
+| ¿Hay más radiación UV en Ayacucho? | 2,8 s | ALLSKY_SFC_UV_INDEX · Ayacucho | conservado |
+
+Con reglas (el modo del servidor público) las seis se planifican bien y responden en milisegundos.
+Conclusión: el LoRA funciona y es más lento (2,4–3,1 s); no es más preciso que las reglas, lo que
+coincide con el 40/50 frente al 50/50 de las preguntas de referencia. Por eso el producto exige que las
+reglas respalden el plan del adaptador y, si no lo respaldan, deciden ellas (`lora_overruled` en la
+nota del plan; ver `conversation._verify_lora_plan`). Además el adaptador nunca puede retener una
+petición: una inferencia a la vez, tope de 25 s y precarga en segundo plano
+(`planner._guarded_lora_call`; antes, el 15-nov a las 17:50, cargarlo dentro de la petición dejó sin
+respuesta al servidor público).

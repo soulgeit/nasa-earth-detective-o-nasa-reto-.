@@ -8,7 +8,7 @@
 > and determine what is changing, where, how much, and whether the change is significant*).
 
 **Public site:** <https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./>  
-**Live Interactive App & API (Railway):** <https://nasa-earth-detective-o-nasa-reto-production.up.railway.app>
+**Live Interactive App & API (Railway):** <https://huiracochaia.soulgeit.com>
 
 The public site is a **static, no-server backup**: it opens the seven frozen cases
 and the two precomputed trend maps, in English and Spanish, on desktop and phone.
@@ -37,9 +37,13 @@ many more years of data we need"*.
 - **"How many years are still missing?"** from Weatherhead et al. (1998).
 - **Trend maps** with false-discovery-rate control (Benjamini–Hochberg), so a
   single significant cell among hundreds is not sold as a finding.
-- **A detective that cites**: retrieval over a verified corpus of NASA articles,
-  method notes and glossary entries; every claim carries a title, a publisher and
-  a URL, and the assistant never produces numbers or coordinates.
+- **A conversational detective that cites (Huiracocha IA)**: it answers in plain
+  language, remembers the place and variable of the conversation, and retrieves from a
+  verified corpus of about 1,000 documents (NASA, NOAA, SENAMHI, peer-reviewed papers;
+  five Peruvian cities documented in depth). Every claim carries a title, a publisher
+  and a URL, and the assistant never produces numbers or coordinates. "What is
+  changing in Huancayo?" tests all 32 point variables at once, with the
+  Benjamini–Hochberg correction across them.
 - **Visible provenance** on every result: source, exact request URL, retrieval
   date and the sha256 of the raw response.
 - **English and Spanish**, English first; the public site opens in English.
@@ -77,7 +81,8 @@ python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8791
 ```
 
 The app works with **no language model**: the planner uses rules and the
-explanation quotes the cited sources (`AI_MODE=extractive`, the default).
+explanation quotes the cited sources (`AI_MODE=extractive`, the default and the mode the
+public server runs; the "how it works" panel of the app reports the mode it is in).
 
 ### How to check it
 
@@ -119,7 +124,7 @@ numbers in [`docs/EVAL_IA.md`](docs/EVAL_IA.md).
 
 | Source | What we take | Access |
 |---|---|---|
-| **NASA POWER** | Monthly point and regional series for 15 variables (MERRA-2, CERES SYN1deg, GEWEX SRB 4-IP, GEOS-IT) | Public REST API, no account |
+| **NASA POWER** | Monthly point and regional series for 32 variables (MERRA-2, CERES SYN1deg, GEWEX SRB 4-IP, GEOS-IT) | Public REST API, no account |
 | **NASA GISTEMP v4** | Global surface temperature anomaly, 1880–present | Public files |
 | **NSIDC Sea Ice Index v4** | Arctic and Antarctic monthly sea ice extent | Public files |
 | **Giovanni (GES DISC)** | GPM, GLDAS, AIRS, OMI and MODIS series, exported as CSV and uploaded by the user | Earthdata account |

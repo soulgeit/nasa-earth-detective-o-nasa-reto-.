@@ -14,8 +14,11 @@ retrieved, and ``place`` must be a literal substring of the question.
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
+import os
 import re
+import threading
 from functools import lru_cache
 from typing import Any
 
@@ -599,6 +602,79 @@ def validate_plan(raw: Any, *, question: str, candidates: set[str], lang: str) -
     return plan, None
 
 
+# --- LoRA guard (RONDA_7) -----------------------------------------------------
+# On 2026-11-15 at 17:50 the public service stopped answering everybody: the first chat
+# message loaded SmolLM2-1.7B + the adapter on a CPU *inside the request*. The adapter
+# may still be offered, but it can never again hold a request (or the server) hostage:
+#   * one inference at a time (a second question gets the rules answer at once);
+#   * a hard timeout (the answer comes from the rules; the run finishes in its thread);
+#   * the model is loaded in the background at start-up, not on the first question;
+#   * the state is reported as it is ("loading", "ready", "failed"), never assumed.
+LORA_TIMEOUT_S = float(os.environ.get("LORA_TIMEOUT", "25") or 25)
+_LORA_LOCK = threading.Lock()
+_LORA_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="lora")
+_LORA_STATE: dict[str, Any] = {"state": "idle", "error": None}  # idle | loading | ready | failed
+
+
+class LoraBusy(RuntimeError):
+    """Another question is being planned by the adapter right now."""
+
+
+class LoraLoading(RuntimeError):
+    """The adapter is still being loaded into memory."""
+
+
+def lora_status() -> dict[str, Any]:
+    return dict(_LORA_STATE)
+
+
+def start_lora_warmup() -> bool:
+    """Load the adapter in a background thread. Returns True when a load was started."""
+    if not (SETTINGS.ai_mode == "full" and _planner_model_is_local_lora()):
+        return False
+    if _LORA_STATE["state"] in ("loading", "ready"):
+        return False
+    _LORA_STATE.update(state="loading", error=None)
+
+    def work() -> None:
+        try:
+            from src.ml import serve as serving  # type: ignore
+
+            with _LORA_LOCK:
+                serving.load_lora_planner()
+            _LORA_STATE.update(state="ready", error=None)
+        except Exception as exc:  # no adapter, no torch, out of memory...
+            _LORA_STATE.update(state="failed", error=f"{type(exc).__name__}: {exc}"[:160])
+
+    threading.Thread(target=work, name="lora-warmup", daemon=True).start()
+    return True
+
+
+def _guarded_lora_call(serving: Any, question: str, candidates: list[dict[str, Any]], lang: str) -> Any:
+    """Run the adapter off the request thread, alone, and never for longer than LORA_TIMEOUT_S."""
+    state = _LORA_STATE["state"]
+    if state == "loading":
+        raise LoraLoading("the adapter is still loading in memory")
+    if state == "failed":
+        raise RuntimeError(f"the adapter failed to load: {_LORA_STATE['error']}")
+    if not _LORA_LOCK.acquire(blocking=False):
+        raise LoraBusy("another question is being planned by the adapter")
+
+    def run() -> Any:
+        try:
+            result = serving.plan_with_lora(question, candidates=candidates, lang=lang)
+            _LORA_STATE.update(state="ready", error=None)
+            return result
+        finally:
+            _LORA_LOCK.release()
+
+    future = _LORA_POOL.submit(run)
+    try:
+        return future.result(timeout=LORA_TIMEOUT_S)
+    except concurrent.futures.TimeoutError as exc:
+        raise TimeoutError(f"no answer from the adapter after {LORA_TIMEOUT_S:g} s") from exc
+
+
 def _local_lora(question: str, lang: str, cards: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Call the locally trained adapter through ``src/ml/serve.py`` (Antigravity 2).
 
@@ -622,8 +698,8 @@ def _local_lora(question: str, lang: str, cards: list[dict[str, Any]]) -> dict[s
         if vid
     ]
     try:
-        raw = serving.plan_with_lora(question, candidates=candidates, lang=lang)
-    except Exception as exc:  # adapter missing, CUDA busy, no transformers
+        raw = _guarded_lora_call(serving, question, candidates, lang)
+    except Exception as exc:  # adapter missing, busy, loading, timeout, no transformers
         return _rules_plan(question, lang, cards, mode="rules") | {
             "note": f"local_lora_unavailable: {type(exc).__name__}: {exc}"[:160]
         }
@@ -681,7 +757,7 @@ def _planner_model_is_local_lora() -> bool:
     return (SETTINGS.planner_model or "").strip().lower() in ("local-lora", "local_lora", "lora")
 
 
-def plan(question: str, *, lang: str = "es") -> dict[str, Any]:
+def plan(question: str, *, lang: str = "es", use_lora: bool = True) -> dict[str, Any]:
     """Turn a student's question into an InvestigationPlan (contract §10)."""
     language = _lang(question, lang)
     if not question or not question.strip():
@@ -711,7 +787,7 @@ def plan(question: str, *, lang: str = "es") -> dict[str, Any]:
     # The LoRA is therefore never the silent default: it wins only when the operator
     # asks for it, and its real numbers (200-case set + 50 reference questions) are
     # published together in docs/EVAL_IA.md (rule 20).
-    if SETTINGS.ai_mode == "full" and SETTINGS.planner_model:
+    if use_lora and SETTINGS.ai_mode == "full" and SETTINGS.planner_model:
         if _planner_model_is_local_lora():
             result = _local_lora(question, language, cards)
             if result is not None:

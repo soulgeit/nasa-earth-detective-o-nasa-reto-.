@@ -47,18 +47,27 @@ LORA_FACTS: dict[str, Any] = {
 }
 
 
+def engine_for(*, configured: bool, runtime: bool, adapter: bool, state: str) -> str:
+    """"lora+rag" only once the adapter has really loaded or answered; never on a promise."""
+    return "lora+rag" if (configured and runtime and adapter and state == "ready") else "rules+rag"
+
+
 def _lora_runtime() -> dict[str, Any]:
-    """Whether the LoRA planner can really answer in this process."""
-    adapter = REPO_ROOT / "models" / "etd-planner-lora" / "adapter_config.json"
+    """Whether the LoRA planner can really answer in this process, and in which state."""
+    from .planner import lora_status
+
+    adapter = (REPO_ROOT / "models" / "etd-planner-lora" / "adapter_config.json").exists()
     runtime = all(importlib.util.find_spec(name) is not None for name in ("torch", "peft", "transformers"))
     configured = SETTINGS.ai_mode == "full" and (SETTINGS.planner_model or "").strip().lower() in (
         "local-lora", "local_lora", "lora",
     )
+    status = lora_status()
     return {
-        "adapter_present": adapter.exists(),
+        "adapter_present": adapter,
         "runtime_present": runtime,
         "configured": configured,
-        "active": bool(configured and runtime and adapter.exists()),
+        "state": status["state"],  # idle | loading | ready | failed
+        "active": engine_for(configured=configured, runtime=runtime, adapter=adapter, state=status["state"]) == "lora+rag",
     }
 
 
@@ -116,11 +125,21 @@ def _catalog_block() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=4)
-def about(*, lang: str = "es") -> dict[str, Any]:
+def _static_block(lang: str) -> dict[str, Any]:
+    """The parts that only change when the corpus does (cached per language)."""
     from .corpus import FRAGMENT_ERRORS
     from .rag import corpus_documents
 
     docs = corpus_documents()
+    return {
+        "corpus": _corpus_block(docs) | {"skipped_rows": len(FRAGMENT_ERRORS)},
+        "catalog": _catalog_block(),
+        "resources": _resources(docs, lang),
+    }
+
+
+def about(*, lang: str = "es") -> dict[str, Any]:
+    static = _static_block(lang)
     lora = _lora_runtime()
     engine = "lora+rag" if lora["active"] else "rules+rag"
     return {
@@ -136,12 +155,12 @@ def about(*, lang: str = "es") -> dict[str, Any]:
         },
         "pipeline": ["question", "retrieval", "plan", "nasa_data", "statistics", "explanation"],
         "retrieval": {"method": "BM25 + colloquial lexicon" + (" + embeddings (RRF)" if SETTINGS.embeddings_enabled else "")},
-        "corpus": _corpus_block(docs) | {"skipped_rows": len(FRAGMENT_ERRORS)},
-        "catalog": _catalog_block(),
+        "corpus": static["corpus"],
+        "catalog": static["catalog"],
         "lora": LORA_FACTS,
-        "resources": _resources(docs, lang),
+        "resources": static["resources"],
     }
 
 
 def reset_cache() -> None:
-    about.cache_clear()
+    _static_block.cache_clear()
