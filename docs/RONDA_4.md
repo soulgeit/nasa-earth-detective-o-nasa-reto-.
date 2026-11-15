@@ -9,7 +9,7 @@ git fetch origin && git checkout feature/<tu-rama> && git merge origin/main
 Lee docs/RONDA_4.md entero: reglas 19-25 (§3) y tu apartado del §4. Empieza por tu tarea 1.
 ```
 
-Agentes nuevos (`claude-omni-c`, `claude-omni-e`, `claude-omni-3a`): `git fetch origin && git checkout -b feature/<tu-rama> origin/main`.
+Agentes nuevos (`claude-omni-c`, `claude-omni-e`, `claude-omni-3a`): carpeta propia, para no cambiarle la rama a otro agente del mismo equipo: `git fetch origin && git worktree add ../etd-<tu-rama> -b feature/<tu-rama> origin/main` (por ejemplo `../etd-demo`, `../etd-qa`, `../etd-static`) y trabaja solo dentro de esa carpeta. Nadie hace `git checkout` de otra rama en una carpeta que use otro agente.
 
 **Aviso de integración.** Las dos ramas que traen el LoRA (`feature/data-pipeline@c53d937` y `feature/stats@22b2cb5`) todavía **no están en `main`**: chocan entre sí (§2.1). La fusión está resuelta y probada en el PC1 y entra en `main` cuando el humano diga «integra». Sabrás que ya entró cuando `git cat-file -e origin/main:reports/lora/train_meta.json` no dé error. **Hasta entonces nadie toca `models/`, `reports/lora/` ni `tests/ml/`.** Las tareas marcadas con ⏳ esperan a ese commit (repite `git fetch` cada 10 minutos); las demás empiezan ya.
 
