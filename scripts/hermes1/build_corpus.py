@@ -314,51 +314,6 @@ def make_doc(**kwargs) -> dict:
     return kwargs
 
 
-def build_planned_cards(catalog: dict) -> list[dict]:
-    """Cards for Giovanni variables we do not have yet (RONDA_3 §4).
-
-    They let the detective answer no_match and explain how such a variable is
-    loaded, without ever offering it as available for analysis.
-    """
-    docs = []
-    for entry in catalog.get("planned", []):
-        how = entry.get("how_to_load") or {}
-        for lang in ("es", "en"):
-            name = entry["names"][lang]
-            definition = entry["simple_definition"][lang]
-            text = (
-                f"{name}. {definition} {how.get(lang, '')} "
-                + ("Esta variable todavía no está cargada: no se ofrece para analizar."
-                   if lang == "es" else
-                   "This variable is not loaded yet: it is not offered for analysis.")
-                + (" Fuente de los datos: Giovanni (GES DISC), https://giovanni.gsfc.nasa.gov/giovanni/."
-                   if lang == "es" else
-                   " Data source: Giovanni (GES DISC), https://giovanni.gsfc.nasa.gov/giovanni/.")
-            )
-            docs.append(
-                make_doc(
-                    id=f"planned-{entry['id'].lower()}-{lang}",
-                    type="variable_card",
-                    title=name,
-                    url=(entry.get("source") or {}).get("url") or GIOVANNI_URL_FALLBACK,
-                    publisher="Giovanni (GES DISC), NASA",
-                    date=None,
-                    lang=lang,
-                    text=truncate_sentences(text),
-                    variables=[entry["id"]],
-                    biomes=[],
-                    license="NASA (public domain)",
-                    fetched_at=TODAY + "T00:00:00Z",
-                    sha256=__import__("hashlib").sha256(
-                        json.dumps(entry, ensure_ascii=False, sort_keys=True).encode("utf-8")
-                    ).hexdigest(),
-                    available=False,
-                    generated_from="variables.json#planned",
-                )
-            )
-    return docs
-
-
 def build_variable_cards(catalog: dict) -> list[dict]:
     docs = []
     for card in catalog["variables"]:
@@ -834,7 +789,6 @@ def main() -> int:
     catalog = load_catalog()
     docs: list[dict] = []
     docs.extend(build_variable_cards(catalog))
-    docs.extend(build_planned_cards(catalog))
     docs.extend(build_biome_profiles())
     docs.extend(build_nasa_articles())
     docs.extend(build_papers())
