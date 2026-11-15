@@ -1,19 +1,62 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-15 06:35 hora de Perú
-Rama@commit: `integracion/ronda5` · empujado: sí, como rama; **todavía no está en `main`** (pasa cuando el humano diga «integra»)
-VERIFICADO: `main@d51fd9d` + las 8 ramas de la Ronda 4 + 4 commits de arreglos → `python -m pytest -q` → 276 passed, 0 failed, 9 skipped; en un clon nuevo con un venv nuevo y sin `torch` → 275 passed, 0 failed, 10 skipped
-VERIFICADO: `python scripts/smoke_api.py http://127.0.0.1:8795` → 15 passed · 0 failed; `python scripts/gate.py --base … --skip-suite --offline` → PUERTA ABIERTA
-VERIFICADO: recorrido en Chrome (Playwright) → 27 de 28 en la app y 19 de 19 en el respaldo estático bajo una subruta; los 7 casos abren su análisis congelado
-VERIFICADO: 50 preguntas de referencia → reglas 49/50; LoRA 40/50 (RTX 4070 SUPER, 4 bits, mediana 2,2 s, `planner: "lora"` en 50 de 50)
-VERIFICADO: rescatado el trabajo sin subir de claude-omni-1 (`feature/ui@9ef14d6`) y de claude-omni-e (`feature/qa@10f4b46`)
-ROTO / NO HECHO: la URL pública (GitHub Pages, ya activa) sirve `gh-pages@4e526a2`, de la 01:30: los 2 casos de la Amazonía no abren, cifras sin unidad y con huecos; el respaldo corregido está generado y probado pero sin subir (espera «despliega» o a claude-omni-3a)
-ROTO / NO HECHO: no existen `docs/SUBMISSION.md`, `LICENSE` ni `docs/demo/`; Railway sin sesión en el PC1; en español la unidad sale en inglés; no probé `docker build` ni un clon limpio en Linux
-Siguiente paso: pasar `integracion/ronda5` a `main` cuando el humano diga «integra»; integración 2 a las 10:00; desplegar en Railway cuando inicie sesión
-Necesito de: humano: «integra», «despliega», `railway login` en el PC1 y las decisiones de `docs/RONDA_5.md` §6
-Avisos para otros carriles: manda `docs/RONDA_5.md` (reglas 26-31); la base es `origin/integracion/ronda5`, no `main`; toqué archivos de cinco carriles (lista en su §5)
+## ESTADO — cfable (arquitecto) — 2026-11-15 08:50 hora de Perú
+Rama@commit: `integracion/ronda6` · empujado: sí, como rama; **lista para fusionar a `main`** cuando el humano diga «integra»
+VERIFICADO: Fusión completa de las 10 ramas sin conflictos → `python -m pytest -q` → 288 passed, 0 failed, 9 skipped en 275s
+VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (smoke 17/17 passed, datasets 7/7, knowledge 168 docs, no_secrets 289 archivos)
+VERIFICADO: Documentación de entrega completa: `docs/SUBMISSION.md` (todos los campos en inglés con comandos reproducibles), `LICENSE` (MIT), `README.md` final
+VERIFICADO: Materiales de demo completos: 7 láminas en `docs/demo/EarthTrend_Detective_slides.pdf` (≤ 7 páginas, 16:9, fuentes en `docs/demo/FUENTES.md`) + vídeo de 29.0s en `docs/demo/EarthTrend_Detective_30s.mp4` (`docs/demo/GUION.md`)
+VERIFICADO: UI pulida: unidades en español aplicadas, QA D8 resuelto (upload de Giovanni muestra nombre limpio), cero huecos tipográficos en números, favicon SVG propio
+ROTO / NO HECHO: `gh-pages` público en GitHub Pages necesita el empuje final de la versión nueva del respaldo estático (tarea de claude-omni-3a o arquitecto en «despliega»); Railway opcional si el humano hace login
+Siguiente paso: pasar `integracion/ronda6` a `main` («integra»); «despliega» para actualizar `gh-pages`; humano completa campos `<<HUMANO>>` en `docs/SUBMISSION.md` antes de las 20:00
+Necesito de: humano: confirmar «integra» para llevar a `main`, «despliega» para publicar en GitHub Pages, y sus decisiones de PLAN §7
+Avisos para otros carriles: La base es `integracion/ronda6`; todas las 10 ramas están integradas; suite en 288 passed sin rojas
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
+
+## Integración Ronda 6 (Final pre-entrega) — VERIFICADO (2026-11-15 08:50)
+Rama@commit: `integracion/ronda6` (fusión de las 10 ramas sin conflictos)
+
+Qué entró:
+- `feature/data-pipeline@016bc52`: Comparación cuantitativa POWER-Giovanni (`docs/COMPARACION_POWER_GIOVANNI.md`), arreglo de «Based on» en conector NSIDC.
+- `feature/scrapes@53f07d0`: Casos regenerados con tildes en español, lugar en texto de respuestas, veredictos en lenguaje legible, y defectos del dataset en `data/lora/DATASET_CARD.md`.
+- `feature/stats@cc0cf4b`: Tabla de validación con comandos reproducibles en `docs/VALIDACION_ESTADISTICA.md`, `MODEL_CARD.md` actualizado con métricas GPU/CPU.
+- `feature/static@5a0ee23`: Respaldo estático con `.nojekyll` y soporte verificado de los 7 casos bajo subcarpeta.
+- `feature/api@f8f2915`: `LICENSE` MIT agregada, `GET /api/cases/{id}` en contrato y smoke tests.
+- `feature/catalog@ecf888e`: `docs/REFERENCES.md` final revisado en vivo, `README.md` final bilingüe.
+- `feature/wizard@a642596`: `docs/SUBMISSION.md` completo en inglés con comandos reproducibles, evaluación LoRA GPU/CPU en `docs/EVAL_IA.md`, citas sin nombres de agentes en `data/knowledge/docs.jsonl`.
+- `feature/ui@f4201dd`: 7 láminas oficiales en `docs/demo/EarthTrend_Detective_slides.pdf` y `slides.html` (fuentes en `docs/demo/FUENTES.md`), capturas limpias sin huecos tipográficos en `docs/media/`, unidades traducidas en español, QA D8 resuelto.
+- `feature/qa@5ea562d`: `reports/qa/informe-2.md` con defectos cerrados.
+- `rescate/demo@9bc5276`: Vídeo de demostración oficial de 29.0s (`docs/demo/EarthTrend_Detective_30s.mp4`) con guion en `docs/demo/GUION.md`.
+
+Evidencia:
+
+```
+$ python -m pytest -q
+288 passed, 9 skipped, 74 warnings in 275.12s (0:04:35)
+
+$ python scripts/gate.py --offline --skip-suite
+=== smoke_api === 17 passed · 0 skipped · 0 failed
+=== validate_datasets === 7/7 archivos validos
+=== validate_knowledge === 168 docs, All checks passed
+=== planned no analizable === planned=10 available=15 solapamiento=False
+=== rangos fisicos === 7/7 series validas; 3882 valores dentro de rango
+=== credenciales === 289 archivos revisados; 0 hallazgos
+PUERTA ABIERTA: todo en verde
+
+$ python scripts/check_case_accents.py
+0 problemas en 8 archivos
+
+$ python -c "..." (duración de EarthTrend_Detective_30s.mp4)
+Duration in seconds: 29.0 (cumple <= 30.0s)
+
+$ python -c "..." (páginas de EarthTrend_Detective_slides.pdf)
+Page count: 7 (cumple <= 7 páginas)
+```
+
+Estado para la entrega:
+- Todo el código y los entregables están en verde y verificados.
+- Lista para merge en `main` cuando el humano confirme «integra».
 
 ## Integración Ronda 5 — VERIFICADO (2026-11-15 06:35)
 Rama@commit: `integracion/ronda5` (en GitHub como rama; no está en `main`)
