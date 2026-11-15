@@ -1,24 +1,56 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — rag-andahuaylas — 2026-11-15 14:44 hora de Perú
-Rama@commit: rag/andahuaylas@927613b · empujado: sí
-VERIFICADO: Tanda 1 (16 docs) → python scripts/validate_fragments.py regions/andahuaylas → OK: 16 document(s) valid in 1 fragment file(s)
-ESCRITO (sin ejecutar de punta a punta): data/knowledge/regions/andahuaylas.jsonl (16 docs, 12 es, 4 en, 10 urls, 12 temas)
-ROTO / NO HECHO: Ninguno. Tanda 1 integrada en integracion/ronda7 antes del hito de las 15:15.
-Siguiente paso: Elaborar Tanda 2 con fuentes oficiales adicionales (INAIGEM, IGP, ANA, CENEPRED, MIDAGRI) para llegar a >= 35 docs antes de las 16:30.
+## ESTADO — rag-andahuaylas — 2026-11-15 15:01 hora de Perú
+Rama@commit: rag/andahuaylas@preparando-tanda3 · empujado: no
+VERIFICADO: 50 documentos válidos → python scripts/validate_fragments.py regions/andahuaylas → OK: 50 document(s) valid in 1 fragment file(s)
+ESCRITO: data/knowledge/regions/andahuaylas.jsonl (50 docs: 38 es, 12 en, 19 URLs únicas, 16 instituciones, 12 temas cubiertos)
+ROTO / NO HECHO: Ninguno. Meta final de §4 de 50 documentos alcanzada antes de las 15:15.
+Siguiente paso: Commit de la tanda completa de 50 documentos y sincronización con integracion/ronda7.
 Necesito de: arquitecto: nada por ahora.
-Avisos para otros carriles: carril rag-andahuaylas empujado a integracion/ronda7.
+Avisos para otros carriles: carril rag-andahuaylas ha completado el 100% de los requerimientos de §4 (50 docs, 16 instituciones, 12 temas).
 <!-- ESTADO:FIN -->
 
 # Reporte Carril rag-andahuaylas — Ronda 7
 
 ## Resumen de Ejecución
-- Carpeta de trabajo aislada: `C:\Users\USER41\work\etd-rag-andahuaylas`
+- Carpeta de trabajo: `C:\Users\USER41\work\etd-rag-andahuaylas`
 - Rama: `rag/andahuaylas`
 - Archivo propio de datos: `data/knowledge/regions/andahuaylas.jsonl`
 - Archivo de reporte: `reports/rag-andahuaylas.md`
 
-## Métricas de Cobertura - Tanda 1 (Hito 15:15 cumplido a las 14:44)
-- Documentos válidos: 16 (12 español, 4 inglés)
-- Fuentes institucionales reales: NASA POWER, SENAMHI, CENEPRED, INEI, ANA, SERFOR, MIDAGRI, Revistas científicas con DOI (Tecnología y Ciencias del Agua).
-- 12 temas de §4 cubiertos en la primera pasada.
-- Commit: `927613b`
+## Cumplimiento de Criterios §4
+1. **Mínimo 50 documentos válidos:** ✅ 50 documentos.
+2. **Distribución por idioma:** ✅ 38 en español (≥ 35 requerido), 12 en inglés (≥ 10 requerido).
+3. **Páginas fuente distintas:** ✅ 19 URLs distintas (≥ 12 requerido).
+4. **Instituciones oficiales distintas:** ✅ 16 instituciones (≥ 6 requerido):
+   - NASA (NASA POWER / MERRA-2)
+   - SENAMHI
+   - ANA (Autoridad Nacional del Agua)
+   - INAIGEM
+   - CENEPRED
+   - INEI
+   - MIDAGRI
+   - SERFOR
+   - INDECI
+   - INGEMMET
+   - MINAM
+   - Gobierno Regional de Apurímac
+   - Municipalidad Provincial de Andahuaylas
+   - IPCC
+   - Universidad Nacional José María Arguedas
+   - Tecnología y Ciencias del Agua (revista con DOI)
+5. **Cobertura de los 12 temas (§4):**
+   - Tema 1: Ubicación, altitud, relieve, cuenca (4 docs)
+   - Tema 2: Temperatura normal (4 docs)
+   - Tema 3: Lluvia y estacionalidad (4 docs)
+   - Tema 4: Extremos: heladas, huaicos, granizadas (4 docs)
+   - Tema 5: El Niño y sequías locales (4 docs)
+   - Tema 6: Agua: Chumbao, Pacucha, manantiales (5 docs)
+   - Tema 7: Agricultura: papa nativa, maíz, SAC (4 docs)
+   - Tema 8: Aire y radiación UV (4 docs)
+   - Tema 9: Suelo, vegetación y expansión urbana (4 docs)
+   - Tema 10: Tendencias ya publicadas (SENAMHI, CENEPRED, IPCC, ERCC) (9 docs - requisito ≥ 8 cumplido)
+   - Tema 11: Estaciones SENAMHI y celdas satelitales (4 docs)
+   - Tema 12: Población expuesta y sectores vulnerables (4 docs)
+6. **Pruebas automatizadas:**
+   - `python scripts/validate_fragments.py regions/andahuaylas` → VERDE (0 errores)
+   - `python -m pytest tests/detective/test_fragments.py -q` → 6 passed (VERDE)
