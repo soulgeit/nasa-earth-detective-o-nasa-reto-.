@@ -408,14 +408,16 @@ async function investigate() {
     return runTrendMap();
   }
 
-  if (!state.point && !state.bbox) {
+  const variableId = $('#variable-select')?.value || 'T2M';
+  const FIXED_GLOBAL_VARS = ['GISTEMP_TANOM', 'SEAICE_EXTENT_N', 'SEAICE_EXTENT_S'];
+  const isGlobal = FIXED_GLOBAL_VARS.includes(variableId);
+
+  if (!isGlobal && !state.point && !state.bbox) {
     showError(new ApiError('NO_LOCATION', state.lang === 'es'
       ? 'Elige primero un lugar en el mapa o búscalo por nombre.'
       : 'Pick a place on the map or search for it by name first.'));
     return;
   }
-  const variableId = $('#variable-select').value;
-  if (!variableId) return;
 
   const btn = $('#investigate-btn');
   btn.disabled = true;
@@ -431,7 +433,7 @@ async function investigate() {
     };
     if (state.bbox) {
       params.bbox = state.bbox.join(',');
-    } else {
+    } else if (state.point) {
       params.lat = Number(state.point.lat).toFixed(4);
       params.lon = Number(state.point.lon).toFixed(4);
     }
@@ -500,6 +502,47 @@ function renderAnalysis(a) {
   renderChart();
   renderFindings(a, cleanVar, cleanLoc);
   renderMethod(a);
+  // tests disagree breakdown (Ronda 3, Task 3)
+  const disagreePanel = $('#tests-disagree-panel');
+  const hasDisagree = (a.warnings && a.warnings.includes('TESTS_DISAGREE')) || (a.significance && a.significance.tests_agree === false);
+  if (disagreePanel) {
+    disagreePanel.hidden = !hasDisagree;
+    if (hasDisagree) {
+      const list = $('#test-agreement-list');
+      if (list) {
+        list.innerHTML = '';
+        const mkMonthly = a.tests?.mann_kendall?.p_value_autocorr ?? a.tests?.mann_kendall?.p_value;
+        const mkAnnual = a.tests?.mann_kendall_annual?.p_value;
+        const tOls = a.tests?.t_test_ols?.p_value;
+        const ci = a.trend?.sen_ci95_per_decade;
+        const ciExclZero = Array.isArray(ci) && (ci[0] * ci[1] > 0);
+
+        const items = [
+          { name: state.lang === 'es' ? 'Mann–Kendall mensual' : 'Mann–Kendall (monthly)', sig: mkMonthly !== undefined && mkMonthly < 0.05, p: mkMonthly },
+          { name: state.lang === 'es' ? 'Mann–Kendall anual' : 'Mann–Kendall (annual)', sig: mkAnnual !== undefined && mkAnnual < 0.05, p: mkAnnual },
+          { name: state.lang === 'es' ? 'Prueba t de MCO ajustada' : 'OLS t-test (autocorr. adj.)', sig: tOls !== undefined && tOls < 0.05, p: tOls },
+          { name: state.lang === 'es' ? 'Intervalo de confianza 95%' : '95% Confidence Interval', sig: ciExclZero, p: null },
+        ];
+
+        for (const it of items) {
+          const li = el('li');
+          const badge = el('span', { class: `badge-agree ${it.sig ? 'yes' : 'no'}` }, it.sig ? '✓ Sig' : '✗ Not sig');
+          li.appendChild(badge);
+          li.appendChild(document.createTextNode(` ${it.name}${it.p !== null && it.p !== undefined ? ` (p = ${fmtP(it.p)})` : ''}`));
+          list.appendChild(li);
+        }
+
+        const moreY = a.detectability?.more_years_needed;
+        if (moreY && Number(moreY) > 0) {
+          const needLi = el('li');
+          needLi.style.marginTop = '0.3rem';
+          needLi.appendChild(el('strong', null, `⏱ ${t('years.more', { n: fmt(moreY, 1) })}`));
+          list.appendChild(needLi);
+        }
+      }
+    }
+  }
+
   renderProvenance(a);
   loadExplanation(a, currentExplainLevel);
   $('#results').focus({ preventScroll: true });
@@ -778,6 +821,34 @@ function getDivergingColor(slope, maxAbs) {
   }
 }
 
+
+async function loadGlobalAtlas() {
+  clearError();
+  const select = $('#variable-select');
+  const varId = (select && select.value) || 'T2M';
+  const targetAtlas = (varId === 'GISTEMP_TANOM') ? 'GISTEMP_TANOM' : 'T2M';
+
+  const btn = $('#btn-load-atlas');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = t('atlas.loading');
+  }
+
+  try {
+    const data = await apiGet(`/api/atlas/${targetAtlas}`);
+    setMode('trendmap');
+    renderTrendMap(data);
+    if (map) map.setView([10, 0], 2);
+  } catch (err) {
+    showError(err);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = t('atlas.load.btn');
+    }
+  }
+}
+
 async function runTrendMap() {
   clearError();
   if (!state.bbox) {
@@ -1023,7 +1094,10 @@ async function askDetective(question) {
   btn.textContent = '…';
 
   try {
-    const planData = await apiPost('/api/ai/plan', { question, lang: state.lang });
+    const qUrl = `${API_BASE}/api/ai/plan?question=${encodeURIComponent(question)}&lang=${state.lang}`;
+    const res = await fetch(qUrl, { method: 'POST', headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('Planner error');
+    const planData = await res.json();
     renderPlan(planData);
   } catch (err) {
     showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
@@ -1071,11 +1145,10 @@ async function scoutLocation() {
   btn.disabled = true;
 
   try {
-    const scoutData = await apiPost('/api/ai/scout', {
-      lat: state.point.lat,
-      lon: state.point.lon,
-      lang: state.lang,
-    });
+    const qUrl = `${API_BASE}/api/ai/scout?lat=${state.point.lat}&lon=${state.point.lon}&lang=${state.lang}`;
+    const res = await fetch(qUrl, { method: 'POST', headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('Scout error');
+    const scoutData = await res.json();
     renderScout(scoutData);
   } catch (err) {
     showError(new ApiError('AI_SCOUT_ERROR', state.lang === 'es'
@@ -1139,16 +1212,32 @@ async function loadExplanation(analysis, level = 'school') {
     const cleanLoc = getCleanRegionName(analysis);
     textEl.textContent = sanitizeText(exp.text || '', analysis.variable?.id, cleanLoc);
 
+    // Update label strictly based on mode (Ronda 3, Task 1)
+    const badgeEl = document.querySelector('.ai-badge');
+    if (badgeEl) {
+      const isFull = (exp.mode === 'full');
+      badgeEl.textContent = isFull
+        ? t('detective.explain.badge.full')
+        : t('detective.explain.badge.extractive');
+    }
+
     if (exp.citations && exp.citations.length) {
       sourcesBox.hidden = false;
       listEl.innerHTML = '';
       for (const cit of exp.citations) {
+        const citNum = (cit.n !== undefined && cit.n !== null) ? cit.n : (cit.id || 1);
         const li = el('li');
-        li.appendChild(el('strong', null, `[${cit.id || cit.index || 1}] `));
-        li.appendChild(document.createTextNode(`${cit.title || cit.name || 'NASA Resource'}. `));
+        li.appendChild(el('strong', null, `[${citNum}] `));
+
         if (cit.url) {
-          const a = el('a', { href: cit.url, target: '_blank', rel: 'noopener noreferrer' }, '(NASA)');
+          const a = el('a', { href: cit.url, target: '_blank', rel: 'noopener noreferrer' }, cit.title || 'Source');
           li.appendChild(a);
+        } else {
+          li.appendChild(document.createTextNode(cit.title || 'Source'));
+        }
+
+        if (cit.publisher) {
+          li.appendChild(el('span', { class: 'citation-publisher' }, ` — ${cit.publisher}`));
         }
         listEl.appendChild(li);
       }
@@ -1372,6 +1461,7 @@ function boot() {
   $('#place-search-btn').addEventListener('click', () => searchPlace($('#place-search').value, false));
   $('#place-search-btn-b').addEventListener('click', () => searchPlace($('#place-search-b').value, true));
   $('#btn-calc-trendmap').addEventListener('click', runTrendMap);
+  $('#btn-load-atlas')?.addEventListener('click', loadGlobalAtlas);
   $('#detective-ask-btn')?.addEventListener('click', () => askDetective($('#detective-input').value));
   $('#detective-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askDetective($('#detective-input').value); } });
   $('#plan-confirm-btn')?.addEventListener('click', confirmPlan);
