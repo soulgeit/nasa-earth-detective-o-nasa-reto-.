@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-1b — 2026-11-15 07:35 hora de Perú (Ronda 5)
-Rama@commit: feature/catalog@6e3f44d + README (ver commit del README en esta rama) · empujado: sí
+Rama@commit: feature/catalog@2eca3ec · empujado: sí
 VERIFICADO: `docs/REFERENCES.md` reescrito → `python -X utf8 -I scripts/validate_knowledge.py --max-url-checks 100` → «catalog: 15 available + 10 planned», 168 documentos, **All checks passed** (0 fallos).
 VERIFICADO: las 23 URLs citadas en REFERENCES.md comprobadas en vivo hoy (Power, GISTEMP, NSIDC, Giovanni, EO, NTRS, CSA, GeoNames, Wikidata, Nominatim, GIBS, OSM, Leaflet, Chart.js, Google Fonts, HF SmolLM2, ambos DOI). Solo dan 403 la portada del glossary AMS y el HTML del editor Wiley (§5 lo explica; las páginas de término responden 200).
 VERIFICADO: README final en inglés: URL pública viva (`gh-pages` nuevo sirve los 7 casos y 2 atlas), arranque, comprobaciones, datos, método, límites, uso de IA y licencia (`<<HUMANO>>`).
