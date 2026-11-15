@@ -1276,6 +1276,34 @@ function renderPlan(plan) {
   const card = $('#detective-plan-card');
   card.hidden = false;
 
+  const confirmBtn = $('#plan-confirm-btn');
+
+  // Handle greetings or no-match queries friendly
+  if (plan.intent === 'no_match' || (!plan.place && (!plan.variable_ids || plan.variable_ids.length === 0))) {
+    const rawQ = ($('#detective-input')?.value || '').toLowerCase().trim();
+    const isGreeting = /^(hola|ola|buenos|buenas|hello|hi|hey|saludos|que tal|quÃ© tal|qué tal)/i.test(rawQ);
+    if (isGreeting) {
+      $('#plan-intent-text').textContent = state.lang === 'es'
+        ? '¡Hola! Soy Huiracocha IA. Puedo analizar tendencias climáticas con datos de la NASA. Prueba preguntando: "¿Llueve menos en Piura?" o "¿Sube la temperatura en Lima?".'
+        : 'Hello! I am Huiracocha AI. I can investigate climate trends with NASA Earth science data. Try asking: "Is it raining less in Piura?" or "Is temperature rising in Lima?".';
+    } else {
+      $('#plan-intent-text').textContent = state.lang === 'es'
+        ? 'No identifiqué una variable climática o lugar específico. Pregúntame sobre temperatura, lluvia o vegetación de una ciudad (ej. "¿Llueve menos en Piura?").'
+        : 'Could not match a climate variable or location. Ask me about temperature, rainfall or vegetation in a place (e.g. "Is it raining less in Piura?").';
+    }
+    const badge = $('#plan-meta-badge');
+    if (badge) {
+      badge.textContent = state.lang === 'es' ? 'Huiracocha IA' : 'Huiracocha AI';
+      badge.className = 'plan-badge plan-badge-rules';
+    }
+    const noteEl = $('#plan-note-text');
+    if (noteEl) noteEl.hidden = true;
+    if (confirmBtn) confirmBtn.hidden = true;
+    return;
+  }
+
+  if (confirmBtn) confirmBtn.hidden = false;
+
   const varId = plan.variable_ids && plan.variable_ids[0] ? plan.variable_ids[0] : 'T2M';
   const cleanVar = getCleanVariableName(varId);
   const placeName = plan.place || (state.lang === 'es' ? 'el lugar seleccionado' : 'the selected place');
@@ -1303,7 +1331,6 @@ function renderPlan(plan) {
   }
 
   // Rule 19: If plan picked a planned variable, it cannot be run directly
-  const confirmBtn = $('#plan-confirm-btn');
   if (confirmBtn) {
     if (isPlannedVariable(varId)) {
       confirmBtn.disabled = true;
