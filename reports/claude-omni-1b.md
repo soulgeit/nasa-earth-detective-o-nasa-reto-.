@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-1b — 2026-11-15 10:35 hora de Perú (Ronda 6, reporte final)
-Rama@commit: feature/catalog@(ver commit) · empujado: sí
+Rama@commit: feature/catalog@0b65290 · empujado: sí
 VERIFICADO: base = `origin/main@e67873e` fusionada en `feature/catalog` (main estaba ocupada por otro worktree; regla 30: no se commitea en main).
 VERIFICADO: **168 documentos del corpus con URL viva** → `python -X utf8 -I scripts/validate_knowledge.py --max-url-checks 100` → «catalog: 15 available + 10 planned», 168 documentos, **All checks passed**, 0 fallos, exit 0. Las 93 URLs únicas del corpus (81 no-DOI + 12 DOI) caben en el tope de 100: **se comprueban todas**.
 VERIFICADO: **29 URLs externas del README + REFERENCES.md comprobadas en vivo**: 27 responden 200; 1 (CSA/SWOT) respondió 200 al reintentar (era intermitente); la AMS responde 200 a `curl`/`requests` con cabeceras de navegador (el 403 de `urllib` es del WAF de Cloudflare, no un enlace roto — el validador oficial la comprueba con `requests` y pasa).
