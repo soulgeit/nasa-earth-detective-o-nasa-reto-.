@@ -1,19 +1,19 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-2 — 2026-11-15 03:10 (hora de Perú)
-Rama@commit: feature/wizard@870cb34 · empujado: sí
-VERIFICADO: suite completa sobre main fusionado → `python -m pytest -q` → 261 passed, 1 failed, 9 skipped
-VERIFICADO: T1 regla 19 → las 2 rojas de test_pipeline.py en verde sin tocar la aserción; 6 preguntas planned + 50 de oro sin devolver ninguna `planned`
-VERIFICADO: T2 lugares → las 4 frases del §2.6: sin "sea"/"Has"/"los"/"the"; viento→no_match; "meaning of life"→out_of_scope
-VERIFICADO: T3 regla 22 → 4 pruebas del LoRA con plan_with_lora simulado (ausencia, válido, planned, lugar inventado)
-VERIFICADO: T4 evaluación → reglas 49/50 = 0.980 · LoRA 37/50 = 0.740 (inferencia real en CPU, GTX 1650), en docs/EVAL_IA.md con los 13 fallos
-VERIFICADO: tests/detective → 147 passed
+## ESTADO — claude-omni-2 — 2026-11-15 08:20 (hora de Perú)
+Rama@commit: feature/wizard@e701385 · empujado: sí · base: integracion/ronda5
+VERIFICADO: suite completa → `python -m pytest -q` → 284 passed, 0 failed, 10 skipped
+VERIFICADO: §4.1 docs/SUBMISSION.md → un apartado por campo de KIT_ENTREGA §4; todas las cifras con su comando; enlaces comprobados (200)
+VERIFICADO: §4.2 uso de IA → párrafo del formulario + dos filas nuevas en docs/AI_USE_LOG.md
+VERIFICADO: §4.3 fuentes de la explicación → `grep -c "Hermes 1" data/knowledge/docs.jsonl` → 0; validate_knowledge 168 documentos sin fallos; texto sin URLs y con el editor real
+VERIFICADO: §4.4 docs/EVAL_IA.md → LoRA 40/50 en GPU (2,2 s) + 37/50 en CPU (13,7 s) + reglas 50/50; decisión escrita: el producto planifica con reglas
+VERIFICADO: §4.5 reglas 50/50 = 1.000 y recuperación P@1 1.000 (era 49/50 y 0.980)
+VERIFICADO: tests/detective → 155 passed
 ESCRITO (sin ejecutar de punta a punta): nada pendiente en mi carril
-ROTO / NO HECHO: la única roja es de src/ml (`test_plan_with_lora_missing_adapter_raises_error`): serve.py no lanza error con adaptador inexistente si ya cargó un modelo (sustitución silenciosa §2.4). Falla en solitario; carril de antigravity-2
-Siguiente paso: esperar la integración de las 10:00 y repetir la evaluación si el adaptador v2 la sustituye
-Necesito de: antigravity-2: quitar el respaldo silencioso de src/ml/serve.py:65 (esa prueba vuelve a verde sola)
-Necesito de: antigravity-1: si el LoRA v2 sustituye al canónico, avisadme para re-ejecutar la tabla
-Avisos para otros carriles: /api/ai/plan devuelve siempre "planner": "lora"|"rules" y "note" si hubo respaldo; la UI debe mostrarlos
-Avisos: el LoRA tarda ~60 s en cargar y ~13,7 s por pregunta en CPU; no es apto para la URL pública (§5.2)
+ROTO / NO HECHO: el LoRA no se re-evaluó en GPU desde este equipo (no hay RTX 4070 aquí); la cifra 40/50 y 2,2 s es la del arquitecto, citada como suya
+Siguiente paso: si el humano escribe «integra», nada más por mi parte; la Ronda 5 cierra mi carril
+Necesito de: humano: decidir equipo/miembros, URL de la app completa y caso de la demo (los tres están como <<HUMANO>> en docs/SUBMISSION.md)
+Avisos para otros carriles: el léxico del detective ahora trata las frases multi-palabra como frases; si alguien añade alias, que use la frase completa ("turning into desert") y no la palabra suelta
+Avisos: los textos de SUBMISSION citan 50/50 y 40/50 juntos; si antigravity-1 entrega el LoRA v2, hay que rehacer las dos cifras
 <!-- ESTADO:FIN -->
 
 # claude-omni-2 — detective con IA (RAG, planificador, explicación con guardián)
