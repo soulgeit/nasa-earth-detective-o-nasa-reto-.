@@ -46,7 +46,9 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background: var(--paper);
-  font-variant-numeric: tabular-nums;
+  /* No `tabular-nums` here: in Schibsted Grotesk that feature also gives the period,
+     the comma and the colon the width of a digit, so "-0.495" was drawn "-0 . 495"
+     and "Lima, Peru:" as "Lima , Peru :" (measured: 9 px -> 20 px at 32 px). */
 }
 img, svg, canvas { max-width: 100%; }
 button, input, select { font: inherit; color: inherit; }
@@ -428,7 +430,7 @@ details.method[open] summary::before { content: "–"; }
 .test-table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 .test-table th, .test-table td { text-align: left; padding: 0.35rem 0.5rem 0.35rem 0; border-bottom: 1px solid var(--rule-soft); }
 .test-table th { font-weight: 600; color: var(--muted); font-size: var(--step--1); }
-.test-table td.num { font-variant-numeric: tabular-nums; }
+.test-table td.num { white-space: nowrap; }
 .warn-list { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0; margin: 0; list-style: none; }
 .warn-list li {
   font-size: var(--step--1);
@@ -641,7 +643,6 @@ details.method[open] summary::before { content: "–"; }
 .scale-label {
   font-size: var(--step--1);
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
   color: var(--ink-2);
 }
 .legend-detail {
