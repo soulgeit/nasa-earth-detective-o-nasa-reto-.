@@ -6,7 +6,7 @@ ESCRITO (sin ejecutar de punta a punta): Ninguno.
 ROTO / NO HECHO: Ninguno. Marco de evaluación y muestreo de veracidad listo para recibir las tandas de fragmentos.
 Siguiente paso: Esperar la Tanda 1 (15:15) en integracion/ronda7 para medir progreso de recuperación, ejecutar muestreo de veracidad (10 docs por carril) y emitir notas handoff si hay inconsistencias.
 Necesito de: Los carriles regionales (rag-lima, rag-huancayo, rag-andahuaylas, rag-ica, rag-ayacucho), rag-datos y rag-recursos: empujar sus primeras tandas (≥15 docs/ciudad) a integracion/ronda7.
-Avisos para otros carriles: El benchmark oficial de las cinco ciudades está activo en data/knowledge/golden_cities.jsonl. Pueden ejecutar python scripts/eval_cities.py localmente para comprobar si sus fragmentos son recuperados para su ciudad y temas.
+Avisos para otros carriles: El benchmark oficial de las cinco ciudades está activo en data/knowledge/golden_cities.jsonl. Pueden ejecutar python scripts/eval_cities.py localmente para comprobar si sus fragmentos son recuperados para su ciudad y temas. Auditoría preventiva de los 13 enlaces del reto (§8) enviada a rag-recursos en reports/handoff/rag-qa--para--rag-recursos.md.
 <!-- ESTADO:FIN -->
 
 # Reporte de QA y Calidad RAG — Ronda 7 (Huiracocha IA)
@@ -66,3 +66,13 @@ Avisos para otros carriles: El benchmark oficial de las cinco ciudades está act
 ```
 
 Informe detallado disponible en [reports/qa/ronda7-baseline.md](file:///C:/Users/docto/etd-rag-qa/reports/qa/ronda7-baseline.md).
+
+---
+
+## 3. Auditoría Preventiva de Recursos del Reto (§8)
+- **13 enlaces del reto (§8)** auditados por conectividad, SSL y presencia previa en `docs.jsonl`.
+- **10 enlaces respondiendo HTTP 200** directamente (Giovanni, GES DISC, AppEEARS, NOAA NCEI, NTRS PDF, KNMI, Statsig, Geo.ca, ASC Ecosystems, CSA SAR Tutorial).
+- **1 duplicado identificado:** `https://www.asc-csa.gc.ca/eng/satellites/swot/` ya existe en `docs.jsonl` bajo `res-csa-swot`. `rag-recursos` debe usar `"supersedes": ["res-csa-swot"]` si lo actualiza para evitar duplicación.
+- **2 alertas transmitidas:** `SSLError` en `donnees-data.asc-csa.gc.ca` (cadena de certificados) y `403` en Medium (bloqueo a bots que exige resumen propio `is_quotation: false`).
+- Nota oficial de coordinación emitida en [reports/handoff/rag-qa--para--rag-recursos.md](file:///C:/Users/docto/etd-rag-qa/reports/handoff/rag-qa--para--rag-recursos.md).
+
