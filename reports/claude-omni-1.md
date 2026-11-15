@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-1 — 2026-11-14 20:55 hora de Perú
-Rama@commit: feature/ui@9c61e1d · empujado: no
+Rama@commit: feature/ui@a30c76c · empujado: sí
 VERIFICADO: Tareas Ronda 3 (1, 2, 3, 4) completas. `python -m pytest -q` → 1 failed, 223 passed, 9 skipped (el único fallo es de backend en `test_published_nasa_benchmarks` asignado a antigravity-1/2); `python scripts/smoke_api.py http://127.0.0.1:8000` → 10 passed, 0 failed; `python scripts/take_real_screenshots.py` → 6 capturas oficiales en `docs/media/` a 1600x900 generadas con backend en vivo y en estricto inglés (Regla 16).
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en interfaz
