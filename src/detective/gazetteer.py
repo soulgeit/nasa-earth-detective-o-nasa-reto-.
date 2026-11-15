@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from functools import lru_cache
@@ -44,6 +45,8 @@ class Place:
     bbox: list[float] | None
     population: int | None
     source: str
+    ascii_name: str | None = None
+    alt_names: tuple[str, ...] = ()
 
     def to_public(self, *, score: float | None = None) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -84,6 +87,8 @@ def _load() -> tuple[Place, ...]:
                     bbox=row.get("bbox"),
                     population=row.get("population"),
                     source="gazetteer",
+                    ascii_name=row.get("ascii"),
+                    alt_names=tuple(str(a) for a in (row.get("alt_names") or ()) if a),
                 )
             )
         except (KeyError, TypeError, ValueError):
@@ -95,36 +100,148 @@ def _load() -> tuple[Place, ...]:
 
 def reset_cache() -> None:
     _load.cache_clear()
+    _fields_index.cache_clear()
+
+
+@lru_cache(maxsize=1)
+def _fields_index() -> tuple[dict[str, tuple[int, ...]], tuple[tuple[str, ...], ...]]:
+    """Pre-computed search structures, built once per process.
+
+    Two lookups:
+      * ``exact``: spelling -> place indexes, for name / ascii / alt_names;
+      * ``prefix``: 4-letter prefix -> place indexes, so the fuzzy pass only ever
+        compares against plausible candidates instead of all 8 109 cities
+        (55 000 SequenceMatcher calls per query, measured, is not interactive).
+    """
+    places = _load()
+    exact: dict[str, list[int]] = {}
+    prefix: dict[str, set[int]] = {}
+    all_fields: list[tuple[str, ...]] = []
+    for idx, place in enumerate(places):
+        fields = tuple(_fields(place))
+        all_fields.append(fields)
+        for field in fields:
+            exact.setdefault(field, []).append(idx)
+            if len(field) >= 4:
+                prefix.setdefault(field[:4], set()).add(idx)
+    return (
+        {k: tuple(v) for k, v in exact.items()},
+        {p: tuple(sorted(v)) for p, v in prefix.items()},
+    )
 
 
 def _fields(place: Place) -> list[str]:
-    return [fold(place.name), fold(place.name.replace("-", " "))]
+    """Every spelling a student may type for this place.
+
+    RONDA_2 §6.3: the 8 109-city GeoNames gazetteer publishes ``ascii`` and
+    ``alt_names``; without them "Cuzco" (official: Cusco), "Lima, Peru"
+    (alt: Lima) or "Moscow" (alt: Moskva) never match.
+    """
+    variants: list[str] = [place.name]
+    if place.ascii_name:
+        variants.append(place.ascii_name)
+    variants.extend(place.alt_names)
+    fields: list[str] = []
+    for value in variants:
+        folded = fold(value).strip()
+        if not folded:
+            continue
+        for form in (folded, folded.replace("-", " "), folded.replace(".", "")):
+            if form and form not in fields:
+                fields.append(form)
+    return fields
+
+
+COUNTRY_NAMES = frozenset(
+    """peru perú mexico méxico chile argentina colombia ecuador bolivia venezuela brazil brasil
+    spain españa france francia germany alemania italy italia china japan japón india russia
+    canada australia egypt egipto kenya nigeria morocco marruecos bolivia uruguay paraguay
+    cuba haiti guatemala honduras nicaragua panama panamá portugal netherlands belgium sweden
+    norway finland poland turkey turquía greece greece iran iraq israel pakistan bangladesh
+    indonesia thailand vietnam philippines malaysia korea nigeria ethiopia sudan angola""".split()
+)
+
+
+def _head_is_country(query: str) -> bool:
+    head = re.split(r"[,(]", fold(query).strip())[0].strip()
+    return head in COUNTRY_NAMES
 
 
 def _score(query: str, place: Place) -> float:
     q = fold(query).strip()
     if not q:
         return 0.0
+    # "Lima, Peru" / "Lima Peru" / "Piura (Peru)" -> try the city part first.
+    head = re.split(r"[,(]", q)[0].strip()
     best = 0.0
     for field in _fields(place):
         if not field:
             continue
         if field == q:
             return 1.0
-        if q == field.split(",")[0].strip():
-            best = max(best, 0.99)
-        if len(q) >= 3 and (field.startswith(q) or q.startswith(field)):
-            best = max(best, 0.9)
+        if head and field == head:
+            best = max(best, 0.995)
+        if len(head) >= 3 and (field.startswith(head) or head.startswith(field)):
+            # A prefix is only evidence when it is most of the word AND it is not a
+            # 1-3 letter fragment of an alternative spelling: GeoNames lists "Per"
+            # as an alt name for Perth (from "Peairt"), and "Peru" must not match it.
+            shorter, longer = sorted((len(head), len(field)))
+            if longer > 0 and shorter >= 4 and shorter / longer >= 0.75:
+                best = max(best, 0.9)
         if len(q) >= 4 and q in field:
             best = max(best, 0.82)
-        if len(q) >= 4 and len(field) >= 4:
-            best = max(best, SequenceMatcher(None, q, field).ratio() * 0.95)
+        if len(head) >= 4 and len(field) >= 4:
+            # Spelling variants ("cusco"/"cuzco") score high; a shared prefix with a
+            # different word ("peru"/"perth") must not. Require a long common stem.
+            ratio = SequenceMatcher(None, head, field).ratio()
+            prefix = SequenceMatcher(None, head[:4], field[:4]).ratio()
+            if prefix == 1.0 and ratio < 0.85:
+                continue
+            best = max(best, ratio * 0.95)
     return best
 
 
+def _candidate_indexes(head: str) -> set[int]:
+    """Places worth a fuzzy look at, chosen by a 4-letter prefix bucket.
+
+    For queries shorter than 4 characters there is no fuzzy pass at all: a 2-letter
+    fragment matches half the planet and produces exactly the kind of confident
+    nonsense we are trying to avoid.
+    """
+    if len(head) < 4:
+        return set()
+    _exact, prefix_index = _fields_index()
+    for size in (4, 3):
+        key = head[:size]
+        if len(key) < 3:
+            continue
+        found = prefix_index.get(key)
+        if found:
+            return set(found)
+    return set()
+
+
 def _rank(places: list[Place], query: str) -> list[tuple[Place, float]]:
-    scored = [(_score(query, p), p) for p in places]
-    scored = [(s, p) for s, p in scored if s >= 0.7]
+    """Exact hits first; the fuzzy pass runs only on prefix candidates."""
+    q = fold(query).strip()
+    head = re.split(r"[,(]", q)[0].strip()
+    exact, _prefix = _fields_index()
+
+    hits: dict[int, float] = {}
+    for key in (q, head):
+        if key:
+            for idx in exact.get(key, ()):
+                hits[idx] = max(hits.get(idx, 0.0), 1.0 if key == q else 0.995)
+
+    # Prefix and spelling variants, restricted to plausible candidates.
+    for idx in _candidate_indexes(head or q):
+        if idx in hits:
+            continue
+        score = _score(q, places[idx])
+        if score >= 0.7:
+            hits[idx] = score
+
+    scored = [(score, places[idx]) for idx, score in hits.items()]
     scored.sort(key=lambda sp: (-sp[0], -(sp[1].population or 0), fold(sp[1].name), sp[1].country or ""))
     return [(p, s) for s, p in scored]
 
@@ -134,15 +251,21 @@ def geocode(q: str, *, limit: int = 5) -> list[dict[str, Any]]:
     places = _load()
     if not q or not q.strip() or not places:
         return []
+    if _head_is_country(q):
+        # The gazetteer holds cities only. Answering "Perus, BR" to "Peru" would be
+        # worse than answering nothing: the UI then asks for a click on the map.
+        return []
     ranked = _rank(list(places), q)[:limit]
     return [p.to_public(score=s) for p, s in ranked]
 
 
 def find_in_text(text: str, *, limit: int = 3) -> list[tuple[Place, str]]:
-    """Longest gazetteer names that appear literally inside ``text``.
+    """Longest gazetteer spellings that appear literally inside ``text``.
 
     Used by the rules planner: the contract says ``place`` must be text copied
-    from the question, so we return the matched span exactly as written.
+    from the question, so the returned span is sliced out of ``text`` itself.
+    We look at name, ascii and alt_names, but a match is accepted only on a word
+    boundary — otherwise "Ica" would match inside "America".
     """
     places = _load()
     if not text or not places:
@@ -150,15 +273,20 @@ def find_in_text(text: str, *, limit: int = 3) -> list[tuple[Place, str]]:
     folded = fold(text)
     hits: list[tuple[Place, str, int]] = []
     for place in places:
-        for variant in {place.name}:
-            needle = fold(variant)
+        best: tuple[str, int] | None = None
+        for variant in _fields(place):
+            needle = variant.strip()
             if len(needle) < 3:
                 continue
-            idx = folded.find(needle)
-            if idx >= 0:
-                original = text[idx : idx + len(needle)]
-                hits.append((place, original, len(needle)))
-                break
+            for match in re.finditer(rf"(?<!\w){re.escape(needle)}(?!\w)", folded):
+                span = folded[match.start():match.end()]
+                if best is None or len(span) > len(best[0]):
+                    best = (span, match.start())
+        if best is None:
+            continue
+        span_text, start = best
+        original = text[start : start + len(span_text)]
+        hits.append((place, original, len(span_text)))
     hits.sort(key=lambda h: (-h[2], -(h[0].population or 0), fold(h[0].name)))
     out: list[tuple[Place, str]] = []
     seen: set[str] = set()

@@ -19,7 +19,7 @@ QUESTIONS = [
     ("¿el aire de Lima está más contaminado?", "es", "AOD_55"),
     ("¿se está derritiendo el hielo del Ártico?", "es", "SEAICE_EXTENT_N"),
     ("¿hay menos nieve en la Cordillera Blanca?", "es", "SNODP"),
-    ("¿la selva de Madre de Dios pierde vegetación?", "es", "MODIS_NDVI"),
+    ("¿la selva de Madre de Dios pierde vegetación?", "es", None),   # MODIS NDVI: not in the catalogue
     ("¿se está secando el suelo de Ica?", "es", "GWETTOP"),
     ("¿qué es la humedad relativa?", "es", "RH2M"),
     ("¿llega más radiación solar a la costa?", "es", "ALLSKY_SFC_SW_DWN"),
@@ -31,7 +31,7 @@ QUESTIONS = [
     ("is Lima getting hotter?", "en", "T2M"),
     ("is Arctic sea ice shrinking?", "en", "SEAICE_EXTENT_N"),
     ("what is soil moisture?", "en", "GWETTOP"),
-    ("is Amazon vegetation declining?", "en", "MODIS_NDVI"),
+    ("is Amazon vegetation declining?", "en", None),                 # MODIS NDVI: not in the catalogue
     ("is snow decreasing in the Andes?", "en", "SNODP"),
     ("is Antarctica gaining or losing ice?", "en", "SEAICE_EXTENT_S"),
 ]
@@ -58,6 +58,13 @@ def test_pipeline_offline(question, lang, expected, analysis_result, no_network)
 
     result = detective.plan(question, lang=lang)
     assert result["mode"] == "rules"          # extractive mode, no model
+    if expected is None:
+        # RONDA_2 §6.2: for a product we do not carry, say so — do not return the
+        # closest variable we happen to have.
+        assert result["intent"] == "no_match", result
+        assert result["variable_ids"] == []
+        assert result.get("missing"), "no_match must name what is missing"
+        return
     assert result["variable_ids"], "planner produced no variable"
     assert expected in result["variable_ids"]  # the top pick is the right one
     if result["place"]:
@@ -67,6 +74,22 @@ def test_pipeline_offline(question, lang, expected, analysis_result, no_network)
     assert answer["mode"] == "extractive"
     assert answer["text"].strip()
     assert answer["guard"]["numbers_ok"] is True
+
+
+@pytest.mark.parametrize("question,lang,fragment", [
+    ("¿la selva de Madre de Dios pierde vegetación?", "es", "vegetación"),
+    ("is Amazon vegetation declining?", "en", "vegetation"),
+])
+def test_missing_variable_is_declared_not_substituted(question, lang, fragment):
+    """The catalogue has no NDVI: the plan must say so and offer real alternatives."""
+    result = detective.plan(question, lang=lang)
+    assert result["intent"] == "no_match"
+    assert result["variable_ids"] == []
+    assert any(fragment in name for name in result["missing"])
+    assert "MODIS_NDVI" in result["missing_ids"]
+    for alt in result.get("alternatives", []):
+        assert alt["variable_id"] != "MODIS_NDVI"
+        assert alt["variable_id"], "an alternative without an id is not an alternative"
 
 
 @pytest.mark.parametrize("question,lang,expected", QUESTIONS[:5])

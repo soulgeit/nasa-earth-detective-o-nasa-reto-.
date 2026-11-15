@@ -125,3 +125,60 @@ def test_validate_rejects_place_b_outside_question():
     result, reason = validate_plan(_valid(intent="compare", place_b="Cusco"),
                                    question=QUESTION, candidates=CANDIDATES, lang="es")
     assert result is None and "place_b" in reason
+
+
+# --- T4: training and inference must use the same message --------------------
+
+def _dataset_system_prompt():
+    import json as _json
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "data" / "lora" / "train.jsonl"
+    if not path.exists():
+        return None
+    with path.open("r", encoding="utf-8") as fh:
+        return _json.loads(fh.readline())["messages"][0]["content"]
+
+
+def test_system_prompt_is_identical_to_the_dataset():
+    from src.detective.planner import _system_prompt
+
+    expected = _dataset_system_prompt()
+    if expected is None:
+        pytest.skip("data/lora/train.jsonl not published")
+    assert _system_prompt() == expected
+
+
+def test_candidate_lines_match_the_dataset_shape():
+    from src.detective.planner import _user_message, debug_candidates
+
+    question = "¿qué es la temperatura?"
+    message = _user_message(question, debug_candidates(question, lang="es", k=4), lang="es")
+    lines = message.splitlines()
+    assert lines[0] == f"QUESTION: {question}"
+    assert lines[1] == "CANDIDATES:"
+    for line in lines[2:]:
+        # "- T2M: Temperatura del aire a 2 m (°C) - Cuánto calor hace..."
+        assert line.startswith("- ")
+        assert ": " in line
+        assert " - " in line, f"missing the definition separator: {line}"
+
+
+def test_local_lora_without_serving_falls_back_to_rules(monkeypatch):
+    """PLANNER_MODEL=local-lora must not pretend if src/ml/serve.py is absent."""
+    from src.detective import config as cfg
+    from src.detective import planner as planner_module
+
+    monkeypatch.setattr(planner_module, "SETTINGS", cfg.Settings(
+        ai_mode="full", llm_base_url="http://localhost:11434/v1",
+        planner_model="local-lora", explain_model="",
+        embed_base_url="http://localhost:11434", embed_model="",
+        data_dir=cfg.SETTINGS.data_dir, catalog_dir=cfg.SETTINGS.catalog_dir,
+        knowledge_dir=cfg.SETTINGS.knowledge_dir, index_dir=cfg.SETTINGS.index_dir,
+        request_timeout=5.0,
+    ), raising=False)
+    from src.detective.planner import plan as _plan
+
+    result = _plan("¿está lloviendo menos en Piura?", lang="es")
+    assert result["mode"] == "rules"
+    assert "local_lora" in result.get("note", "") or "rejected" in result.get("note", "")
