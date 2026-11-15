@@ -1,29 +1,25 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-c — 2026-11-15 07:25 hora de Perú
-Rama@commit: feature/demo@e3d7c3e · empujado: no (PC1, commit local listo en feature/demo; terminal no-interactiva requiere push del usuario o arquitecto con: ! git -C C:\Users\USER41\work\etd-demo push -u origin feature/demo)
-VERIFICADO: docs/demo/EarthTrend_Detective_30s.mp4 generado con Playwright + ffmpeg sobre integracion/ronda5 → ffprobe: duration=29.00s (límite <= 30.0s), resolución 1920x1080 (1080p 16:9), códec h264, tamaño 0.76 MB (límite <= 25MB). Guión detallado en docs/demo/GUION.md. Sin voz sintética, sin marcas de agua ni logos NASA, sin personas, sin barras de navegador.
+## ESTADO — claude-omni-c — 2026-11-15 08:35 hora de Perú
+Rama@commit: main@e67873e · empujado: sí
+VERIFICADO: docs/demo/EarthTrend_Detective_30s.mp4 dura exactamente 29.00s (cumple límite oficial <= 30.0s) según ffprobe (1920x1080, H.264, 795 KB). docs/demo/GUION.md describe segundo a segundo las 6 escenas del video (intro, Hielo Ártico, Hielo Antártico con detectabilidad honesta, TrendMap FDR, Comparación con ejes sincronizados, y cierre con URL pública de GitHub Pages). 100% en inglés, sin voz sintética, sin marcas/logos NASA, sin menores, bajo congelación de código (Ronda 6).
 ESCRITO (sin ejecutar de punta a punta): ninguno
 ROTO / NO HECHO: ninguno en el carril de demo
-Siguiente paso: esperar a claude-omni-1 para capturas finales y rehacer demo si hay cambios visibles tras integración 2 (10:00).
-Necesito de: arquitecto / humano: subir vídeo a hosting/plataforma con enlace público para el formulario de entrega.
+Siguiente paso: el equipo y humano deciden si envían la opción A (láminas 7 págs) o la opción B (video 29s) en el formulario oficial.
+Necesito de: humano / equipo: seleccionar video o láminas para el campo demo de docs/SUBMISSION.md.
 Avisos para otros carriles:
-- Para @claude-omni-1: El vídeo oficial de 30s (`docs/demo/EarthTrend_Detective_30s.mp4`) está listo y verificado (29.0s exactos, 1080p).
-- Para @claude-omni-2: En `docs/SUBMISSION.md` se puede enlazar el vídeo demo de 29s junto con las láminas de 7 páginas.
+- Para @claude-omni-2: El video dura exactamente 29.0s y su guión está verificado en `docs/demo/GUION.md`. En `docs/SUBMISSION.md` se puede enlazar directamente junto con las láminas de 7 páginas.
+- Para @claude-omni-e: Video y guión verificados en `main@e67873e` con `ffprobe` (29.00s <= 30.0s).
 <!-- ESTADO:FIN -->
 
 # Reportes de Claude Omni C (Demo / Vídeo)
 
-## RONDA 5 — Vídeo Oficial de 29 Segundos (2026-11-15 07:20 UTC-5)
-Rama@commit: `feature/demo`
+## RONDA 6 — Verificación Final de Demostración (2026-11-15 08:35 UTC-5)
+Rama@commit: `main@e67873e`
 
-### 1. Entregables Generados
-- `docs/demo/EarthTrend_Detective_30s.mp4` (vídeo oficial de alta definición en inglés).
-- `docs/demo/GUION.md` (guión segundo a segundo, fuentes de datos, casos analizados).
-- `scripts/make_demo.py` (script automatizado para grabar interfaz real y ensamblar vídeo).
+### 1. Verificación Técnica de `EarthTrend_Detective_30s.mp4`
+Comprobación oficial ejecutada con `ffprobe` sobre la versión integrada en `main`:
 
-### 2. Comprobación y Verificación Rigurosa con `ffprobe`
-```bash
-$ ffprobe -v error -show_entries format=duration,size:stream=codec_name,width,height -of json docs/demo/EarthTrend_Detective_30s.mp4
+```json
 {
     "streams": [
         {
@@ -34,17 +30,33 @@ $ ffprobe -v error -show_entries format=duration,size:stream=codec_name,width,he
     ],
     "format": {
         "duration": "29.000000",
-        "size": "795958"
+        "size": "795958",
+        "bit_rate": "219574"
     }
 }
 ```
-- **Duración:** 29.00 segundos exactos (cumple requisito oficial `<= 30.0 s`).
-- **Resolución:** 1920×1080 (16:9 Full HD).
-- **Códec:** H.264 (perfil alto, compatible con todos los reproductores web y móviles).
-- **Tamaño de archivo:** 0.76 MB (muy por debajo del límite de 25 MB).
-- **Inspección visual:**
-  - 100% en inglés.
-  - Cero logos o insignias de la NASA (cumple con las directrices del reto).
-  - Cero rostros o menores de edad.
-  - Cero barras o elementos externos del navegador.
-  - Muestra datos reales: Hielo Ártico (tendencia fuerte -0.50M km²/década), Hielo Antártico (veredicto honesto no significativo con 133 años necesarios), TrendMap global (control FDR $q=0.10$), y comparación Lima vs Ártico con ejes sincronizados.
+
+- **Duración:** `29.000000 s` (Límite máximo permitido: `30.0 s` → **APROBADO**).
+- **Resolución:** `1920×1080` (Full HD 16:9 → **APROBADO**).
+- **Códec de vídeo:** `H.264` (perfil baseline/high universalmente reproducible en web y móviles).
+- **Peso de archivo:** `777 KB` (0.76 MB) (Límite máximo permitido: `25 MB` → **APROBADO**).
+
+---
+
+### 2. Concordancia con `docs/demo/GUION.md`
+El archivo `docs/demo/GUION.md` detalla con exactitud las escenas montadas en el archivo MP4:
+- **00:00 - 00:03:** Tarjeta de título con misión y lema en inglés.
+- **00:03 - 00:09:** Caso Hielo Ártico (1978–2026), declive fuerte de `-0.50M km²/década`, veredicto `SIGNIFICANT_STRONG` (5/5).
+- **00:09 - 00:15:** Caso Hielo Antártico, honestidad científica con veredicto `NOT_SIGNIFICANT` (p = 0.63) y cálculo de detectabilidad de ~133 años restantes.
+- **00:15 - 00:21:** TrendMap Global con control FDR Benjamini-Hochberg ($q=0.10$, 60% celdas significativas destacadas con stippling central).
+- **00:21 - 00:26:** Modo Comparar con ejes Y sincronizados (Lima vs. Ártico).
+- **00:26 - 00:29:** Tarjeta final con enlace público al despliegue en GitHub Pages (`soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./`).
+
+---
+
+### 3. Normativa y Requisitos Oficiales del Hackathon Space Apps 2026
+- **Idioma:** 100% en inglés en pantalla, textos y subtítulos.
+- **Marcas de identidad:** Sin logos, insignias ni tipografías institucionales de la NASA (cumple norma de no suplantación).
+- **Privacidad y menores:** Cero personas, menores de edad o rostros.
+- **Voz y audio:** Sin locución sintética generada por IA (acorde con directrices de la Ronda 5/6).
+- **Código y datos:** 100% de datos reales procedentes de `data/cases/` y `data/atlas/`.
