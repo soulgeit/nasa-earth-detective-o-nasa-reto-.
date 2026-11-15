@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-3 — 2026-11-14 20:05 (hora de Perú)
-Rama@commit: feature/api@<pendiente> (Ronda 3, fusionado origin/main 32d07e2) · empujado: sí
+Rama@commit: feature/api@90744f5 (Ronda 3, fusionado origin/main 32d07e2) · empujado: sí
 VERIFICADO: variables sin lugar sin coordenadas → `pytest tests/api/test_contract.py -q` → 30 passed; smoke 14/14
 VERIFICADO: `place` de /api/geocode llega a `region.name` y al texto → `where='Observed in Lima, Peru.'`
 VERIFICADO: `/api/trendmap` devuelve `variable_id: "T2M"` (antes "VAR") y el catálogo publica `available`/`planned`
