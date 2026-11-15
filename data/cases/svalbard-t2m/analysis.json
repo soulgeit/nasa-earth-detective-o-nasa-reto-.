@@ -4105,12 +4105,12 @@
  },
  "answers": {
   "what": {
-   "es": "T2M se encuentra aumentando a lo largo del periodo analizado.",
-   "en": "T2M is increasing across the analyzed period."
+   "es": "Temperatura del aire a 2 m se encuentra aumentando a lo largo del periodo analizado.",
+   "en": "Air temperature at 2 m is increasing across the analyzed period."
   },
   "where": {
-   "es": "Observado en None.",
-   "en": "Observed in None."
+   "es": "Observado en las coordenadas (+78.22°, +15.65°).",
+   "en": "Observed in coordinates (+78.22°, +15.65°)."
   },
   "how_much": {
    "es": "Tasa estimada de +0.699 °C/década, con un cambio acumulado de +3.144 °C.",

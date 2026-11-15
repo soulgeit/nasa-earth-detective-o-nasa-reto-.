@@ -4105,12 +4105,12 @@
  },
  "answers": {
   "what": {
-   "es": "PRECTOTCORR se encuentra disminuyendo a lo largo del periodo analizado.",
-   "en": "PRECTOTCORR is decreasing across the analyzed period."
+   "es": "Precipitación corregida se encuentra disminuyendo a lo largo del periodo analizado.",
+   "en": "Precipitation (corrected) is decreasing across the analyzed period."
   },
   "where": {
-   "es": "Observado en None.",
-   "en": "Observed in None."
+   "es": "Observado en las coordenadas (-5.19°, -80.63°).",
+   "en": "Observed in coordinates (-5.19°, -80.63°)."
   },
   "how_much": {
    "es": "Tasa estimada de -0.011 mm/day/década (-2.0 % por década), con un cambio acumulado de -0.050 mm/day.",

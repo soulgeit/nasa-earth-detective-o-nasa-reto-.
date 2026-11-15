@@ -18,8 +18,8 @@
     "lon": -77.03,
     "bbox": null
    },
-   "verdict_code": "SIGNIFICANT_STRONG",
-   "frozen_at": "2026-11-15T00:09:17Z",
+   "verdict_code": "SIGNIFICANT",
+   "frozen_at": "2026-11-15T00:42:43Z",
    "paths": {
     "series": "data/cases/lima-t2m/series.json",
     "analysis": "data/cases/lima-t2m/analysis.json",
@@ -51,7 +51,7 @@
     "bbox": null
    },
    "verdict_code": "SIGNIFICANT_STRONG",
-   "frozen_at": "2026-11-15T00:09:17Z",
+   "frozen_at": "2026-11-15T00:43:12Z",
    "paths": {
     "series": "data/cases/svalbard-t2m/series.json",
     "analysis": "data/cases/svalbard-t2m/analysis.json",
@@ -83,7 +83,7 @@
     "bbox": null
    },
    "verdict_code": "SUGGESTIVE",
-   "frozen_at": "2026-11-15T00:09:17Z",
+   "frozen_at": "2026-11-15T00:43:13Z",
    "paths": {
     "series": "data/cases/piura-prectotcorr/series.json",
     "analysis": "data/cases/piura-prectotcorr/analysis.json",

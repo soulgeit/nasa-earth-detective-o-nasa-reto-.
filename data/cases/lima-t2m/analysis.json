@@ -70,9 +70,9 @@
  },
  "significance": {
   "is_significant": true,
-  "verdict_code": "SIGNIFICANT_STRONG",
-  "level": "p<0.01",
-  "tests_agree": true
+  "verdict_code": "SIGNIFICANT",
+  "level": "p<0.05",
+  "tests_agree": false
  },
  "detectability": {
   "years_needed": 58.3,
@@ -4105,12 +4105,12 @@
  },
  "answers": {
   "what": {
-   "es": "T2M se encuentra aumentando a lo largo del periodo analizado.",
-   "en": "T2M is increasing across the analyzed period."
+   "es": "Temperatura del aire a 2 m se encuentra aumentando a lo largo del periodo analizado.",
+   "en": "Air temperature at 2 m is increasing across the analyzed period."
   },
   "where": {
-   "es": "Observado en None.",
-   "en": "Observed in None."
+   "es": "Observado en las coordenadas (-12.05°, -77.03°).",
+   "en": "Observed in coordinates (-12.05°, -77.03°)."
   },
   "how_much": {
    "es": "Tasa estimada de +0.158 °C/década, con un cambio acumulado de +0.713 °C.",
@@ -4126,7 +4126,8 @@
   }
  },
  "warnings": [
-  "HIGH_AUTOCORRELATION"
+  "HIGH_AUTOCORRELATION",
+  "TESTS_DISAGREE"
  ],
  "provenance": {
   "kind": "nasa_api",
