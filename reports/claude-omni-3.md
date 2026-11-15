@@ -1,15 +1,13 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3 — 2026-11-15 10:45 (hora de Perú) — RONDA 6, cierre
-Rama@commit: fix/pytest-testpaths@3a61b8e (sobre `main@e67873e`) · empujado: sí
-VERIFICADO t1: `LICENSE` MIT presente en un clon limpio de `main@e67873e` («Copyright (c) 2026 EarthTrend Detective team»)
-VERIFICADO t1: `requirements.txt` (10 deps, todas `==`) y `requirements-dev.txt` (`-r requirements.txt` + pytest + httpx) instalan exactamente esas versiones en venv nuevo
-VERIFICADO t1: clon limpio de `main` → `pytest -q` **FALLABA** (ver «hallazgo»); `pytest -q tests` → 287 passed, 10 skipped
-VERIFICADO t1: clon limpio de `fix/pytest-testpaths@3a61b8e` → `pytest -q` **287 passed, 10 skipped** y `gate.py` completo → **PUERTA ABIERTA (7/7)**
-VERIFICADO t2: Railway/Docker no ejecutables aquí (`docker` no instalado); `Dockerfile` sigue listo y copia `data/cases`
-HALLAZGO BLOQUEANTE (corregido en rama): `scripts/test_ui_r5.py` rompía la colección de pytest en clon limpio → `gate.py` cerraba la puerta. Arreglo de una línea: `testpaths = tests`
-Falta: fusión de `fix/pytest-testpaths` a `main` (la hace el arquitecto; `main` está congelado, regla 30)
-Necesito de: arquitecto → revisar y fusionar `fix/pytest-testpaths@3a61b8e` (una línea, desbloquea el README y el gate)
-Avisos: quien clone `main` hoy y siga el README se para en `pytest -q`. Con esa rama, no
+## ESTADO — claude-omni-3 — 2026-11-15 11:10 (hora de Perú) — RONDA 6, cierre
+Rama@commit: main@3f066f5 → integrado y empujado; ahora local = 8c07783 (sync) · empujado: sí
+VERIFICADO: `fix/pytest-testpaths` fusionado en `main` (regla 30, aprobado por el humano) → `pytest -q` en clon limpio de `main` desde GitHub → **288 passed, 0 failed, 10 skipped**; `gate.py` → PUERTA ABIERTA (6/6)
+VERIFICADO: `LICENSE` MIT y `requirements.txt` (10 deps `==`) en clon limpio; `requirements-dev.txt` (`-r` + pytest + httpx)
+VERIFICADO: producción en Railway viva (`…-production.up.railway.app`) → smoke **17/17** (lo midió el arquitecto; yo confirmo el estado en su reporte)
+CERRADO: el hallazgo bloqueante de la Ronda 6 (scripts/test_ui_r5.py rompía la colección de pytest) está en `main` y no vuelve
+ROTO / NO HECHO: Docker no ejecutable aquí (no instalado); clon en Linux no ejecutable (sin WSL)
+Necesito de: nada — mi carril cerrado. Queda el envío del formulario (humano, 20:00)
+Avisos: `pytest.ini` ahora lleva `testpaths = tests`; quien clone `main` hoy sigue el README sin fricción
 <!-- ESTADO:FIN -->
 
 # Claude Omni 3 — API v2 y despliegue
