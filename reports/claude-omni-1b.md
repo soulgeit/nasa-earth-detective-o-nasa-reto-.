@@ -1,15 +1,16 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-1b — 2026-11-14 17:55 hora de Perú
-Rama@commit: feature/catalog@cd0386d · empujado: sí
-VERIFICADO: 8 fallos del validador cerrados → `python -X utf8 -I scripts/validate_knowledge.py --max-url-checks 100` → «All checks passed» (168 docs, 0 fallos).
-VERIFICADO: 2 fuentes nuevas → Acker et al. 2009 (NTRS 20090042747, abstract real) y SWOT de la CSA (`Launch: December 16, 2022`), ambas con URL 200 y sha256.
-VERIFICADO: `docs/REFERENCES.md` en inglés con las fuentes de la ronda 2 y MODIS corregido a `modis-land.gsfc.nasa.gov`.
-ESCRITO (sin ejecutar de punta a punta): propuesta de variables planned en `docs/PROPUESTA_VARIABLES_PLANNED.md`; necesita 1 línea en `src/api/catalog.py` y otra en `src/detective/corpus.py` (carriles ajenos).
-ROTO / NO HECHO: nada de mi carril; no aplico la propuesta sin aprobación del arquitecto.
-Siguiente paso: esperar aprobación del §8; si se aprueba, añado `planned` al catálogo y lo valido.
-Necesito de: cfable (arquitecto): aprobar o corregir la propuesta `docs/PROPUESTA_VARIABLES_PLANNED.md`.
-Necesito de: claude-omni-3 y claude-omni-2: aplicar la línea de sus cargadores si el arquitecto aprueba.
-Avisos para otros carriles: los DOI de editorial dan 403 al bot aunque resuelven; el validador ahora comprueba la redirección de doi.org + el registro en DataCite/Crossref, no el HTML del editor. `README` del corpus: 31 artículos, uno es de la CSA (canadiense), no de la NASA.
+## ESTADO — claude-omni-1b — 2026-11-14 20:20 hora de Perú
+Rama@commit: feature/catalog@4f09a01 · empujado: sí
+VERIFICADO: planned en el catálogo → `python scripts/validate_knowledge.py` → «catalog: 15 available + 10 planned», 168 documentos, 0 fallos.
+VERIFICADO: suite sobre main fusionado → `python -m pytest -q` → 223 passed, 1 failed, 9 skipped. El único fallo es `test_published_nasa_benchmarks`, por el −9999 de NSIDC (antigravity-1); no es mío.
+VERIFICADO: README.md en inglés con arranque, fuentes, método, límites, mapa del repo y uso de IA.
+ESCRITO (sin ejecutar de punta a punta): `docs/SUBMISSION.md` aún no existe (tarea del domingo 10:00).
+ROTO / NO HECHO: no he podido dar tarjetas de conocimiento a las planned sin romper el planificador; ver aviso.
+Siguiente paso: `docs/SUBMISSION.md` y alta de variables de Giovanni cuando antigravity-1 valide más CSV.
+Necesito de: claude-omni-2: completar `MISSING_TOPICS` de `src/detective/planner.py` con GLDAS_EVAP, GLDAS_RUNOFF, MODIS_LST_DAY y MODIS_AOD (ya cubre 6 de las 10 planned), para que toda planned responda no_match con nombre y alternativa.
+Necesito de: claude-omni-3: publicar `planned` en `/api/catalog/variables` sin contarlas como disponibles.
+Necesito de: cfable (arquitecto): integrar `origin/feature/stats@ef18e01` + el arreglo de −9999 de antigravity-1 para que la suite quede en verde.
+Avisos para otros carriles: NO hay que dar tarjetas de corpus a las planned: una tarjeta de GPM_IMERG_PRECIP gana la recuperación frente a PRECTOTCORR y rompe 11 pruebas del detective. La vía correcta es MISSING_TOPICS.
 <!-- ESTADO:FIN -->
 
 # Reportes de Claude Omni 1b — catálogo y conocimiento

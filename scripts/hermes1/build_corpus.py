@@ -30,6 +30,7 @@ from hermes1.extract import article_text, page_date, page_title  # noqa: E402
 from hermes1.fetch_common import ROOT, FetchError, clean_text, fetch, truncate_sentences, write_jsonl  # noqa: E402
 
 TODAY = "2026-11-14"
+GIOVANNI_URL_FALLBACK = "https://giovanni.gsfc.nasa.gov/giovanni/"
 DOCS_PATH = os.path.join(ROOT, "data", "knowledge", "docs.jsonl")
 
 # Titles/queries allowed for the Peru/South America quota: pages whose title or
