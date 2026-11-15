@@ -153,3 +153,85 @@ def test_cache_stats_endpoint_reports_ttl(wired: TestClient) -> None:
     body = wired.get("/api/health").json()
     assert body["cache"]["ttl"] > 0
     json.dumps(body)  # must stay JSON-serialisable for clients
+
+
+# --------------------------------------------------------------------------
+# RONDA_7 — chat y escaneo
+# --------------------------------------------------------------------------
+
+
+def test_benjamini_hochberg_matches_the_textbook_values() -> None:
+    from src.api.service import _benjamini_hochberg
+
+    q = _benjamini_hochberg([0.01, 0.04, 0.03, 0.005])
+    assert [round(v, 4) for v in q] == [0.02, 0.04, 0.04, 0.02]
+    assert _benjamini_hochberg([]) == []
+    # un valor q nunca baja del valor p ni pasa de 1
+    p = [0.2, 0.9, 0.5]
+    assert all(pi <= qi <= 1.0 for pi, qi in zip(p, _benjamini_hochberg(p)))
+
+
+def test_scan_runs_every_point_variable_and_corrects_for_multiple_tests(wired: TestClient) -> None:
+    from src.api import catalog
+
+    r = wired.get("/api/scan", params={"lat": -12.07, "lon": -75.21, "place": "Huancayo"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["schema"] == "scan/1"
+    expected = {c["id"] for c in catalog.all_variables() if not catalog.is_planned(c) and c.get("connector") == "power"}
+    assert {row["variable_id"] for row in body["rows"]} == expected
+    assert body["n_variables"] == len(expected) >= 30
+    assert body["multiple_testing"]["method"] == "Benjamini-Hochberg"
+    tested = [row for row in body["rows"] if row["status"] == "ok"]
+    assert tested, body["rows"][:2]
+    for row in tested:
+        assert row["p_value"] <= row["q_value"] <= 1.0
+        # confirmada exige las dos cosas: veredicto del motor y valor q
+        assert row["confirmed"] == (row["is_significant"] and row["q_value"] < 0.05)
+    # las confirmadas van primero
+    flags = [row["confirmed"] for row in tested]
+    assert flags == sorted(flags, reverse=True)
+    # las series globales (GISTEMP, hielo marino) no son de un punto: no entran
+    assert "GISTEMP_TANOM" not in expected and "SEAICE_EXTENT_N" not in expected
+
+
+def test_scan_survives_a_variable_that_fails(wired: TestClient) -> None:
+    doubles.BEHAVIOR["WS2M"] = "upstream_timeout"
+    doubles.BEHAVIOR["FROST_DAYS"] = "short"
+    try:
+        r = wired.get("/api/scan", params={"lat": -12.07, "lon": -75.21})
+    finally:
+        doubles.BEHAVIOR.clear()
+    assert r.status_code == 200, r.text
+    rows = {row["variable_id"]: row for row in r.json()["rows"]}
+    assert rows["WS2M"]["status"] == "error" and rows["WS2M"]["code"] == "UPSTREAM_TIMEOUT"
+    assert rows["FROST_DAYS"]["status"] != "ok"
+    assert rows["T2M"]["status"] == "ok"
+    # lo que falla va al final y no cuenta como prueba hecha
+    assert r.json()["n_tested"] == sum(1 for row in rows.values() if row["status"] == "ok")
+
+
+def test_chat_route_answers_twice_in_a_row(monkeypatch) -> None:
+    """Regresión: un submódulo llamado como la función dejaba el chat sin servicio
+    a partir del segundo mensaje («src.detective.chat is not importable»)."""
+    from src.api import modules
+
+    modules.clear_cache()
+    import src.api.main as main_mod
+
+    main_mod.limiter.reset()
+    client = TestClient(main_mod.app)
+    first = client.post("/api/ai/chat", json={"message": "hola", "lang": "es"})
+    assert first.status_code == 200, first.text
+    assert first.json()["kind"] == "greeting"
+    second = client.post(
+        "/api/ai/chat",
+        json={"message": "¿y en Huancayo?", "lang": "es", "context": {"place": "Ica", "variable_id": "PRECTOTCORR"}},
+    )
+    assert second.status_code == 200, second.text
+    assert second.json()["plan"]["place"] == "Huancayo"
+    assert client.post("/api/ai/chat", json={"nope": 1}).status_code == 400
+    bad = client.post("/api/ai/chat", content=b"not json", headers={"content-type": "application/json"})
+    assert bad.status_code == 400
+    # "hi" ya no es un error de validación en el planificador
+    assert client.post("/api/ai/plan", params={"question": "hi", "lang": "en"}).status_code == 200

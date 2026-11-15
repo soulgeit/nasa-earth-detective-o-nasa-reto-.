@@ -251,3 +251,114 @@ def compare(
     except Exception as exc:
         raise ApiError("UPSTREAM_ERROR", hint=f"stats/compare: {type(exc).__name__}: {exc}"[:300]) from exc
     return {"a": res_a, "b": res_b, "compare": cmp_result}
+
+
+# --------------------------------------------------------------------------
+# RONDA_7 — escaneo: todas las variables de un punto, ordenadas por evidencia
+# --------------------------------------------------------------------------
+
+SCAN_WORKERS = 6
+SCAN_FDR_Q = 0.05
+POINT_CONNECTORS = ("power",)
+
+
+def _benjamini_hochberg(p_values: list[float]) -> list[float]:
+    """Valores q de Benjamini y Hochberg (1995), en el orden de entrada.
+
+    Con 33 pruebas a alfa = 0,05 se esperan una o dos «significativas» por puro
+    azar. El valor q controla la proporción de falsos hallazgos del conjunto.
+    """
+    m = len(p_values)
+    order = sorted(range(m), key=lambda i: p_values[i])
+    q = [1.0] * m
+    running = 1.0
+    for rank in range(m, 0, -1):
+        idx = order[rank - 1]
+        running = min(running, p_values[idx] * m / rank)
+        q[idx] = running
+    return q
+
+
+def _scan_row(card: dict[str, Any], lat: float, lon: float, place: str | None) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "variable_id": card["id"],
+        "names": card.get("names"),
+        "unit": card.get("unit"),
+        "sphere": card.get("sphere"),
+        "status": "ok",
+    }
+    try:
+        result = analyze(card["id"], lat=lat, lon=lon, place=place)
+    except ApiError as exc:
+        row.update(status="error", code=exc.code)
+        return row
+    except Exception as exc:  # un fallo de una variable no tumba el escaneo
+        row.update(status="error", code="UPSTREAM_ERROR", hint=f"{type(exc).__name__}"[:80])
+        return row
+
+    trend = result.get("trend") or {}
+    tests = (result.get("tests") or {}).get("mann_kendall") or {}
+    significance = result.get("significance") or {}
+    period = result.get("period") or {}
+    p_value = tests.get("p_value_autocorr")
+    if p_value is None:
+        p_value = tests.get("p_value")
+    if trend.get("sen_slope_per_decade") is None or p_value is None or not period.get("years"):
+        row.update(status="insufficient", period=period)
+        return row
+    row.update(
+        direction=trend.get("direction"),
+        slope_per_decade=trend.get("sen_slope_per_decade"),
+        ci95_per_decade=trend.get("sen_ci95_per_decade"),
+        percent_per_decade=trend.get("percent_per_decade"),
+        total_change=trend.get("total_change"),
+        p_value=float(p_value),
+        is_significant=bool(significance.get("is_significant")),
+        verdict_code=significance.get("verdict_code"),
+        tests_agree=significance.get("tests_agree"),
+        period={k: period.get(k) for k in ("start", "end", "years", "n_obs")},
+        source=(result.get("provenance") or {}).get("underlying") or (result.get("provenance") or {}).get("source"),
+    )
+    return row
+
+
+def scan(*, lat: float, lon: float, place: str | None = None) -> dict[str, Any]:
+    """Analiza todas las variables de punto del catálogo en un lugar.
+
+    Cada fila sale de `analyze()` (mismo motor, mismas cifras, misma caché) y el
+    conjunto añade la corrección por comparaciones múltiples: una variable solo
+    se destaca si su valor q (Benjamini-Hochberg) queda por debajo de 0,05.
+    """
+    lat, lon = validation.check_point(lat, lon)
+    cards = [
+        c for c in catalog.all_variables()
+        if not catalog.is_planned(c) and str(c.get("connector") or "") in POINT_CONNECTORS
+    ]
+    key = _normalize_key("scan", round(lat, 2), round(lon, 2), place, sorted(c["id"] for c in cards))
+    return analysis_cache.get_or_compute(key, lambda: _scan(cards, lat, lon, place))
+
+
+def _scan(cards: list[dict[str, Any]], lat: float, lon: float, place: str | None) -> dict[str, Any]:
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as pool:
+        rows = list(pool.map(lambda card: _scan_row(card, lat, lon, place), cards))
+
+    tested = [r for r in rows if r["status"] == "ok"]
+    for row, q_value in zip(tested, _benjamini_hochberg([r["p_value"] for r in tested])):
+        row["q_value"] = q_value
+        # Confirmada = el veredicto del motor ya era «significativa» (sus pruebas
+        # coinciden) Y además sobrevive a la corrección por pruebas múltiples.
+        row["confirmed"] = bool(row["is_significant"] and q_value < SCAN_FDR_Q)
+    tested.sort(key=lambda r: (not r["confirmed"], r["p_value"], r["variable_id"]))
+    others = [r for r in rows if r["status"] != "ok"]
+    return {
+        "schema": "scan/1",
+        "region": {"kind": "point", "name": place, "lat": lat, "lon": lon},
+        "n_variables": len(rows),
+        "n_tested": len(tested),
+        "n_significant": sum(1 for r in tested if r["is_significant"]),
+        "n_confirmed": sum(1 for r in tested if r["confirmed"]),
+        "multiple_testing": {"method": "Benjamini-Hochberg", "q": SCAN_FDR_Q, "reference": "Benjamini & Hochberg 1995"},
+        "rows": tested + others,
+    }

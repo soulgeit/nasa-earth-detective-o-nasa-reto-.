@@ -5,6 +5,7 @@ Public surface, exactly as agreed with the other lanes:
 
     retrieve(query, *, lang="es", k=6, types=None) -> list[dict]
     plan(question, *, lang="es") -> dict            # InvestigationPlan, contract §10
+    chat(message, *, lang=None, context=None) -> dict   # conversational turn (RONDA_7)
     scout(lat, lon, *, lang="es") -> dict           # candidate variables for a place
     explain(analysis, *, level="school", lang="es") -> dict
     geocode(q) -> list[dict]                        # [{"name","country","lat","lon","bbox"}]
@@ -16,7 +17,7 @@ from __future__ import annotations
 
 from .rag import retrieve as _retrieve
 
-__all__ = ["retrieve", "plan", "scout", "explain", "geocode", "__version__"]
+__all__ = ["retrieve", "plan", "chat", "scout", "explain", "geocode", "__version__"]
 
 __version__ = "2.0.0"
 
@@ -30,6 +31,15 @@ def plan(question: str, *, lang: str = "es"):
     from .planner import plan as _plan
 
     return _plan(question, lang=lang)
+
+
+def chat(message: str, *, lang: str | None = None, context: dict | None = None):
+    """One conversational turn with Huiracocha IA (RONDA_7): reply, plan and sources."""
+    # The module is NOT called chat.py on purpose: importing a submodule named
+    # like this function would replace the function on the package with the module.
+    from .conversation import chat as _chat
+
+    return _chat(message, lang=lang, context=context)
 
 
 def scout(lat: float, lon: float, *, lang: str = "es"):

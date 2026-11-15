@@ -489,8 +489,44 @@ def _detective_call(attr: str, producer) -> Any:
         raise ApiError("AI_UNAVAILABLE", hint=f"{attr}: {type(exc).__name__}: {exc}"[:300]) from exc
 
 
+@app.post("/api/ai/chat", tags=["ai"])
+async def ai_chat(request: Request) -> JSONResponse:
+    """Un turno de conversación con Huiracocha IA (RONDA_7).
+
+    Cuerpo: ``{"message": "...", "lang": "es|en", "context": {"place", "variable_id"}}``.
+    No guarda estado: el cliente devuelve el ``context`` de la respuesta anterior.
+    """
+    _limit(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = None
+    message = body.get("message") if isinstance(body, dict) else None
+    if not isinstance(message, str):
+        raise ApiError(
+            "INVALID_REQUEST",
+            message={"es": "Falta el campo 'message'.", "en": "The 'message' field is missing."},
+        )
+    lang = body.get("lang") if body.get("lang") in ("es", "en") else None
+    context = body.get("context") if isinstance(body.get("context"), dict) else None
+    result = _detective_call("chat", lambda fn: fn(message[:500], lang=lang, context=context))
+    return JSONResponse(result, headers=_data_headers())
+
+
+@app.get("/api/scan", tags=["data"])
+def scan_endpoint(
+    request: Request,
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    place: str | None = Query(None, max_length=120, description="nombre del lugar devuelto por /api/geocode"),
+) -> JSONResponse:
+    """Todas las variables de punto del catálogo para un lugar, ordenadas por evidencia."""
+    _limit(request)
+    return JSONResponse(service.scan(lat=lat, lon=lon, place=place), headers=_data_headers())
+
+
 @app.post("/api/ai/plan", tags=["ai"])
-def ai_plan(request: Request, question: str = Query(..., min_length=3, max_length=500), lang: str = Query("es")) -> JSONResponse:
+def ai_plan(request: Request, question: str = Query(..., min_length=1, max_length=500), lang: str = Query("es")) -> JSONResponse:
     _limit(request)
     lang = validation.check_lang(lang)
     result = _detective_call("plan", lambda fn: fn(question, lang=lang))
