@@ -1,18 +1,41 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-15 11:30 hora de Perú
-Rama@commit: `main@9e386db` · empujado: sí (por el humano/equipo tras el cierre de R6)
-VERIFICADO: Suite completa sobre `main` ampliado → `python -m pytest -q` → **288 passed, 0 failed, 9 skipped** en 272s (incluye reportes R6, fix `pytest.ini` testpaths, scripts de deploy, corrección de texto es)
-VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (smoke 17/17, datasets 7/7, knowledge 168 docs, no_secrets 289 archivos, rangos físicos 3882 valores)
-VERIFICADO: `gh-pages` regenerado desde `main@9e386db` y publicado → `gh-pages@cb84560`; URL pública `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` HTTP 200, `Last-Modified: Sun, 15 Nov 2026 16:30:03 GMT`, 7/7 casos 200 y la corrección de español ya en vivo
-VERIFICADO: SUBMISSION completa — humano rellenó equipo («Angel Fernando Reyes Moreno») y eligió las láminas como demo; sin `<<HUMANO>>` pendientes
-VERIFICADO: Demo: PDF exactamente 7 páginas (2.407.097 bytes, `/Count 7`) y vídeo 29.0s (795.958 bytes, ffprobe 29.000000)
-ROTO / NO HECHO: informes R6 pendientes de 4 carriles (claude-omni-1, claude-omni-2, claude-omni-3, claude-omni-e/informe-3); Railway opcional si el humano hace login
-Siguiente paso: esperar el informe-3 de QA (o redactarlo) y la decisión del humano de «Submit for Judging» a las 20:00
-Necesito de: humano: «Submit for Judging» a las 20:00; si Railway no se despliega, la URL de entrega es la de GitHub Pages
-Avisos para otros carriles: todo lo que toca a `main` está empujado y en verde; no hay nada que integrar ya salvo reportes de cierre docs-only
+## ESTADO — cfable (arquitecto) — 2026-11-15 12:05 hora de Perú
+Rama@commit: `main@0c86b8c` · empujado: sí
+VERIFICADO: Suite completa sobre `main` → **289 passed, 0 failed, 9 skipped** en 271s (incluye la prueba nueva de H1)
+VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (6/6)
+VERIFICADO: **Producción en Railway viva**: `https://nasa-earth-detective-o-nasa-reto-production.up.railway.app` → `/api/health` 200 `status ok` `ai_mode=extractive`, ETL/stats/detective disponibles; `scripts/smoke_api.py` contra ella → **17/17 passed, 0 skipped, 0 failed** (incluye analyze Lima 540 obs, trendmap 63 celdas, cases 7, planned 15+10, UI 200)
+VERIFICADO: `gh-pages@10c7e16` (rebuild desde main@6597f48) sirve el respaldo estático con H1 aplicado: 7/7 casos 200, Lima «+0.159» en vivo, `Last-Modified` 16:50 GMT
+VERIFICADO: Láminas alineadas con H1 — `slides.html` y `FUENTES.md` corregidos (+0.159, rules 50/50 según `docs/EVAL_IA.md`) y PDF regenerado (2.405.519 bytes, `/Count 7`, 1280×720 por diseño)
+VERIFICADO: SUBMISSION y README con la URL de Railway en «Live links»; equipo «Angel Fernando Reyes Moreno»; demo = láminas 7 págs
+ROTO / NO HECHO: informes R6 de claude-omni-1 y claude-omni-e (informe-3 QA) — los redacta el arquitecto con evidencia propia (el peer user41-73 confirmó que no los escribe)
+Siguiente paso: pasada de QA final sobre la URL pública; «Submit for Judging» a las 20:00 es del humano
+Necesito de: humano: enviar el formulario a las 20:00 con la URL de Railway como app completa y la de GitHub Pages como respaldo estático
+Avisos para otros carriles: main@0c86b8c en verde con producción viva; no hace falta tocar nada más salvo los dos informes de cierre
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
+
+## Cierre de producción (final) — VERIFICADO (2026-11-15 12:05)
+Rama@commit: `main@0c86b8c` (empujado)
+
+```
+$ python -m pytest -q -p no:cacheprovider
+289 passed, 9 skipped, 74 warnings in 271.13s (0:04:31)
+
+$ python scripts/smoke_api.py https://nasa-earth-detective-o-nasa-reto-production.up.railway.app
+17 passed · 0 skipped · 0 failed
+  health 200 ai_mode=extractive · catalog 15 · analyze Lima 540 obs sospecha NASA · trendmap 63 celdas
+  cases 200 · case detail lima-t2m SIGNIFICANT · GPM_IMERG_PRECIP → 409 VARIABLE_PLANNED · UI 200
+
+$ curl -I https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./
+HTTP 200 · Last-Modified: Sun, 15 Nov 2026 16:50:07 GMT (gh-pages@10c7e16, H1 aplicado)
+```
+
+Despliegue completo (Railway): la app interactiva con API viva responde en producción y
+pasa el smoke completo. El respaldo estático (GitHub Pages) sirve los 7 casos congelados
+con las cifras ya corregidas (+0.159 tras H1). Láminas de entrega alineadas con H1 y
+regeneradas a PDF (7 páginas exactas). «Live links» de SUBMISSION y README apuntan a
+ambas URLs.
 
 ## Cierre Ronda 6 (final) — VERIFICADO (2026-11-15 11:30)
 Rama@commit: `main@9e386db` (todo lo de la entrega en `main`, en verde, empujado)
