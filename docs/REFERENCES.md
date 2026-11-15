@@ -53,6 +53,7 @@ stored in the `provenance` field of each series and shown in the app under
 | Wilks, D. S. (2016). “The stippling shows statistically significant grid points”: How research results are routinely overstated and overinterpreted, and what to do about it. *BAMS* 97(12). | 10.1175/BAMS-D-15-00267.1 |
 | Gelaro, R. et al. (2017). The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2). *J. Climate* 30. | 10.1175/JCLI-D-16-0758.1 |
 | Rodell, M. et al. (2004). The Global Land Data Assimilation System. *BAMS* 85(3). | 10.1175/BAMS-85-3-381 |
+| Lenssen, N. et al. (2019). Improvements in the GISTEMP Uncertainty Model. *J. Geophys. Res. Atmos.* | 10.1029/2018JD029522 |
 | Lenssen, N. et al. (2024). A NASA GISTEMPv4 Observational Uncertainty Ensemble. *J. Geophys. Res. Atmos.* | 10.1029/2023JD040179 |
 | Hussain, M. M. & Mahmud, I. (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests. *JOSS* 4(39). | 10.21105/joss.01556 |
 | Acker, J. G. et al. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. *EARSeL eProceedings* 8(2). | NTRS record 20090042747 |
