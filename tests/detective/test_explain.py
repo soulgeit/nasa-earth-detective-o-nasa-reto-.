@@ -140,3 +140,42 @@ def test_both_languages_have_citations(analysis_result):
     for lang in ("es", "en"):
         result = explain(_lima(analysis_result), level="school", lang=lang)
         assert result["citations"], f"no citations in {lang}"
+
+
+# --- RONDA_5 §2.15: sources are attributed once, and a summary is not a quote ----
+
+def test_text_does_not_repeat_sources_or_raw_urls(analysis_result):
+    result = explain(_lima(analysis_result), level="school", lang="en")
+    text = result["text"]
+    assert "http" not in text, "the raw URL must live in the citations list, not the text"
+    # Every cited title appears once in the prose at most.
+    for citation in result["citations"]:
+        assert text.count(citation["title"]) <= 1
+
+
+def test_no_internal_agent_name_is_shown_as_a_publisher(analysis_result):
+    """§2.15: 'Hermes 1 summary of cited sources' was visible to the judge."""
+    for lang in ("es", "en"):
+        result = explain(_lima(analysis_result), level="school", lang=lang)
+        blob = result["text"] + " ".join(str(c.get("publisher") or "") for c in result["citations"])
+        assert "Hermes 1" not in blob
+        for citation in result["citations"]:
+            assert citation["publisher"], "every source needs a real publisher"
+
+
+def test_no_document_is_attributed_to_an_internal_agent():
+    from src.detective.rag import corpus_documents
+
+    offenders = [
+        d.id for d in corpus_documents()
+        if "hermes" in str(d.publisher or "").lower() or "claude-omni" in str(d.publisher or "").lower()
+    ]
+    assert not offenders, f"documents show an internal agent as publisher: {offenders}"
+
+
+def test_summaries_are_flagged_and_quotations_are_not():
+    from src.detective.rag import corpus_documents
+
+    for doc in corpus_documents():
+        if doc.summary_by:
+            assert doc.is_quotation is False, f"{doc.id} is a summary but marked as a quotation"

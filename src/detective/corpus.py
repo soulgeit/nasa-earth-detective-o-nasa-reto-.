@@ -49,6 +49,10 @@ class Document:
     biomes: list[str] = field(default_factory=list)
     license: str | None = None
     derived_from: str | None = None
+    # A document whose text is our own summary, not a literal quotation of the page.
+    # RONDA_5 §2.15: a summary must never be shown between quotation marks.
+    is_quotation: bool = True
+    summary_by: str | None = None
     # True when the app can actually fetch this variable today (a `live`
     # connector), False for `planned_giovanni` cards that depend on a CSV the
     # human has not exported yet. The planner prefers what we can deliver.
@@ -76,6 +80,8 @@ class Document:
             "variables": list(self.variables),
             # RONDA_4 rule 19: a planned product is documented but never analysable.
             "available": self.available,
+            "is_quotation": self.is_quotation,
+            "summary_by": self.summary_by,
             "text": self.text,
             "available": bool(self.available),
         }
@@ -113,6 +119,8 @@ def _doc_from_jsonl(row: dict[str, Any], *, source: Path) -> Document:
         variables=list(row.get("variables") or []),
         biomes=list(row.get("biomes") or []),
         license=row.get("license"),
+        is_quotation=bool(row.get("is_quotation", True)),
+        summary_by=row.get("summary_by"),
     )
 
 

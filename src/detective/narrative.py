@@ -150,6 +150,7 @@ def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES)
             "type": doc["type"],
             "lang": doc.get("lang"),
             "publisher": doc.get("publisher"),
+            "is_quotation": doc.get("is_quotation", True),
             "role": role,
             "text": doc["text"],
         }
@@ -166,7 +167,15 @@ def _answer(analysis: dict[str, Any], key: str, lang: str) -> str:
 
 
 def extractive_text(analysis: dict[str, Any], *, lang: str, passages: list[dict[str, Any]]) -> str:
-    """Deterministic template: the app's own `answers` plus short, attributed quotes."""
+    """The app's own `answers`, then one plain sentence naming the sources.
+
+    RONDA_5 §2.15: the sources used to be listed twice — once inline with a raw URL
+    and again in the citations list — and every fragment sat between quotation marks
+    even when it was our own summary, not a literal quote. Now:
+      * the text names the sources once, by title, without URLs;
+      * the citations list carries the links (that is the UI's "sources" block);
+      * a fragment is quoted only when the document is a real quotation.
+    """
     parts = [p for p in (
         _answer(analysis, "what", lang),
         _answer(analysis, "where", lang),
@@ -176,17 +185,26 @@ def extractive_text(analysis: dict[str, Any], *, lang: str, passages: list[dict[
     ) if p]
     first = " ".join(parts) if parts else _fallback_summary(analysis, lang)
 
-    second_lines: list[str] = []
-    for p in passages:
-        # A short quoted sentence, then the source it came from with its real URL.
-        quote = _first_sentence(p["text"], limit=180)
-        source = p.get("publisher") or p.get("type") or ""
-        attrib = f" — {source}" if source else ""
-        second_lines.append(f"[{p['n']}] {p['title']}{attrib}: \"{quote}\"\n     {p['url'] or ''}".rstrip())
-    second = "\n".join(second_lines) if second_lines else (
-        "No hay fuentes recuperadas para este caso." if lang == "es" else "No sources were retrieved for this case."
-    )
-    return f"{first}\n\n{second}"
+    if not passages:
+        return first
+
+    titles = [str(p.get("title") or "").strip() for p in passages if p.get("title")]
+    if lang == "es":
+        lead = "Fuentes consultadas:" if len(titles) > 1 else "Fuente consultada:"
+    else:
+        lead = "Sources consulted:" if len(titles) > 1 else "Source consulted:"
+    return f"{first}\n\n{lead} " + "; ".join(titles) + "."
+
+
+def _fragment_sentence(passage: dict[str, Any], *, lang: str) -> str:
+    """One sentence from the passage, quoted only when it is really a quotation."""
+    sentence = _first_sentence(passage.get("text", ""), limit=180)
+    if not sentence:
+        return ""
+    if passage.get("is_quotation", False):
+        return f"\"{sentence}\""
+    prefix = "Resumen: " if lang == "es" else "Summary: "
+    return f"{prefix}{sentence}"
 
 
 def _first_sentence(text: str, *, limit: int) -> str:

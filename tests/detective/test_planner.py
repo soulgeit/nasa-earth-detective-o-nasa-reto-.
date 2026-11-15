@@ -402,3 +402,41 @@ def test_planned_cards_are_read_from_the_catalog():
     planned = [c for c, available in cards if not available]
     for card in planned:
         assert card.get("available") is False, "a planned card must say so in its payload"
+
+
+# --- RONDA_5 §4.5: the lexicon must not confuse a place with a process --------
+
+@pytest.mark.parametrize("question,lang,expected", [
+    # "Desert" here is part of a place name, not a request for soil moisture.
+    ("Is dust from the Sechura Desert travelling farther now?", "en", "AOD_55"),
+    # The same word inside "turning into desert" IS a desertification question.
+    ("Which variable tells me if Piura is turning into desert?", "en", "GWETTOP"),
+    # Reverse direction: a phrase split across the sentence must still match.
+    ("Is the soil in Ica drying out?", "en", "GWETTOP"),
+    ("¿El aire de Lima está más sucio que hace veinte años?", "es", "AOD_55"),
+])
+def test_desert_and_drying_are_not_confused(question, lang, expected):
+    result = plan(question, lang=lang)
+    assert expected in result["variable_ids"], result["variable_ids"]
+
+
+def test_all_reference_questions_are_answered_by_rules():
+    """RONDA_5: the rules must answer 50/50 on the golden set (was 49/50)."""
+    from src.detective.config import SETTINGS
+
+    path = SETTINGS.knowledge_dir / "golden_questions.jsonl"
+    if not path.exists():
+        pytest.skip("golden_questions.jsonl not published")
+    import json as _json
+
+    failures = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = _json.loads(line)
+        result = plan(row["question"], lang=row.get("lang", "es"))
+        expected = set(row.get("expected_variable_ids") or [])
+        got = set(result.get("variable_ids") or [])
+        if not (expected & got) or result["intent"] not in ("investigate", "compare", "define"):
+            failures.append((row["question"], sorted(got), sorted(expected)))
+    assert not failures, f"{len(failures)} reference questions still fail: {failures}"

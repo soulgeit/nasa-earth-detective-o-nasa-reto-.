@@ -128,11 +128,25 @@ ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 # Reverse map built once: normalised alias -> ids
+# Words that must not become loose aliases even though they appear inside a
+# multi-word alias. They are too generic on their own: "desert" is a place in
+# "Sechura Desert", not a request for soil moisture data.
+_PHRASE_ONLY_WORDS = frozenset({"desert", "turning", "turn", "into"})
+
 _ALIAS_TO_IDS: dict[str, set[str]] = {}
 for _vid, _aliases in ALIASES.items():
     for _alias in _aliases:
-        for _term in normalize_terms(_alias):
-            _ALIAS_TO_IDS.setdefault(_term, set()).add(_vid)
+        _terms = normalize_terms(_alias)
+        if len(_terms) == 1:
+            _ALIAS_TO_IDS.setdefault(_terms[0], set()).add(_vid)
+        else:
+            # A multi-word alias contributes its words ("soil", "drying") so a
+            # question that separates them still matches — "Is the soil in Ica
+            # drying out?" must reach GWETTOP. Words listed in _PHRASE_ONLY_WORDS
+            # are excluded, and the phrase itself is matched separately below.
+            for _term in _terms:
+                if _term not in _PHRASE_ONLY_WORDS:
+                    _ALIAS_TO_IDS.setdefault(_term, set()).add(_vid)
 
 # Multi-word aliases ("humedad del aire", "air pollution") are only evidence when
 # they appear as a phrase: their individual words are too common on their own.
@@ -150,7 +164,11 @@ def _normalized_text(query: str) -> str:
 
 
 def expand(query: str) -> dict[str, list[str]]:
-    """variable_id -> the student's words that pointed at it (for the 'why' text)."""
+    """variable_id -> the student's words that pointed at it (for the 'why' text).
+
+    Single-word aliases match per word; multi-word aliases match as a phrase, so
+    "turning into desert" still reaches GWETTOP without "desert" alone doing so.
+    """
     hits: dict[str, list[str]] = {}
     text = _normalized_text(query)
     for term in text.split():
@@ -158,6 +176,12 @@ def expand(query: str) -> dict[str, list[str]]:
             bucket = hits.setdefault(vid, [])
             if term not in bucket:
                 bucket.append(term)
+    padded = f" {text} "
+    for phrase, vid, _weight in _PHRASES:
+        if f" {phrase} " in padded:
+            bucket = hits.setdefault(vid, [])
+            if phrase not in bucket:
+                bucket.append(phrase)
     return hits
 
 
