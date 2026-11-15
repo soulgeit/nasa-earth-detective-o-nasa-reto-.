@@ -1,16 +1,15 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3 — 2026-11-15 07:35 (hora de Perú)
-Rama@commit: feature/api@60b293b (Ronda 5, fusionado origin/integracion/ronda5) · empujado: sí
-VERIFICADO t2: `LICENSE` MIT + README «Licence and third-party notices» (POWER/GISTEMP/NSIDC/Giovanni, Leaflet BSD-2, Chart.js MIT, Google Fonts OFL 1.1, GIBS+OSM, y las licencias Python leídas del LICENSE de cada paquete)
-VERIFICADO t3: `GET /api/cases/{id}` documentada en CONTRATOS §7 y en el smoke → 200 `analysis/2` (lima-t2m, verdict SIGNIFICANT) y 404 `NOT_FOUND`
-VERIFICADO clon limpio (Windows, no hay Linux/WSL): clon de GitHub @60b293b → venv nuevo → `requirements.txt` → arranca → `requirements-dev.txt` → **`pytest -q` 275 passed, 0 failed, 10 skipped**; smoke **17/17**; `validate_datasets` 7/7; `validate_knowledge` OK; `gate.py` PUERTA ABIERTA (6/6)
-VERIFICADO suite en mi árbol (regla 14) → `pytest -q` → **275 passed, 0 failed, 10 skipped**
-ROTO / NO HECHO: t1 en **Linux o WSL imposible** (no instalados; decisión del humano, no la tomo yo). t4 **Docker imposible** (no instalado)
-Falta por hora: t5 gate en G3 10:00 y G4 18:00; smoke remoto 12:00, 16:00, 19:00. t6 (README final) solo si claude-omni-1b no commitea antes de las 10:00
-Hallazgo del entorno (no del repo): en este PC `python` del PATH es el alias de Microsoft Store y no ejecuta; el README ya lo advierte tras mi cambio. Es lo que haría fallar un clon limpio en Windows
-Revisión §5: los 3 cambios del arquitecto en mi carril NO contradicen el contrato
-Necesito de: humano → Linux/WSL y Docker si quiere t1 y t4 cerradas; nadie más en mi carril
-Avisos para otros carriles: el smoke ahora comprueba `GET /api/cases/{id}`; «catalog availability flags» contaba `planned` mal y ya lee la lista real (15 disponibles + 10 planned)
+## ESTADO — claude-omni-3 — 2026-11-15 10:45 (hora de Perú) — RONDA 6, cierre
+Rama@commit: fix/pytest-testpaths@3a61b8e (sobre `main@e67873e`) · empujado: sí
+VERIFICADO t1: `LICENSE` MIT presente en un clon limpio de `main@e67873e` («Copyright (c) 2026 EarthTrend Detective team»)
+VERIFICADO t1: `requirements.txt` (10 deps, todas `==`) y `requirements-dev.txt` (`-r requirements.txt` + pytest + httpx) instalan exactamente esas versiones en venv nuevo
+VERIFICADO t1: clon limpio de `main` → `pytest -q` **FALLABA** (ver «hallazgo»); `pytest -q tests` → 287 passed, 10 skipped
+VERIFICADO t1: clon limpio de `fix/pytest-testpaths@3a61b8e` → `pytest -q` **287 passed, 10 skipped** y `gate.py` completo → **PUERTA ABIERTA (7/7)**
+VERIFICADO t2: Railway/Docker no ejecutables aquí (`docker` no instalado); `Dockerfile` sigue listo y copia `data/cases`
+HALLAZGO BLOQUEANTE (corregido en rama): `scripts/test_ui_r5.py` rompía la colección de pytest en clon limpio → `gate.py` cerraba la puerta. Arreglo de una línea: `testpaths = tests`
+Falta: fusión de `fix/pytest-testpaths` a `main` (la hace el arquitecto; `main` está congelado, regla 30)
+Necesito de: arquitecto → revisar y fusionar `fix/pytest-testpaths@3a61b8e` (una línea, desbloquea el README y el gate)
+Avisos: quien clone `main` hoy y siga el README se para en `pytest -q`. Con esa rama, no
 <!-- ESTADO:FIN -->
 
 # Claude Omni 3 — API v2 y despliegue
@@ -767,3 +766,137 @@ $ python -m pytest -q
 - **Tarea 6** (README final, que era de claude-omni-1b): solo pasa a mí si a las
   10:00 no hay commit suyo. A las 07:31 su rama no tenía nada nuevo desde ayer a
   las 20:26.
+
+---
+
+# Reporte final — Ronda 6 (15-nov-2026, 10:45 hora de Perú)
+
+Base: `origin/main@e67873e`, clonado de cero desde GitHub. No hubo cambios de
+código en mi carril esta ronda: `main` está en congelación (regla 31).
+
+## Tarea 1 — `LICENSE` y `requirements.txt` en un clon limpio
+
+### Lo que pide el checklist
+
+**`LICENSE`** — presente en `main@e67873e`, MIT:
+
+```
+$ ls LICENSE && head -3 LICENSE
+MIT License
+
+Copyright (c) 2026 EarthTrend Detective team
+```
+
+**`requirements.txt`** — 10 dependencias, todas con `==`:
+
+```
+fastapi==0.163.0      starlette==1.10.0     uvicorn==0.54.0
+pydantic==2.14.3      python-multipart==0.0.33   requests==2.34.2
+certifi==2026.10.23   numpy==2.5.4          scipy==1.18.1
+pymannkendall==1.4.3
+```
+
+**`requirements-dev.txt`** — `-r requirements.txt` + `pytest==9.2.0` +
+`httpx==0.28.1`. Lo correcto: el despliegue no necesita pytest.
+
+Instaladas en un venv nuevo, las 10 salen exactamente en la versión fijada (lo
+comprobé leyendo `importlib.metadata` después de instalar, no el archivo).
+
+### Hallazgo: el README no se podía seguir en un clon limpio
+
+En un clon de `main@e67873e`, con venv nuevo y solo `requirements-dev.txt`:
+
+```
+$ python -m pytest -q
+ERROR scripts/test_ui_r5.py
+!!! Interrupted: 1 error during collection !!!
+E   ModuleNotFoundError: No module named 'playwright'
+```
+
+**Causa.** `scripts/test_ui_r5.py` es un *script* de verificación con Playwright
+(de claude-omni-1; se ejecuta a mano con `python scripts/test_ui_r5.py`, como él
+documenta en su reporte), pero se llama `test_*`, así que pytest lo recoge,
+intenta importar `playwright` y **aborta toda la colección**. No está en ningún
+`requirements`: correcto, porque Playwright con su navegador son ~50 MB que solo
+necesita quien hace capturas.
+
+**Efecto en la entrega.** El primer comando de comprobación del README falla en
+cualquier máquina limpia, y `gate.py` sin `--skip-suite` cierra la puerta:
+
+```
+$ python scripts/gate.py --base … --offline        # clon de main
+FALLA  pytest              exit=2      1.4s
+OK     smoke_api, validate_datasets, validate_knowledge,
+       planned_not_analyzable, case_physical_ranges, no_secrets
+PUERTA CERRADA: fallaron pytest
+```
+
+El arquitecto no lo vio porque midió el gate con `--skip-suite` (§1 de
+`RONDA_6.md` dice `gate.py --offline`, pero el resultado que pegó no incluye la
+línea de pytest).
+
+**Arreglo** (`fix/pytest-testpaths@3a61b8e`, una línea en `pytest.ini`):
+
+```ini
+testpaths = tests
+```
+
+`scripts/` queda fuera de la recolección y el script sigue funcionando a mano.
+No toca código, no toca `src/`, no cambia ninguna prueba.
+
+### Verificación del arreglo, en un clon limpio desde cero
+
+```
+$ git clone -b fix/pytest-testpaths … && python -m venv .venv
+$ pip install -r requirements-dev.txt
+$ python -m uvicorn src.api.main:app --port 8802      -> health 200
+      ai_mode=extractive etl=True stats=True detective=True
+$ python -m pytest -q
+287 passed, 10 skipped in 494.73s
+$ python scripts/gate.py --base http://127.0.0.1:8802 --offline
+OK    pytest                 exit=0    490.9s
+OK    smoke_api              exit=0     18.6s
+OK    validate_datasets      exit=0      0.2s
+OK    validate_knowledge     exit=0      0.2s
+OK    planned_not_analyzable exit=0      0.0s
+OK    case_physical_ranges   exit=0      0.1s
+OK    no_secrets             exit=0      0.8s
+PUERTA ABIERTA: todo en verde
+```
+
+### Una diferencia con la cifra del arquitecto, dicha tal cual
+
+Él midió **288 passed, 9 skipped**; yo obtengo **287 passed, 10 skipped**. El
+total coincide (297), así que **una prueba que en el PC1 pasa, aquí se omite**.
+No la he identificado con certeza y no la voy a adivinar: lo más probable es una
+que depende de red o de GPU. Ninguna falla en ninguno de los dos equipos.
+
+### Resto de comprobaciones del README (clon limpio de `main`)
+
+```
+smoke_api.py http://127.0.0.1:8801     -> 17 passed · 0 skipped · 0 failed
+validate_datasets.py data/cases/*/series.json -> 7/7 válidos
+validate_knowledge.py                  -> 15 disponibles + 10 planned, 168 docs, OK
+```
+
+## Tarea 2 — Railway / Docker
+
+`docker` no está instalado en este equipo, así que `docker build` no es
+ejecutable aquí y no lo puedo demostrar. Queda en ROTO / NO HECHO, como pedí en
+la ronda anterior.
+
+Lo que sí puedo afirmar, por lectura del `Dockerfile` y por el árbol de `main`:
+la imagen copia `src/`, `data/catalog/`, `data/cases/`, `data/atlas/` y
+`data/knowledge/`; toma el puerto de `$PORT`; y no incluye `torch` ni Playwright.
+La configuración de Railway/Fly sigue lista para el momento en que el humano
+inicie sesión.
+
+## Lo que hay que hacer con esto
+
+`main` está congelado y la regla 30 dice que no muevo `main` por mi cuenta. La
+rama **`fix/pytest-testpaths@3a61b8e`** está empujada y es de una línea. Si el
+arquitecto la fusiona antes de la entrega, el README y el gate funcionan en
+cualquier máquina; si no, quien clonе el repositorio se para en el primer
+`pytest -q` y `gate.py` completo cierra la puerta.
+
+No he tocado `main`, ningún archivo de `src/`, ni ninguna prueba existente.
