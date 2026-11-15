@@ -1,14 +1,14 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — hermes-2 — 2026-11-14 19:20 hora de Perú
-Rama@commit: feature/scrapes@6ffe1bd · empujado: sí
-VERIFICADO: casos analysis/2 → `python -X utf8 -I scripts/regenerate_cases_v2.py` → 5/5 recomputados con el motor real (no traducidos del JSON viejo) + `data/cases/index.json`.
-VERIFICADO: atlas con el motor real → `python -X utf8 -I scripts/build_atlas.py --variable T2M --bbox -82 -18 -68 -2` → 759 celdas, 455 significativas (59,9 %); GISTEMP 16 041 celdas, 15 429 (96,2 %). Ya no usan el fallback local.
-VERIFICADO: API → `src.api.main.list_cases()` devuelve 5 casos con precedencia NASA y `get_atlas('T2M')` responde trendmap/2.
-ESCRITO (sin ejecutar de punta a punta): nada pendiente.
-ROTO / NO HECHO: el veredicto sigue mal en `main`: arctic-seaice sale SIGNIFICANT_STRONG con OLS p=0,3985 y `tests_agree: true`. El arreglo existe en `origin/feature/stats@ef18e01`, no en main; no lo aplico (carril de Antigravity 2).
-Siguiente paso: cuando se integre ef18e01, reejecutar `scripts/regenerate_cases_v2.py` (un comando).
-Necesito de: cfable (integrador): integrar `origin/feature/stats@ef18e01` antes de congelar el veredicto de los casos.
-Avisos para otros carriles: el dataset LoRA estaba truncado en disco (4323→281, 814→78, 632→78); restaurado desde el commit bueno, no regenerado.
+## ESTADO — hermes-2 — 2026-11-14 21:10 hora de Perú (Ronda 3)
+Rama@commit: feature/scrapes@59b6a49 · empujado: sí
+SUITE COMPLETA sobre main fusionado: `python -m pytest -q` → **1 failed, 223 passed, 9 skipped** (la roja es test_published_nasa_benchmarks, por el −9999 del hielo).
+VERIFICADO: casos regenerados con el motor v2 → lima-t2m queda **SIGNIFICANT** (era SIGNIFICANT_STRONG congelado); los 5 recomputados, no traducidos.
+VERIFICADO: 2 casos nuevos con los CSV reales de Giovanni → `amazonia-t2m` (SIGNIFICANT_STRONG, Sen 0,186 °C/década, 557 meses) y `amazonia-prectotcorr`, con `provenance.kind=user_upload` y la «URL to Reproduce Results».
+VERIFICADO: `/api/cases` sirve 7 casos (índice reconstruido desde los case.json).
+ROTO / NO HECHO: tarea 2 bloqueada. Los casos de hielo siguen con −9999 en 1987-12 y 1988-01 (min(series.raw) = −9999,0); la OLS sale +25,7 y +26,2 por década frente a Sen −0,50 y −0,03. El arreglo de antigravity-1 no está empujado (origin/feature/data-pipeline = 33e27fa, sin cambios en src/etl/nsidc_seaice.py).
+Siguiente paso: al llegar el commit de antigravity-1, `regenerate_cases_v2.py --id arctic-seaice` y `--id antarctic-seaice`, y comprobar min(raw) >= 0, los dos meses en null y OLS/Sen con el mismo signo.
+Necesito de: antigravity-1 (arreglo del −9999 en el conector NSIDC).
+Avisos para otros carriles: los dos CSV de Giovanni son de MERRA-2, no de GPM/MODIS/OMI; no presentarlos como instrumento distinto. El venv local necesitaba `pymannkendall` y `httpx`; instalados, sin tocar requirements.txt.
 <!-- ESTADO:FIN -->
 
 # Reportes de Hermes 2
@@ -131,3 +131,97 @@ rama `feature/scrapes` es anterior a ese cambio: solo audita `data/processed/` y
 buenos los 4 archivos sintéticos que la v2 manda borrar. No edito ese archivo porque es
 del carril de Antigravity 1; lo señalo para que el arquitecto lo resuelva al integrar
 (la versión vigente es la de `feature/data-pipeline`).
+
+---
+
+## Ronda 3 — ESTADO de hermes-2 (2026-11-14 21:05 UTC-5)
+
+**Rama:** `feature/scrapes`
+
+**Suite completa sobre `main` fusionado (regla 14):**
+
+```
+$ python -m pytest -q
+1 failed, 223 passed, 9 skipped, 54 warnings in 155.28s
+FAILED tests/stats/test_trend_engine.py::test_published_nasa_benchmarks
+```
+
+### Tarea 1 — LISTO
+
+`python -X utf8 -I scripts/regenerate_cases_v2.py` sobre `main` fusionado:
+
+```
+--- lima-t2m (T2M)              OK verdict=SIGNIFICANT n=540
+--- svalbard-t2m (T2M)          OK verdict=SIGNIFICANT_STRONG n=540
+--- piura-prectotcorr           OK verdict=SUGGESTIVE n=540
+--- arctic-seaice               OK verdict=SIGNIFICANT n=576
+--- antarctic-seaice            OK verdict=NOT_SIGNIFICANT n=576
+```
+
+`lima-t2m` queda **SIGNIFICANT** (era `SIGNIFICANT_STRONG` congelado), que es lo que responde el
+motor ya integrado.
+
+Nota de entorno: el venv local no tenía `pymannkendall` ni `httpx` (este último lo necesita
+`starlette.testclient` para `tests/api/`), aunque ambos están declarados. Instalados sin tocar
+`requirements.txt`.
+
+### Tarea 2 — NO HECHO (bloqueado por antigravity-1)
+
+Los casos de hielo se regeneraron, pero **siguen con el relleno dentro**:
+
+```
+$ python - <<'PY'   # sobre data/cases/<id>/series.json
+arctic-seaice     min: -9999.0 | valores < 0: 2
+antarctic-seaice  min: -9999.0 | valores < 0: 2
+PY
+```
+
+El defecto se ve en la tabla de los cinco casos regenerados: Sen y OLS salen de signo opuesto.
+
+| caso | sen/década | ols/década | veredicto |
+|---|---|---|---|
+| arctic-seaice | **−0,505** | **+25,746** | SIGNIFICANT |
+| antarctic-seaice | **−0,035** | **+26,158** | NOT_SIGNIFICANT |
+| lima-t2m | 0,159 | 0,131 | SIGNIFICANT |
+| svalbard-t2m | 0,699 | 0,772 | SIGNIFICANT_STRONG |
+| piura-prectotcorr | −0,011 | −0,071 | SUGGESTIVE |
+
+Comprobado a las 21:05 UTC-5: `origin/feature/data-pipeline` sigue en `33e27fa` y
+`git diff origin/main FETCH_HEAD -- src/etl/nsidc_seaice.py` sale vacío; el arreglo del −9999
+**aún no está empujado**. En cuanto llegue, estos dos comandos cierran la tarea:
+
+```
+python -X utf8 -I scripts/regenerate_cases_v2.py --id arctic-seaice
+python -X utf8 -I scripts/regenerate_cases_v2.py --id antarctic-seaice
+```
+
+Criterio de aceptación que comprobaré: `min(series.raw) >= 0`, `1987-12` y `1988-01` en `null`,
+y OLS con el mismo signo y orden de magnitud que Sen.
+
+### Tarea 3 — LISTO
+
+Dos casos nuevos con los CSV reales de Giovanni (557 meses cada uno, `user_upload`, con la
+«URL to Reproduce Results» en `provenance.request_url`):
+
+| caso | veredicto | Sen (°C o mm/día por década) | OLS | periodo |
+|---|---|---|---|---|
+| amazonia-t2m | SIGNIFICANT_STRONG | 0,186 | 0,191 | 1980-01 → 2026-05 |
+| amazonia-prectotcorr | NOT_SIGNIFICANT | ver `analysis.json` | ver `analysis.json` | 1980-01 → 2026-05 |
+
+`amazonia-t2m`: `n_obs` 557, `tests_agree: true`, Mann-Kendall p < 1e-4.
+
+**Aviso para la entrega:** los dos CSV son de **MERRA-2** (vía GES DISC), la misma fuente que
+POWER. Sirven como caso de «sube tu propio CSV», no como instrumento distinto. Nadie debe
+presentarlos como GPM, MODIS u OMI.
+
+### Tarea 4 — pendiente (dom 10:00)
+
+Nombre y frase de hallazgo por caso, en inglés y español, sacados solo de los números.
+
+### Para el resto del enjambre
+
+- **antigravity-2:** cuando entre el arreglo del −9999, `test_published_nasa_benchmarks` debe
+  volver a verde **sin tocar la aserción** (regla 13). Mi regeneración de casos no la afecta.
+- **antigravity-1:** avisadme del commit; regenero los dos casos de hielo y publico la evidencia.
+- **claude-omni-1:** hay **7** casos en `/api/cases` (antes 5); los dos nuevos son
+  `amazonia-t2m` y `amazonia-prectotcorr`, con `provenance.kind = user_upload`.
