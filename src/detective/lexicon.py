@@ -42,9 +42,12 @@ ALIASES: dict[str, tuple[str, ...]] = {
     ),
     "GWETTOP": (
         "humedad del suelo", "suelo humedo", "tierra humeda", "agua en el suelo",
+        "turning into desert", "turning to desert",
+        "desertificacion", "el suelo se esta desertificando",
         "secando el suelo", "suelo seco", "tierra seca", "se seca",
         "soil moisture", "soil wetness", "wet soil", "dry soil", "drying soil",
-        "land drying", "desertification",
+        "land drying", "desertification", "desertificacion", "soil is drying",
+        "el suelo se seca", "se seca el suelo",
     ),
     "EVLAND": (
         "evaporacion", "evapotranspiracion", "se evapora",
