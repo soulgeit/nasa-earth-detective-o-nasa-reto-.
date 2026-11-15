@@ -23,7 +23,7 @@
  },
  "titles": {
   "en": "Amazon basin: precipitation 1980-2026 (user CSV)",
-  "es": "Cuenca amazonica: precipitacion 1980-2026 (CSV del usuario)"
+  "es": "Cuenca amazónica: precipitación 1980-2026 (CSV del usuario)"
  },
  "story": {
   "en": [
@@ -31,7 +31,7 @@
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La tendencia de la precipitacion es de unos -0,083 mm/dia por decada (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': NOT_SIGNIFICANT.",
+   "La tendencia de la precipitación es de unos -0,083 mm/día por década (Theil-Sen); con p = 0,34 ninguna prueba rechaza 'sin tendencia': NOT_SIGNIFICANT.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

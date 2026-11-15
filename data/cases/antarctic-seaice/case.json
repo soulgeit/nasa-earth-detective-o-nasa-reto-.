@@ -18,15 +18,15 @@
  },
  "titles": {
   "en": "Antarctic sea ice extent, 1978-2026",
-  "es": "Extension del hielo marino del Antartico, 1978-2026"
+  "es": "Extensión del hielo marino del Antártico, 1978-2026"
  },
  "story": {
   "en": [
-   "Antarctic sea ice extent fell about 0.05 million km2 per decade (Theil-Sen), 0.23 million km2 in total (-0.4%). The trend is NOT_SIGNIFICANT: with autocorrelation corrected, p = 0.63, so no change can be stated. It would take about 133 years of data to detect a trend this small.",
+   "Antarctic sea ice extent fell about 0.05 million km² per decade (Theil-Sen), 0.23 million km² in total (-0.4%). The trend is NOT_SIGNIFICANT: with autocorrelation corrected, p = 0.63, so no change can be stated. It would take about 133 years of data to detect a trend this small.",
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La extension del hielo marino del Antartico bajo unos 0,05 millones de km2 por decada (Theil-Sen), 0,23 millones de km2 en total (-0,4%). La tendencia es NOT_SIGNIFICANT: corregida la autocorrelacion, p = 0,63, asi que no se puede afirmar un cambio. Harian falta unos 133 anos de datos para detectar una tendencia tan pequena.",
+   "La extensión del hielo marino del Antártico bajó unos 0,05 millones de km² por década (Theil-Sen), 0,23 millones de km² en total (-0,4%). La tendencia es NOT_SIGNIFICANT: corregida la autocorrelación, p = 0,63, así que no se puede afirmar un cambio. Harian falta unos 133 años de datos para detectar una tendencia tan pequeña.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

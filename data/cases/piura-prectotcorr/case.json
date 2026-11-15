@@ -18,7 +18,7 @@
  },
  "titles": {
   "en": "Piura, Peru: precipitation 1981-2025",
-  "es": "Piura, Peru: precipitacion 1981-2025"
+  "es": "Piura, Perú: precipitación 1981-2025"
  },
  "story": {
   "en": [
@@ -26,7 +26,7 @@
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La precipitacion muestra un descenso leve de unos 0,011 mm/dia por decada (Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, asi que el veredicto es SUGGESTIVE, no demostrado.",
+   "La precipitación muestra un descenso leve de unos 0,011 mm/día por década (Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, así que el veredicto es SUGGESTIVE, no demostrado.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },

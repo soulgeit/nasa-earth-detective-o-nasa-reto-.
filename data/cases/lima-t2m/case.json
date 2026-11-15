@@ -18,7 +18,7 @@
  },
  "titles": {
   "en": "Lima, Peru: air temperature 1981-2025",
-  "es": "Lima, Peru: temperatura del aire 1981-2025"
+  "es": "Lima, Perú: temperatura del aire 1981-2025"
  },
  "story": {
   "en": [
@@ -26,7 +26,7 @@
    "TODO_HUMANO: the narrative is the human's decision."
   ],
   "es": [
-   "La temperatura del aire subio unos 0,16 °C por decada (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de minimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
+   "La temperatura del aire subió unos 0,16 °C por década (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de mínimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
