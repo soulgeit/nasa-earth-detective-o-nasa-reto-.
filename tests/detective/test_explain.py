@@ -140,3 +140,14 @@ def test_both_languages_have_citations(analysis_result):
     for lang in ("es", "en"):
         result = explain(_lima(analysis_result), level="school", lang=lang)
         assert result["citations"], f"no citations in {lang}"
+
+
+def test_school_and_university_levels_are_distinct(analysis_result):
+    school = explain(analysis_result, level="school", lang="es")
+    uni = explain(analysis_result, level="university", lang="es")
+    uni_alias = explain(analysis_result, level="uni", lang="es")
+    assert school["text"] != uni["text"]
+    assert uni["text"] == uni_alias["text"]
+    assert "Evaluación universitaria" in uni["text"]
+    assert school["guard"]["numbers_ok"] is True
+    assert uni["guard"]["numbers_ok"] is True

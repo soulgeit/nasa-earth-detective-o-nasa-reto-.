@@ -1512,10 +1512,12 @@ function renderScout(data) {
 
 async function loadExplanation(analysis, level = 'school') {
   currentExplainLevel = level;
-  $('#lvl-school').classList.toggle('is-active', level === 'school');
-  $('#lvl-uni').classList.toggle('is-active', level === 'uni');
-  $('#lvl-school').setAttribute('aria-pressed', String(level === 'school'));
-  $('#lvl-uni').setAttribute('aria-pressed', String(level === 'uni'));
+  const isSchool = (level === 'school');
+  const isUni = (level === 'uni' || level === 'university');
+  $('#lvl-school').classList.toggle('is-active', isSchool);
+  $('#lvl-uni').classList.toggle('is-active', isUni);
+  $('#lvl-school').setAttribute('aria-pressed', String(isSchool));
+  $('#lvl-uni').setAttribute('aria-pressed', String(isUni));
 
   const textEl = $('#explain-text');
   const sourcesBox = $('#explain-sources-box');
@@ -1801,7 +1803,7 @@ function boot() {
   $('#btn-scout')?.addEventListener('click', scoutLocation);
   $('#btn-scout-close')?.addEventListener('click', () => { $('#scout-drawer').hidden = true; });
   $('#lvl-school')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'school'); });
-  $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'uni'); });
+  $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'university'); });
   $('#btn-start-demo')?.addEventListener('click', startDemo);
   $('#btn-demo-pause')?.addEventListener('click', pauseResumeDemo);
   $('#btn-demo-next')?.addEventListener('click', nextDemoCase);
