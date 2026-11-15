@@ -17,15 +17,17 @@
   "en": "Lima, Peru"
  },
  "titles": {
-  "es": "TODO_HUMANO",
-  "en": "TODO_HUMANO"
+  "en": "Lima, Peru: air temperature 1981-2025",
+  "es": "Lima, Peru: temperatura del aire 1981-2025"
  },
  "story": {
-  "es": [
-   "TODO_HUMANO"
-  ],
   "en": [
-   "TODO_HUMANO"
+   "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is SIGNIFICANT rather than strong.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La temperatura del aire subio unos 0,16 °C por decada (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de minimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
+   "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
  "frozen_at": "2026-11-15T00:49:44Z",

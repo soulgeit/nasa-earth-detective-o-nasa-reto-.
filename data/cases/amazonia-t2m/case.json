@@ -22,15 +22,17 @@
   "en": "Amazon (lower Amazon basin)"
  },
  "titles": {
-  "es": "TODO_HUMANO",
-  "en": "TODO_HUMANO"
+  "en": "Amazon basin: air temperature 1980-2026 (user CSV)",
+  "es": "Cuenca amazonica: temperatura del aire 1980-2026 (CSV del usuario)"
  },
  "story": {
-  "es": [
-   "TODO_HUMANO"
-  ],
   "en": [
-   "TODO_HUMANO"
+   "Air temperature rose about 0.19 °C per decade (Theil-Sen), 0.87 °C in total, from an uploaded NASA Giovanni export; both tests agree: SIGNIFICANT_STRONG.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La temperatura del aire subio unos 0,19 °C por decada (Theil-Sen), 0,87 °C en total, a partir de una exportacion de NASA Giovanni subida por el usuario; ambas pruebas coinciden: SIGNIFICANT_STRONG.",
+   "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
  "frozen_at": "2026-11-15T00:52:20Z",
