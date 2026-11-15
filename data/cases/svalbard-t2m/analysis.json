@@ -4131,8 +4131,8 @@
   "source": "NASA POWER v2.10.0",
   "underlying": "MERRA-2",
   "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=15.65&latitude=78.22&start=1981&end=2025&format=JSON",
-  "retrieved_at": "2026-11-15T00:09:19Z",
-  "sha256": "78ffab2a4966b81e400867e8d37df961524e0f34f4e9da90830aede6c1e581cd",
+  "retrieved_at": "2026-11-15T00:49:47Z",
+  "sha256": "6d5fac4f95cfd6f3a4d26ddbad074854fb12895929fe05931d6484d92f206286",
   "native_resolution": "0.5° x 0.625°",
   "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
  }

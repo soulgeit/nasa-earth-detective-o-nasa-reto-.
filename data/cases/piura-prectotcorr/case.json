@@ -17,26 +17,28 @@
   "en": "Piura, Peru"
  },
  "titles": {
-  "es": "TODO_HUMANO",
-  "en": "TODO_HUMANO"
+  "en": "Piura, Peru: precipitation 1981-2025",
+  "es": "Piura, Peru: precipitacion 1981-2025"
  },
  "story": {
-  "es": [
-   "TODO_HUMANO"
-  ],
   "en": [
-   "TODO_HUMANO"
+   "Precipitation shows a slight decrease of about 0.011 mm/day per decade (Theil-Sen); the tests disagree and Mann-Kendall gives p = 0.075, so the verdict is SUGGESTIVE, not proven.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La precipitacion muestra un descenso leve de unos 0,011 mm/dia por decada (Theil-Sen); las pruebas discrepan y Mann-Kendall da p = 0,075, asi que el veredicto es SUGGESTIVE, no demostrado.",
+   "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T00:43:13Z",
+ "frozen_at": "2026-11-15T00:49:44Z",
  "verdict_code": "SUGGESTIVE",
  "provenance": {
   "kind": "nasa_api",
   "source": "NASA POWER v2.10.0",
   "underlying": "MERRA-2",
   "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=-80.63&latitude=-5.19&start=1981&end=2025&format=JSON",
-  "retrieved_at": "2026-11-15T00:09:20Z",
-  "sha256": "0f4b11fa35f61fc912c3831f5f2706e2bf6012cbe3595eff9f7810d7a778f525",
+  "retrieved_at": "2026-11-15T00:49:47Z",
+  "sha256": "cc74b0613583c42ecb17a0bc9189001853108e11515c16e116c21ac885f03189",
   "native_resolution": "0.5° x 0.625°",
   "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
  }
