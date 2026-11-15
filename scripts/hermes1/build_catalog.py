@@ -529,6 +529,145 @@ def build_power_source(pid: str, seed: dict, power_meta: dict[str, dict], urls: 
     }
 
 
+# ---------------------------------------------------------------------------
+# Planned Giovanni variables (approved in RONDA_3 §4, claude-omni-1b task 1).
+# Conditions from the architect:
+#   1. every planned entry carries available: false;
+#   2. they are never counted as available variables in any text;
+#   3. they are never offered for analysis: the detective answers no_match and
+#      explains that they are loaded by uploading the Giovanni CSV.
+# ---------------------------------------------------------------------------
+
+GIOVANNI_URL = "https://giovanni.gsfc.nasa.gov/giovanni/"
+
+PLANNED_CONTENT: dict[str, dict[str, Any]] = {
+    "GPM_IMERG_PRECIP": {
+        "names": {"es": "Precipitacion GPM IMERG", "en": "GPM IMERG precipitation"},
+        "simple_definition": {
+            "es": "Lluvia estimada por satelite con GPM IMERG; se carga subiendo el CSV de Giovanni.",
+            "en": "Rainfall estimated by satellite with GPM IMERG; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "mm/day",
+    },
+    "GLDAS_SOILM_0_10": {
+        "names": {"es": "Humedad del suelo 0-10 cm (GLDAS)", "en": "Soil moisture 0-10 cm (GLDAS)"},
+        "simple_definition": {
+            "es": "Humedad de la capa superior del suelo en el modelo GLDAS; se carga subiendo el CSV de Giovanni.",
+            "en": "Top-layer soil moisture from the GLDAS model; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "kg/m2",
+    },
+    "GLDAS_EVAP": {
+        "names": {"es": "Evapotranspiracion (GLDAS)", "en": "Evapotranspiration (GLDAS)"},
+        "simple_definition": {
+            "es": "Agua que pasa del suelo y las plantas al aire en GLDAS; se carga subiendo el CSV de Giovanni.",
+            "en": "Water moving from soil and plants into the air in GLDAS; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "mm/day",
+    },
+    "GLDAS_RUNOFF": {
+        "names": {"es": "Escorrentia (GLDAS)", "en": "Runoff (GLDAS)"},
+        "simple_definition": {
+            "es": "Agua que corre por la superficie hacia los rios en GLDAS; se carga subiendo el CSV de Giovanni.",
+            "en": "Water flowing over the surface towards rivers in GLDAS; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "mm/day",
+    },
+    "AIRS_SURF_AIR_TEMP": {
+        "names": {"es": "Temperatura del aire en superficie (AIRS)", "en": "Surface air temperature (AIRS)"},
+        "simple_definition": {
+            "es": "Temperatura del aire medida por el instrumento AIRS; se carga subiendo el CSV de Giovanni.",
+            "en": "Air temperature measured by the AIRS instrument; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "K",
+    },
+    "OMI_NO2_TROP": {
+        "names": {"es": "Dioxido de nitrogeno troposferico (OMI)", "en": "Tropospheric nitrogen dioxide (OMI)"},
+        "simple_definition": {
+            "es": "Contaminacion por NO2 en la troposfera segun OMI; se carga subiendo el CSV de Giovanni.",
+            "en": "Nitrogen dioxide pollution in the troposphere from OMI; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "molecules/cm2",
+    },
+    "OMI_O3_TOTAL": {
+        "names": {"es": "Ozono total (OMI)", "en": "Total column ozone (OMI)"},
+        "simple_definition": {
+            "es": "Ozono de toda la columna de aire segun OMI; se carga subiendo el CSV de Giovanni.",
+            "en": "Ozone in the whole air column from OMI; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "DU",
+    },
+    "MODIS_NDVI": {
+        "names": {"es": "Indice de vegetacion NDVI (MODIS)", "en": "NDVI vegetation index (MODIS)"},
+        "simple_definition": {
+            "es": "Cuantas plantas verdes hay, segun MODIS; se carga subiendo el CSV de Giovanni.",
+            "en": "How much green vegetation there is, from MODIS; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "index (-1 to 1)",
+    },
+    "MODIS_LST_DAY": {
+        "names": {"es": "Temperatura de superficie diurna (MODIS)", "en": "Daytime land surface temperature (MODIS)"},
+        "simple_definition": {
+            "es": "Calor de la superficie terrestre de dia segun MODIS; se carga subiendo el CSV de Giovanni.",
+            "en": "Daytime heat of the land surface from MODIS; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "C",
+    },
+    "MODIS_AOD": {
+        "names": {"es": "Espesor optico de aerosoles (MODIS)", "en": "Aerosol optical depth (MODIS)"},
+        "simple_definition": {
+            "es": "Particulas que bloquean la luz segun MODIS; se carga subiendo el CSV de Giovanni.",
+            "en": "Particles that block sunlight, from MODIS; loaded by uploading the Giovanni CSV.",
+        },
+        "unit": "dimensionless",
+    },
+}
+
+
+def build_planned(seed: dict[str, Any]) -> list[dict[str, Any]]:
+    """Giovanni variables we do not have yet, declared so the app can say so.
+
+    They stay out of `variables` (the available list) and always carry
+    `available: false`, so no consumer can count them as available.
+    """
+    planned: list[dict[str, Any]] = []
+    for entry in seed.get("planned_giovanni", []):
+        pid = entry["id"]
+        content = PLANNED_CONTENT.get(pid)
+        if content is None:
+            raise SystemExit(f"missing planned content for {pid}")
+        planned.append(
+            {
+                "id": pid,
+                "connector": entry["connector"],
+                "available": False,
+                "names": content["names"],
+                "simple_definition": content["simple_definition"],
+                "unit": content["unit"],
+                "sphere": entry["sphere"],
+                "ratio_scale": entry["ratio_scale"],
+                "challenge_named_source": entry["challenge_named_source"],
+                "missing_reason": "needs_user_csv",
+                "how_to_load": {
+                    "es": "Sube el CSV exportado de Giovanni para esta variable.",
+                    "en": "Upload the CSV exported from Giovanni for this variable.",
+                },
+                "source": {
+                    "model_or_mission": None,
+                    "instrument": None,
+                    "via": "Giovanni (GES DISC)",
+                    "challenge_named_source": entry["challenge_named_source"],
+                    "native_resolution": None,
+                    "start": None,
+                    "homogeneous_since": None,
+                    "doi": None,
+                    "url": GIOVANNI_URL,
+                },
+            }
+        )
+    return planned
+
+
 def build_catalog() -> dict[str, Any]:
     seed = load_seed()
     power_meta, dictionary_url = load_power_metadata()
@@ -619,7 +758,12 @@ def build_catalog() -> dict[str, Any]:
         else:
             raise SystemExit(f"no content for live variable {pid}")
 
-    return {"schema": "catalog/2", "generated_at": TODAY, "variables": cards}
+    return {
+        "schema": "catalog/2",
+        "generated_at": TODAY,
+        "variables": cards,
+        "planned": build_planned(seed),
+    }
 
 
 def main() -> int:

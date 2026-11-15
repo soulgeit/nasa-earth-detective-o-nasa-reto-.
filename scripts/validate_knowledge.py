@@ -25,6 +25,7 @@ import os
 import html
 import re
 import sys
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 
@@ -60,11 +61,19 @@ class Failures:
 
 
 def http_ok(url: str, timeout: int = 30) -> tuple[bool, int | None, str]:
-    try:
-        resp = requests.get(url, timeout=(10, timeout), headers=HEADERS, verify=certifi.where(), allow_redirects=True)
-        return resp.status_code == 200, resp.status_code, resp.url
-    except Exception as exc:  # noqa: BLE001
-        return False, None, f"{type(exc).__name__}: {exc}"
+    """HTTP 200 check. A network-level failure (connection reset) is retried:
+    some hosts (e.g. asc-csa.gc.ca) drop connections intermittently and answer
+    200 on the next attempt. An HTTP error status is never retried."""
+    last_error = ""
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, timeout=(10, timeout), headers=HEADERS, verify=certifi.where(), allow_redirects=True)
+            return resp.status_code == 200, resp.status_code, resp.url
+        except Exception as exc:  # noqa: BLE001
+            last_error = f"{type(exc).__name__}: {exc}"
+            if attempt < 2:
+                time.sleep(3)
+    return False, None, last_error
 
 
 def doi_resolves(doi: str) -> bool:
@@ -105,6 +114,41 @@ def validate_catalog(failures: Failures, online: bool) -> int:
     for sid in seed_ids:
         if sid not in cards:
             failures.add(f"catalog: missing seed id {sid}")
+
+    # Planned Giovanni variables (RONDA_3 §4): declared but never available.
+    planned_ids = {item["id"] for item in seed.get("planned_giovanni", [])}
+    planned_docs = catalog.get("planned", [])
+    planned_seen: set[str] = set()
+    for entry in planned_docs:
+        pid = entry.get("id")
+        planned_seen.add(pid)
+        if pid not in planned_ids:
+            failures.add(f"catalog: planned id {pid} is not in the seed")
+        if entry.get("available") is not False:
+            failures.add(f"catalog: planned {pid} must carry available: false")
+        if pid in cards:
+            failures.add(f"catalog: planned {pid} must NOT be in the available list")
+        for lang in ("es", "en"):
+            for field in ("names", "simple_definition"):
+                value = (entry.get(field) or {}).get(lang)
+                if not value or not str(value).strip():
+                    failures.add(f"catalog: planned {pid}.{field}.{lang} empty")
+            if not (entry.get("how_to_load") or {}).get(lang):
+                failures.add(f"catalog: planned {pid}.how_to_load.{lang} empty")
+        if not entry.get("missing_reason"):
+            failures.add(f"catalog: planned {pid} has no missing_reason")
+        if online:
+            url = (entry.get("source") or {}).get("url")
+            if url:
+                ok, status, _ = http_ok(url)
+                if not ok:
+                    failures.add(f"catalog: planned {pid} source.url not 200 ({status}) {url}")
+    for missing in sorted(planned_ids - planned_seen):
+        failures.add(f"catalog: seed planned id {missing} is missing from the catalog")
+
+    available_count = len(cards)
+    planned_count = len(planned_docs)
+    print(f"catalog: {available_count} available + {planned_count} planned (planned are not counted as available)")
 
     for cid, card in cards.items():
         for lang in ("es", "en"):
