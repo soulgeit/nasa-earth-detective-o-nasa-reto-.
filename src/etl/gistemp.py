@@ -1,4 +1,4 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Gemini 3.8 Flash)
 """
 Conector GISTEMP v4 (rejilla 2°x2°, anomalia de temperatura desde 1880).
 
@@ -225,6 +225,8 @@ def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=N
         raise DataUnavailable("OUT_OF_COVERAGE", f"sin meses entre {start} y {end}")
     if all(pt["value"] is None for pt in data):
         raise DataUnavailable("OUT_OF_COVERAGE", f"sin datos GISTEMP en {bbox or (lat, lon)}")
+    provenance = dict(provenance)
+    provenance["n_missing"] = sum(1 for pt in data if pt["value"] is None)
     return {
         "schema": "timeseries/2",
         "variable_id": variable_id,

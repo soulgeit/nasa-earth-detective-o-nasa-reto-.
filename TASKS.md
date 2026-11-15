@@ -6,9 +6,10 @@ Plan: `docs/PLAN_GANADOR.md` · Contratos: `docs/CONTRATOS.md` · Entrega: `docs
 **Cierre oficial: domingo 15-nov 23:59 (hora local). Entregamos a las 20:00.**
 Desde ahora una casilla solo se marca con evidencia en `reports/` y verificada por el arquitecto.
 
-> **RONDA 2 (sáb 14-nov, 17:00) — lee `docs/RONDA_2.md`: manda sobre este tablero.**
-> Avance real ~60 %: las seis ramas ya están integradas en `main` (17:45); faltan los defectos del §6, el LoRA real, el despliegue y la entrega. Reglas nuevas, cómo empujar, nota de estado obligatoria
-> y pendientes por agente están allí. Las tablas de «✅ LISTO» de más abajo las escribieron los propios agentes y **no están verificadas**.
+> **RONDA 3 (sáb 14-nov, 20:00) — lee `docs/RONDA_3.md`: manda sobre este tablero y sobre `docs/RONDA_2.md` donde lo contradiga.**
+> Avance real ~68 %: las 7 ramas están integradas en `main` sin conflictos (19:45); suite 223 verdes / 1 roja / 9 omitidas. Faltan: el valor de relleno −9999 del hielo marino,
+> el LoRA con evidencia, la URL pública y el material de entrega. Las reglas 1-11 y la forma de empujar siguen en `docs/RONDA_2.md` §2-§4; las reglas 12-18 y las tareas por agente, en `docs/RONDA_3.md`.
+> Las tablas de «✅ LISTO» de más abajo las escribieron los propios agentes y **no están verificadas**.
 
 ## Hermes 1 — C1-C7 Status Update (2026-11-14T23:55)
 

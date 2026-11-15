@@ -1,4 +1,4 @@
-# SI-assisted: claude-omni-3 (Claude Opus 5.5)
+# SI-assisted: claude-omni-3 (Claude Opus 5.5); migrado por Antigravity 1 (Gemini 3.8 Flash)
 """Prueba de sistema de punta a punta (ETL -> motor -> contrato v2).
 
 Sustituye al `test_system.py` del primer prototipo, que importaba funciones del
@@ -22,6 +22,7 @@ import math
 import pytest
 
 from src.etl import power as etl_power
+from src.etl.registry import get_series
 from src.stats.trend_engine import analyze_series
 
 
@@ -93,7 +94,7 @@ def test_upstream_failure_serves_no_data_when_fixtures_disallowed(monkeypatch):
     _break_upstream(monkeypatch)
 
     with pytest.raises(etl_power.DataUnavailable) as excinfo:
-        etl_power.get_power_point_series("T2M", -12.05, -77.03)
+        get_series("T2M", lat=-12.05, lon=-77.03)
 
     assert excinfo.value.code == "UPSTREAM_TIMEOUT"
 
@@ -108,7 +109,7 @@ def test_etl_never_substitutes_a_local_sample_even_if_fixtures_allowed(monkeypat
     _break_upstream(monkeypatch)
 
     with pytest.raises(etl_power.DataUnavailable) as excinfo:
-        etl_power.get_power_point_series("T2M", -12.05, -77.03)
+        get_series("T2M", lat=-12.05, lon=-77.03)
 
     assert excinfo.value.code == "UPSTREAM_TIMEOUT"
 
@@ -118,7 +119,7 @@ def test_live_data_keeps_nasa_api_provenance(monkeypatch):
     monkeypatch.setenv("ALLOW_FIXTURES", "0")
 
     try:
-        ts = etl_power.get_power_point_series("T2M", -12.05, -77.03)
+        ts = get_series("T2M", lat=-12.05, lon=-77.03)
     except etl_power.DataUnavailable as exc:
         pytest.skip(f"Sin red ni caché en disco: {exc}")
 

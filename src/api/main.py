@@ -87,7 +87,17 @@ def _startup() -> None:
 
 
 def _client_key(request: Request) -> str:
-    """IP del cliente para el límite de peticiones. Sin datos personales."""
+    """IP del cliente para el límite de peticiones. Sin datos personales.
+
+    Detrás del proxy de la nube (Fly, Render, Koyeb) `request.client.host` es la
+    IP del proxy, así que todos los visitantes compartirían el mismo cupo de 120
+    peticiones por minuto y la demo se bloquearía sola. Se prefiere la primera
+    entrada de `X-Forwarded-For`, que el proxy antepone.
+    """
+    forwarded = request.headers.get("x-forwarded-for", "")
+    first = forwarded.split(",")[0].strip()
+    if first:
+        return first
     return request.client.host if request.client else "unknown"
 
 
@@ -142,7 +152,7 @@ def list_variables(lang: str = Query("es", pattern="^(es|en)$")) -> dict[str, An
     meta = catalog.catalog_meta()
     out = []
     for card in cards:
-        item = dict(card)
+        item = catalog.with_availability(card)
         for field in ("names", "simple_definition"):
             value = item.get(field)
             if isinstance(value, dict) and lang in value:
@@ -266,11 +276,23 @@ def _series_params(
     bbox: str | None,
     start: str | None,
     end: str | None,
+    place: str | None = None,
 ) -> dict[str, Any]:
-    catalog.get_variable(variable_id)
-    position, mode = validation.point_or_bbox(lat, lon, bbox)
+    card = catalog.get_variable(variable_id)
+    position, mode = validation.point_or_bbox(lat, lon, bbox, card=card)
     start, end = validation.check_period(start, end)
-    return {"variable_id": variable_id, **position, "start": start, "end": end, "_mode": mode}
+    params: dict[str, Any] = {
+        "variable_id": variable_id,
+        **position,
+        "start": start,
+        "end": end,
+        "_mode": mode,
+    }
+    # `place` es el nombre que devolvió /api/geocode. Se usa para que la
+    # respuesta diga «Lima» y no «None» (RONDA_3 §2.7); no sustituye coordenadas.
+    if place and str(place).strip():
+        params["place"] = str(place).strip()[:120]
+    return params
 
 
 @app.get("/api/series", tags=["data"])
@@ -282,9 +304,10 @@ def get_series_endpoint(
     bbox: str | None = Query(None, description="oeste,sur,este,norte"),
     start: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     end: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
+    place: str | None = Query(None, max_length=120, description="nombre del lugar devuelto por /api/geocode"),
 ) -> JSONResponse:
     _limit(request)
-    params = _series_params(variable_id, lat, lon, bbox, start, end)
+    params = _series_params(variable_id, lat, lon, bbox, start, end, place)
     params.pop("_mode")
     ts = service.get_series(**params)
     return JSONResponse(ts, headers=_data_headers())
@@ -299,9 +322,10 @@ def analyze_endpoint(
     bbox: str | None = Query(None, description="oeste,sur,este,norte"),
     start: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     end: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
+    place: str | None = Query(None, max_length=120, description="nombre del lugar devuelto por /api/geocode"),
 ) -> JSONResponse:
     _limit(request)
-    params = _series_params(variable_id, lat, lon, bbox, start, end)
+    params = _series_params(variable_id, lat, lon, bbox, start, end, place)
     params.pop("_mode")
     result = service.analyze(**params)
     return JSONResponse(result, headers=_data_headers())
@@ -454,12 +478,13 @@ def report_endpoint(
     start: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     end: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     lang: str = Query("en"),
+    place: str | None = Query(None, max_length=120),
 ) -> HTMLResponse:
     _limit(request)
     from .report import render_report
 
     lang = validation.check_lang(lang)
-    params = _series_params(variable_id, lat, lon, bbox, start, end)
+    params = _series_params(variable_id, lat, lon, bbox, start, end, place)
     params.pop("_mode")
     result = service.analyze(**params)
     return HTMLResponse(render_report(result, lang=lang))

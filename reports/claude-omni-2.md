@@ -1,3 +1,20 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — claude-omni-2 — 2026-11-14 21:50 (hora de Perú)
+Rama@commit: feature/wizard@76e1966 · empujado: sí
+VERIFICADO: suite completa sobre main fusionado → `python -m pytest -q` → 229 passed, 1 failed, 9 skipped. La roja es test_published_nasa_benchmarks por el −9999 de NSIDC (§2.1, antigravity-1); no la toco (regla 9)
+VERIFICADO: T1 idioma → explain(lima, es) cita "Temperatura del aire a 2 m"; explain(lima, en) cita "Air temperature at 2 m"; ninguna mezcla
+VERIFICADO: T2 planned → catálogo sin sección `planned` hoy; lector implementado y probado con catálogo de prueba; nombra la variable y dice cómo cargarla
+VERIFICADO: T3 planner → POST /api/ai/plan → "planner": "rules"; local-lora llama a serve.plan_with_lora y degrada con note si falta el adaptador
+VERIFICADO: T4 evaluación → `python -m src.detective.rag.eval_plan` → 49/50 = 0.980; recuperación P@1 0.980, P@3 1.000, MRR 0.990
+VERIFICADO: tests/detective → 123 passed
+ESCRITO (sin ejecutar de punta a punta): camino local-lora real; no hay adaptador entrenado
+ROTO / NO HECHO: LoRA sin columna en EVAL_IA.md (no hay modelo); "AI-assisted synthesis" en src/ui/i18n.js sigue (carril de Claude Omni 1)
+Siguiente paso: cuando exista adaptador, `eval_plan --planner local-lora` y comprobar que supera a reglas
+Necesito de: Claude Omni 1 (UI): leer cit.n/title/publisher/url (ya no llega cit.id) y rotular extractivo vs IA
+Necesito de: Claude Omni 3 (API): nada pendiente; "planner" se serializa solo porque el endpoint devuelve el dict
+Avisos para otros carriles: el catálogo puede llevar ya la sección `planned`; el detective la lee sin cambios
+<!-- ESTADO:FIN -->
+
 # claude-omni-2 — detective con IA (RAG, planificador, explicación con guardián)
 
 Rama de trabajo: `feature/wizard` · Carpetas: `src/detective/`, `tests/detective/`, sección RAG de `docs/EVAL_IA.md`
@@ -186,3 +203,101 @@ Ninguno negativo: `src/detective/` no usa SWOT ni ninguno de estos conectores di
 La #5 refuerza el enfoque del guardián (cifras solo desde el motor estadístico) y confirma
 que la detección de tendencias en series **mensuales** con pocos años es un problema real
 que incluso un equipo de la NASA trata con cuidado.
+
+---
+
+# Ronda 2 — detalle de las tareas
+
+## T1 — Citaciones por variable analizada · VERIFICADO
+
+**Problema visto por el arquitecto:** al explicar T2M de Lima se citaban cinco fichas
+de aerosoles y GISTEMP, con ids internos (`[var-aod_55-es]`) y todas rotuladas
+«NASA Earth Observatory».
+
+**Causa raíz (reproducida):** `_passages_for` construía una sola bolsa de palabras
+(`"Temperatura del aire a 2 m T2M Lima, Peru"`), la ampliación léxica metía AOD_55 y
+GISTEMP por el alias «aire»/«temperatura», y la recuperación devolvía 4 fichas de AOD
+antes de cualquier T2M. Además el corpus tenía **30 fichas duplicadas** (las de
+`docs.jsonl` más otra copia derivada del catálogo).
+
+**Arreglos:**
+1. `_passages_for` recupera por `variable_id` y solo acepta documentos que lleven esa
+   variable; después, como mucho un artículo de la región y un `method_note`.
+2. Deduplicación por URL normalizada: la misma página en dos idiomas es una cita.
+3. `load_corpus` ya no deriva tarjetas del catálogo si `docs.jsonl` las trae: 196 → 166
+   documentos, cero duplicados.
+4. Las citas exponen `title`, `url` y `publisher` reales; el id interno pasa a
+   `source_id` y no aparece en el texto.
+5. El texto cita **una frase** y debajo la fuente con su enlace, en vez de volcar el
+   fragmento entero.
+6. Léxico: «aire»/«air» ya no arrastran AOD_55; «humo» y «garúa» sí apuntan a AOD_55 y
+   CLOUD_AMT. Se añadió coincidencia por frase («humedad del aire» → RH2M).
+
+**Evidencia (datos reales, extremo a extremo):**
+```
+GET /api/analyze?variable_id=T2M&lat=-12.05&lon=-77.03   → 200, 540 meses
+POST /api/ai/explain {analysis, level:school, lang:es}   → 200
+  mode: extractive · numbers_ok: true · 2 citas
+  [1] Temperatura del aire a 2 m — NASA POWER parameter dictionary
+  [2] What the Mann-Kendall test is — Hermes 1 summary of cited sources
+```
+
+**Pendiente en otro carril:** el rótulo «Síntesis asistida por IA» cuando `mode` es
+`extractive` está en `src/ui/i18n.js` (Claude Omni 1). No lo toqué (regla 2). Anotado
+en el bloque ESTADO.
+
+## T2 — `no_match` honesto · VERIFICADO
+
+Las 2 pruebas rojas esperaban `MODIS_NDVI`, que no está en el catálogo, y el
+planificador respondía `EVLAND` (lo más parecido). Ahora `MISSING_TOPICS` +
+`_coverage()` devuelven `intent: "no_match"`, `variable_ids: []`, el nombre de lo que
+falta y hasta 3 alternativas **que sí existen** y son afines físicamente.
+
+```
+plan("¿la selva de Madre de Dios pierde vegetación?")
+→ intent no_match · missing ["NDVI / vegetación (MODIS)"] · alternatives [GWETTOP, EVLAND]
+```
+
+Cubre NDVI (MODIS), GPM, GLDAS, AIRS, OMI NO₂ y OMI O₃.
+
+## T3 — Gazetteer real y scout · VERIFICADO
+
+- `alt_names` y `ascii` en uso: "Cuzco"→Cusco, "Lima, Peru"→Lima, "Moscow"→Moscow.
+- Falsos positivos cerrados: "Peru" → `[]` (un gazetteer de ciudades no tiene países);
+  "Perth" ya no se lleva "Peru" por el alt_name «Per».
+- **Rendimiento:** de 1 300 ms a **4 ms** por consulta (antes: 55 331 llamadas a
+  `SequenceMatcher` por consulta; ahora índice de prefijos cacheado).
+- `find_in_text` conserva el texto tal como se escribió («Cuzco» no se normaliza).
+- `scout` con el ETL real: Köppen BWh para Lima, ciudad grande a 0,8 km, costero desde
+  `regions.json` (aproximado y declarado), 3 candidatas con su cita.
+- `src/detective/wizard.py` **borrado**.
+
+**Límite de la fuente, medido y declarado:** la celda de POWER para Cusco tiene
+elevación 3 739,76 m y 9,1 °C en el mes más cálido → clasifica **ET**, mientras la
+ciudad está a ~3 350 m y no es tundra. El código es correcto para la celda; `scout`
+añade ahora `CELL_RESOLUTION` y `POLAR_CODE_AT_LOW_LATITUDE` para no presentarlo como
+un hecho sobre la ciudad.
+
+## T4 — `PLANNER_MODEL=local-lora` · ESCRITO
+
+- `local-lora` llama a `src/ml/serve.py::generate(messages)` si existe; si no, responde
+  por reglas con `note: "local_lora_unavailable"`. Nunca simula.
+- El mensaje se reconstruye con el formato exacto del dataset
+  (`- T2M: nombre (unidad) - definición`) desde `data/catalog/variables.json`.
+- Una prueba comprueba que el `system_prompt` es **idéntico** al de `data/lora/train.jsonl`.
+
+**Estado:** el camino de respaldo está verificado; el camino real no puede probarse
+hasta que Antigravity 2 entregue el adaptador y `serve.py`.
+
+## Evaluación de recuperación (actualizada)
+
+Sobre las **50 preguntas oficiales** de Hermes 1 (`data/knowledge/golden_questions.jsonl`),
+no las provisionales:
+
+| Backend | P@1 | P@3 | MRR |
+|---|---|---|---|
+| bm25 | 0.960 | 1.000 | 0.977 |
+| vectors | — | — | — |
+
+Subió de 0.880 a 0.960 P@1 tras añadir humo, garúa y la coincidencia por frase.
+Tabla completa y comando en `docs/EVAL_IA.md`.

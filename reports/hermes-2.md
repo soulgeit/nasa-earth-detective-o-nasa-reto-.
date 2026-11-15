@@ -1,3 +1,25 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — hermes-2 — 2026-11-14 20:20 hora de Perú
+Rama@commit: feature/scrapes@921a01d · empujado: sí
+VERIFICADO: tarea 1 de la ronda 3 → `python -X utf8 -I scripts/regenerate_cases_v2.py --id lima-t2m` → `lima-t2m` queda SIGNIFICANT (antes SIGNIFICANT_STRONG), con TESTS_DISAGREE y HIGH_AUTOCORRELATION.
+VERIFICADO: Svalbard sigue SIGNIFICANT_STRONG y Piura SUGGESTIVE, regenerados con el motor de main.
+ROTO / NO HECHO: tarea 2 (casos de hielo) BLOQUEADA: main todavía entrega −9999 en 1987-12 y 1988-01 (`src/etl/nsidc_seaice.py` no lo filtra). No puedo cumplir «mínimo ≥ 0 y esos meses en null» hasta que antigravity-1 empuje su arreglo. Tarea 3 (casos con CSV de Giovanni) no empezada.
+Siguiente paso: en cuanto antigravity-1 avise, `scripts/regenerate_cases_v2.py` y comprobar mínimo ≥ 0 y el signo de OLS frente a Sen.
+Necesito de: antigravity-1: su arreglo de −9999 empujado; aviso en #general.
+Avisos para otros carriles: los casos de hielo congelados actuales siguen contaminados con −9999; no usarlos para capturas ni para la demo hasta regenerarlos.
+
+
+## ESTADO — hermes-2 — 2026-11-14 21:10 hora de Perú (Ronda 3)
+Rama@commit: feature/scrapes@59b6a49 · empujado: sí
+SUITE COMPLETA sobre main fusionado: `python -m pytest -q` → **1 failed, 223 passed, 9 skipped** (la roja es test_published_nasa_benchmarks, por el −9999 del hielo).
+VERIFICADO: casos regenerados con el motor v2 → lima-t2m queda **SIGNIFICANT** (era SIGNIFICANT_STRONG congelado); los 5 recomputados, no traducidos.
+VERIFICADO: 2 casos nuevos con los CSV reales de Giovanni → `amazonia-t2m` (SIGNIFICANT_STRONG, Sen 0,186 °C/década, 557 meses) y `amazonia-prectotcorr`, con `provenance.kind=user_upload` y la «URL to Reproduce Results».
+VERIFICADO: `/api/cases` sirve 7 casos (índice reconstruido desde los case.json).
+ROTO / NO HECHO: tarea 2 bloqueada. Los casos de hielo siguen con −9999 en 1987-12 y 1988-01 (min(series.raw) = −9999,0); la OLS sale +25,7 y +26,2 por década frente a Sen −0,50 y −0,03. El arreglo de antigravity-1 no está empujado (origin/feature/data-pipeline = 33e27fa, sin cambios en src/etl/nsidc_seaice.py).
+Siguiente paso: al llegar el commit de antigravity-1, `regenerate_cases_v2.py --id arctic-seaice` y `--id antarctic-seaice`, y comprobar min(raw) >= 0, los dos meses en null y OLS/Sen con el mismo signo.
+Necesito de: antigravity-1 (arreglo del −9999 en el conector NSIDC).
+Avisos para otros carriles: los dos CSV de Giovanni son de MERRA-2, no de GPM/MODIS/OMI; no presentarlos como instrumento distinto. El venv local necesitaba `pymannkendall` y `httpx`; instalados, sin tocar requirements.txt.<!-- ESTADO:FIN -->
+
 # Reportes de Hermes 2
 
 ## S1 — LISTO  (2026-11-14 15:50 UTC-5)
@@ -118,3 +140,157 @@ rama `feature/scrapes` es anterior a ese cambio: solo audita `data/processed/` y
 buenos los 4 archivos sintéticos que la v2 manda borrar. No edito ese archivo porque es
 del carril de Antigravity 1; lo señalo para que el arquitecto lo resuelva al integrar
 (la versión vigente es la de `feature/data-pipeline`).
+
+---
+
+## Ronda 3 — ESTADO de hermes-2 (2026-11-14 21:05 UTC-5)
+
+**Rama:** `feature/scrapes`
+
+**Suite completa sobre `main` fusionado (regla 14):**
+
+```
+$ python -m pytest -q
+1 failed, 223 passed, 9 skipped, 54 warnings in 155.28s
+FAILED tests/stats/test_trend_engine.py::test_published_nasa_benchmarks
+```
+
+### Tarea 1 — LISTO
+
+`python -X utf8 -I scripts/regenerate_cases_v2.py` sobre `main` fusionado:
+
+```
+--- lima-t2m (T2M)              OK verdict=SIGNIFICANT n=540
+--- svalbard-t2m (T2M)          OK verdict=SIGNIFICANT_STRONG n=540
+--- piura-prectotcorr           OK verdict=SUGGESTIVE n=540
+--- arctic-seaice               OK verdict=SIGNIFICANT n=576
+--- antarctic-seaice            OK verdict=NOT_SIGNIFICANT n=576
+```
+
+`lima-t2m` queda **SIGNIFICANT** (era `SIGNIFICANT_STRONG` congelado), que es lo que responde el
+motor ya integrado.
+
+Nota de entorno: el venv local no tenía `pymannkendall` ni `httpx` (este último lo necesita
+`starlette.testclient` para `tests/api/`), aunque ambos están declarados. Instalados sin tocar
+`requirements.txt`.
+
+### Tarea 2 — NO HECHO (bloqueado por antigravity-1)
+
+Los casos de hielo se regeneraron, pero **siguen con el relleno dentro**:
+
+```
+$ python - <<'PY'   # sobre data/cases/<id>/series.json
+arctic-seaice     min: -9999.0 | valores < 0: 2
+antarctic-seaice  min: -9999.0 | valores < 0: 2
+PY
+```
+
+El defecto se ve en la tabla de los cinco casos regenerados: Sen y OLS salen de signo opuesto.
+
+| caso | sen/década | ols/década | veredicto |
+|---|---|---|---|
+| arctic-seaice | **−0,505** | **+25,746** | SIGNIFICANT |
+| antarctic-seaice | **−0,035** | **+26,158** | NOT_SIGNIFICANT |
+| lima-t2m | 0,159 | 0,131 | SIGNIFICANT |
+| svalbard-t2m | 0,699 | 0,772 | SIGNIFICANT_STRONG |
+| piura-prectotcorr | −0,011 | −0,071 | SUGGESTIVE |
+
+Comprobado a las 21:05 UTC-5: `origin/feature/data-pipeline` sigue en `33e27fa` y
+`git diff origin/main FETCH_HEAD -- src/etl/nsidc_seaice.py` sale vacío; el arreglo del −9999
+**aún no está empujado**. En cuanto llegue, estos dos comandos cierran la tarea:
+
+```
+python -X utf8 -I scripts/regenerate_cases_v2.py --id arctic-seaice
+python -X utf8 -I scripts/regenerate_cases_v2.py --id antarctic-seaice
+```
+
+Criterio de aceptación que comprobaré: `min(series.raw) >= 0`, `1987-12` y `1988-01` en `null`,
+y OLS con el mismo signo y orden de magnitud que Sen.
+
+### Tarea 3 — LISTO
+
+Dos casos nuevos con los CSV reales de Giovanni (557 meses cada uno, `user_upload`, con la
+«URL to Reproduce Results» en `provenance.request_url`):
+
+| caso | veredicto | Sen (°C o mm/día por década) | OLS | periodo |
+|---|---|---|---|---|
+| amazonia-t2m | SIGNIFICANT_STRONG | 0,186 | 0,191 | 1980-01 → 2026-05 |
+| amazonia-prectotcorr | NOT_SIGNIFICANT | ver `analysis.json` | ver `analysis.json` | 1980-01 → 2026-05 |
+
+`amazonia-t2m`: `n_obs` 557, `tests_agree: true`, Mann-Kendall p < 1e-4.
+
+**Aviso para la entrega:** los dos CSV son de **MERRA-2** (vía GES DISC), la misma fuente que
+POWER. Sirven como caso de «sube tu propio CSV», no como instrumento distinto. Nadie debe
+presentarlos como GPM, MODIS u OMI.
+
+### Tarea 4 — pendiente (dom 10:00)
+
+Nombre y frase de hallazgo por caso, en inglés y español, sacados solo de los números.
+
+### Para el resto del enjambre
+
+- **antigravity-2:** cuando entre el arreglo del −9999, `test_published_nasa_benchmarks` debe
+  volver a verde **sin tocar la aserción** (regla 13). Mi regeneración de casos no la afecta.
+- **antigravity-1:** avisadme del commit; regenero los dos casos de hielo y publico la evidencia.
+- **claude-omni-1:** hay **7** casos en `/api/cases` (antes 5); los dos nuevos son
+  `amazonia-t2m` y `amazonia-prectotcorr`, con `provenance.kind = user_upload`.
+
+---
+
+## Ronda 3 — diagnostico del −9999 para antigravity-1 (2026-11-14 21:20 UTC-5)
+
+No hay `swarmchat` en este entorno, asi que dejo el diagnostico aqui y en el commit.
+
+**La fuente**, no el parser, es quien trae el relleno. Fila real de `N_12_extent_v4.0.csv`
+(`https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_12_extent_v4.0.csv`):
+
+```
+1986, 12,    NSIDC-0051,      N,  13.22,  10.53
+1987, 12,         -9999,      N,  -9999,  -9999     <-- relleno en las tres columnas
+1988, 12,    NSIDC-0051,      N,  13.63,  11.99
+```
+
+Lo mismo en `N_01` con `1988, 1`. `src/etl/nsidc_seaice.py::parse_csv` hace `float(clean["extent"])`
+sin comprobar el valor, asi que `-9999.0` entra como dato y llega hasta `series.json`.
+
+**Arreglo minimo sugerido** (carril de antigravity-1):
+
+```python
+FILL = (-9999.0, -999.0)          # y el que declare la fuente
+raw = float(clean["extent"])
+if raw in FILL or raw < 0:        # el hielo marino no es negativo: -9999 es relleno
+    return None -> value: null, y contarlo en provenance.n_missing
+```
+
+Y en el `analysis.json`, `n_missing` deberia pasar de 0 a 2 en cada hemisferio.
+
+**Verificador listo**: `python -X utf8 -I scripts/verify_seaice_cases.py`
+(exit 1 mientras haya relleno; comprueba `min >= 0`, los dos meses en `null` y que OLS y Sen
+tengan el mismo signo). Hoy da:
+
+```
+arctic-seaice:    min=-9999.0 | 1987-12=-9999.0 1988-01=-9999.0 | Sen=-0.5046 OLS=25.7464 -> FALLA
+antarctic-seaice: min=-9999.0 | 1987-12=-9999.0 1988-01=-9999.0 | Sen=-0.0347 OLS=26.1579 -> FALLA
+exit=1
+```
+
+## Ronda 3 — smoke y copy de casos (2026-11-14 21:25 UTC-5)
+
+```
+$ python -X utf8 scripts/smoke_api.py http://127.0.0.1:8791
+10 passed · 0 skipped · 0 failed
+
+$ curl /api/cases
+7 casos servidos:
+  lima-t2m SIGNIFICANT | Lima, Peru: air temperature 1981-2025
+  svalbard-t2m SIGNIFICANT_STRONG | ...
+  piura-prectotcorr SUGGESTIVE | ...
+  arctic-seaice SIGNIFICANT | (sin titulo: la serie aun lleva -9999)
+  antarctic-seaice NOT_SIGNIFICANT | (sin titulo)
+  amazonia-t2m SIGNIFICANT_STRONG | Amazon basin: air temperature 1980-2026 (user CSV)
+  amazonia-prectotcorr NOT_SIGNIFICANT | Amazon basin: precipitation 1980-2026 (user CSV)
+```
+
+Tarea 4 adelantada para los 5 casos estables (`scripts/write_case_copy.py`). Los dos de hielo se
+quedan sin texto a proposito: escribir una frase de hallazgo sobre una serie con −9999 seria
+publicar un numero falso.

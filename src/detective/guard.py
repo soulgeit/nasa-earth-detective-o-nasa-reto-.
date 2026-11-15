@@ -16,6 +16,7 @@ jailbroken or hallucinating model cannot talk its way past it.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
@@ -52,10 +53,14 @@ YEAR_RE = re.compile(r"\b(1[6-9]\d{2}|20\d{2}|2100)\b")
 # false rejections of perfectly correct answers.
 _IDENTIFIER_RE = re.compile(r"\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|\bT2M\b|\bTS\b|\bNO2\b|\bCO2\b|\bO3\b")
 _UNIT_RE = re.compile(r"\d+\s*(?:m\b|km\b|mm\b|cm\b|kg\b|DU\b|MJ\b|W\b|hPa\b|%|°)?")
+# A URL is a pointer to a source, not a claim: its digits (article ids, DOIs,
+# page numbers) must never be read as "a number the writer invented".
+_URL_RE = re.compile(r"https?://\S+|www\.\S+|doi:\s*\S+", re.IGNORECASE)
 
 
 def strip_non_claims(text: str) -> str:
-    """Remove citation markers and identifier-shaped tokens before number checks."""
+    """Remove citation markers, URLs and identifier-shaped tokens before number checks."""
+    text = _URL_RE.sub(" ", text)
     text = CITATION_RE.sub(" ", text)
     text = _IDENTIFIER_RE.sub(" ", text)
     return text
@@ -134,12 +139,25 @@ def _decimals(token: str) -> int:
     return len(token.split(".")[1]) if "." in token else 0
 
 
-def _number_allowed(token: str, facts: set[float], years: set[int]) -> bool:
-    """A number is allowed only when it is a rounding of a fact.
+def _truncate(value: float, decimals: int) -> float:
+    """Cut extra digits, the way a written number is cut — not banker's rounding.
 
-    Tolerance comes from the *token's own precision*, never from a blanket
-    percentage window: "0.3" is an acceptable rounding of 0.31, but "1999" is not
-    a rounding of 1981 and "0.0001" is not a rounding of 0.01. A blanket ±1 %
+    ``round(0.1585, 3)`` is 0.159 (and 0.158 only by luck of the binary
+    representation), while the engine's own template writes "+0.158 °C/década".
+    Both are honest renderings of 0.1585, so the guard must accept either: it
+    compares at the token's precision with the last written digit free to be a
+    rounded-up one. Anything further away is still rejected.
+    """
+    scaled = 10.0 ** decimals
+    return math.floor(value * scaled + 1e-9) / scaled
+
+
+def _number_allowed(token: str, facts: set[float], years: set[int]) -> bool:
+    """A number is allowed only when it is a rendering of a fact at its precision.
+
+    Tolerance comes from the *token's own* precision, never from a blanket
+    percentage window: "0.3" is an acceptable rendering of 0.31, but "1999" is not
+    a rendering of 1981 and "0.0001" is not a rendering of 0.01. A blanket ±1 %
     window would let both through, which is exactly what this guard exists to stop.
     """
     try:
@@ -149,8 +167,11 @@ def _number_allowed(token: str, facts: set[float], years: set[int]) -> bool:
     if value == int(value) and int(value) in years:
         return True
     decimals = min(_decimals(token), 6)
+    tolerance = 0.5 * 10.0 ** (-decimals) * 1.01 + 1e-9
     for fact in facts:
-        if round(fact, decimals) == round(value, decimals):
+        if abs(value - fact) <= tolerance:
+            return True
+        if abs(value - _truncate(fact, decimals)) <= tolerance:
             return True
     return False
 
@@ -170,17 +191,25 @@ def split_quotes(text: str) -> tuple[str, list[str]]:
     return prose, quoted
 
 
-def _strip_passage_labels(prose: str, passages: Iterable[dict[str, Any]]) -> str:
-    """Drop citation labels like ``[2] Aerosol Optical Depth 55:`` before checking.
+_REF_LINE_RE = re.compile(r"^\s*\[\d{1,2}\].*$", re.MULTILINE)
 
-    The title of a cited passage is metadata pointing at a source, not a claim the
-    writer makes, so its digits (a version number, a wavelength, "Depth 55") must
-    not be treated as invented figures.
+
+def _strip_passage_labels(prose: str, passages: Iterable[dict[str, Any]]) -> str:
+    """Drop the reference lines before checking the writer's prose.
+
+    A line like ``[2] Flood Waters — NASA Earth Observatory:`` is attribution
+    metadata (a title, a publisher such as "Hermes 1", a URL), not a claim the
+    writer makes. Its digits must not be read as invented figures. The quoted
+    sentence on that line is still checked, against the passages it came from.
     """
+    prose = _REF_LINE_RE.sub(" ", prose)
     for passage in passages:
         title = str(passage.get("title") or "").strip()
         if title:
             prose = prose.replace(title, " ")
+        publisher = str(passage.get("publisher") or "").strip()
+        if publisher:
+            prose = prose.replace(publisher, " ")
     return prose
 
 

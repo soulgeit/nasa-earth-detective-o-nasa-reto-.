@@ -8,17 +8,21 @@ Todo lo de aquí se regenera con comandos del repo; ninguna cifra está escrita 
 Comando: `python -m src.detective.rag.eval` (añade `--json` para uso automático).
 
 <!-- TABLA_R2_INICIO -->
-Fuente / Source: **Set provisional** (15 preguntas / 15 questions, escritas por claude-omni-2 antes de mirar resultados; se sustituye por `data/knowledge/golden_questions.jsonl` de Hermes 1)
+Fuente / Source: `data/knowledge/golden_questions.jsonl` (Hermes 1, 50 preguntas / 50 questions)
 
 | Backend | Precision@1 | Precision@3 | MRR | Preguntas / Questions (k=6) |
 |---|---|---|---|---|
-| bm25 | 1.000 | 1.000 | 1.000 | 15 |
+| bm25 | 0.980 | 1.000 | 0.990 | 50 |
 | vectors | — | — | — | 0 |
-| fusion | 1.000 | 1.000 | 1.000 | 15 |
-| fusion (prior léxico) | 1.000 | 1.000 | 1.000 | 15 |
+| fusion | 0.980 | 1.000 | 0.990 | 50 |
 
-Nota: `vectors` queda fuera de la media si no hay servicio de embeddings;
-la app funciona con BM25 solo (contract §11). / `vectors` drops out of the means when no embedding service is available.
+Medido el 14-nov-2026 a las 21:40 (hora de Perú) con `python -m src.detective.rag.eval`,
+corpus de 166 documentos. `vectors` queda fuera de la media: no había servicio de
+embeddings en esta máquina (Ollama apagado). / `vectors` drops out of the means when
+no embedding service is available (contract §11).
+
+El único fallo en P@1 lo recupera P@3: "Is dust from the Sechura Desert travelling
+farther now?" (esperado AOD_55).
 <!-- TABLA_R2_FIN -->
 
 ### Qué se midió y con qué
@@ -94,3 +98,30 @@ python -m venv .venv && .venv/Scripts/pip install numpy scipy requests pytest
 python -m pytest tests/detective -q          # 98 tests
 python -m src.detective.rag.eval             # tabla de recuperación
 ```
+
+
+## 4-bis. Planificador sobre las 50 preguntas de oro (RONDA 3)
+
+Comando: `python -m src.detective.rag.eval_plan` (añade `--json` para uso automático).
+
+<!-- TABLA_PLAN_INICIO -->
+Medido el 2026-11-14 a las 21:35 (hora de Perú), `AI_MODE=extractive`, sin modelo.
+
+| Planificador / Planner | Acierto de variable / Variable accuracy | Preguntas |
+|---|---|---|
+| rules | 49/50 = 0.980 | 50 |
+
+Intenciones detectadas: `define` 1, `investigate` 49.
+Quién planificó: `rules` 50/50.
+
+Fallos:
+
+| Pregunta / Question | Idioma | Intención | Devuelto / Got | Esperado / Expected |
+|---|---|---|---|---|
+| Is dust from the Sechura Desert travelling farther now? | en | `investigate` | `GWETTOP` | `AOD_55` |
+
+**LoRA: no disponible.** El adaptador no existe en el repositorio, así que esta tabla
+**no tiene columna de LoRA**: un modelo sin entrenar no tiene número. Cuando Antigravity 2
+publique el adaptador, `python -m src.detective.rag.eval_plan --planner local-lora`
+rellena esa columna con inferencia real.
+<!-- TABLA_PLAN_FIN -->

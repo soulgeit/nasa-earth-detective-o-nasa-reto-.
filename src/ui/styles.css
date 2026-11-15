@@ -937,3 +937,58 @@ details.method[open] summary::before { content: "–"; }
     border-top: 1px solid #000;
   }
 }
+
+/* ---------- Ronda 3: tests disagree breakdown & publisher citations ---------- */
+.disagree-panel {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--ochre-wash);
+  border: 1px solid var(--ochre);
+  border-left: 4px solid var(--ochre);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.4rem;
+}
+.disagree-panel h4 {
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--ochre);
+}
+.disagree-panel p {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.test-agreement-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+  display: grid;
+  gap: 0.3rem;
+  font-size: var(--step--1);
+}
+.test-agreement-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.test-agreement-list li .badge-agree {
+  display: inline-block;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+}
+.test-agreement-list li .badge-agree.yes {
+  background: var(--teal-wash);
+  color: var(--teal-ink);
+}
+.test-agreement-list li .badge-agree.no {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+.citation-publisher {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.85rem;
+  margin-left: 0.35rem;
+}

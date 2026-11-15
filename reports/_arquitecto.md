@@ -1,15 +1,16 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-14 17:45 hora de Perú
-Rama@commit: integracion/ronda2 → main · empujado: sí
-VERIFICADO: integración de las 6 ramas → `python -m pytest -q` → 196 passed, 2 failed, 9 skipped
-VERIFICADO: API integrada → `python scripts/smoke_api.py http://127.0.0.1:8791` → 10 passed · 0 failed
-VERIFICADO: G1 → `GET /api/analyze?variable_id=T2M&lat=-12.05&lon=-77.03` → analysis/2, 540 meses, provenance nasa_api con sha256
-VERIFICADO: interfaz v2 contra la API real en navegador → buscar «Lima» → Investigar → veredicto, cifra, IC y procedencia en pantalla
-ROTO / NO HECHO: 2 pruebas del detective (MODIS_NDVI ya no está en el catálogo); `validate_knowledge.py` da 8 fallos de URL; `/api/cases` 503
-ROTO / NO HECHO: no hay LoRA entrenado; no hay URL pública; no hay CSV de Giovanni; `scripts/gate.py` sin escribir
-Siguiente paso: revisar los bloques ESTADO de todos con `bash scripts/estado.sh` en la puerta G2 (sáb 23:30)
-Necesito de: humano: repartir la línea de arranque de `docs/RONDA_2.md`, GPU o Colab para el LoRA, CSV de Giovanni, inicio de sesión del hosting
-Avisos para otros carriles: toqué una línea en `src/detective/gazetteer.py`, una en `src/ui/app.js`, `requirements.txt` y 2 pruebas de `tests/test_system.py` (detalle en `docs/RONDA_2.md` §5)
+## ESTADO — cfable (arquitecto) — 2026-11-14 19:55 hora de Perú
+Rama@commit: integracion/ronda3 → main · empujado: sí
+VERIFICADO: fusión de las 7 ramas feature/* → sin conflictos → `python -m pytest -q` → 223 passed, 1 failed, 9 skipped
+VERIFICADO: API integrada → `python scripts/smoke_api.py http://127.0.0.1:8791` → 10 passed · 0 skipped · 0 failed
+VERIFICADO: `/api/analyze` T2M Lima → `SIGNIFICANT`, `tests_agree: false`; `/api/cases` 200 con 5 casos; `/api/atlas/T2M` 759 celdas; explicación extractiva con 2 citas de temperatura
+VERIFICADO: los 2 CSV de `data/raw/giovanni/` son exportaciones auténticas de Giovanni (MERRA-2), 557 meses cada una
+ROTO / NO HECHO: `test_published_nasa_benchmarks` en rojo: el hielo marino lleva −9999 en 1987-12 y 1988-01 (sale así de `get_series`); mínimos cuadrados del Ártico +25,7 por década
+ROTO / NO HECHO: LoRA sin evidencia (no existe `reports/lora/`; en el PC1 no hay proceso de entrenamiento); sin URL pública; casos congelados con el veredicto anterior
+ROTO / NO HECHO: `validate_knowledge.py` no reejecutado por mí; `/api/analyze` pide coordenadas a GISTEMP y hielo marino; `/api/trendmap` devuelve `variable_id: "VAR"`
+Siguiente paso: ventana de integración del sábado 22:00 con `bash scripts/estado.sh`
+Necesito de: humano: inicio de sesión del hosting, decidir en qué PC se entrena el LoRA, más CSV de Giovanni de otros instrumentos, decisiones de PLAN §7
+Avisos para otros carriles: reglas 12-18 y tareas con hora límite en `docs/RONDA_3.md`; propuesta de variables `planned` aprobada con condiciones
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)

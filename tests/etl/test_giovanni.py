@@ -64,3 +64,31 @@ def test_monthly_series_kept_as_is():
     assert [p["date"] for p in res["data"]] == ["2000-01", "2000-02", "2000-03"]
     assert res["data"][0]["value"] == 0.82
     assert res["data"][2]["value"] is None
+
+
+def test_parse_real_giovanni_official_format():
+    """Valida el formato oficial de exportación de NASA Giovanni (GES DISC)."""
+    raw = '''Title:,"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)"
+User Start Date:,1980-01-01T00:00:00Z
+User End Date:,1980-03-31T23:59:59Z
+User Bounding Box:,"-71,0.85,-69.84,1.7"
+Data Bounding Box:,"-70.625,1,-70,1.5"
+URL to Reproduce Results:,"https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&data=M2TMNXFLX(units%3Dmm%2Fday)&portal=GIOVANNI"
+Fill Value (M2TMNXFLX):, 1000000000000000
+
+time, M2TMNXFLX
+1980-01-01 00:00:00,7.14807415
+1980-02-01 00:00:00,3.67127633
+1980-03-01 00:00:00,1000000000000000
+'''
+    res = parse_csv(raw, "M2TMNXFLX")
+    assert res["schema"] == "timeseries/2"
+    assert res["unit"] == "mm/day"
+    assert res["region"]["bbox"] == [-71.0, 0.85, -69.84, 1.7]
+    assert len(res["data"]) == 3
+    assert res["data"][0] == {"date": "1980-01", "value": 7.148074}
+    assert res["data"][1] == {"date": "1980-02", "value": 3.671276}
+    assert res["data"][2] == {"date": "1980-03", "value": None}
+    assert res["provenance"]["kind"] == "user_upload"
+    assert "giovanni.gsfc.nasa.gov" in res["provenance"]["request_url"]
+

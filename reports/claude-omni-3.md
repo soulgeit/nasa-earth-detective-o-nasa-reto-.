@@ -1,3 +1,18 @@
+<!-- ESTADO:INICIO -->
+## ESTADO — claude-omni-3 — 2026-11-14 20:05 (hora de Perú)
+Rama@commit: feature/api@90744f5 (Ronda 3, fusionado origin/main 32d07e2) · empujado: sí
+VERIFICADO: variables sin lugar sin coordenadas → `pytest tests/api/test_contract.py -q` → 30 passed; smoke 14/14
+VERIFICADO: `place` de /api/geocode llega a `region.name` y al texto → `where='Observed in Lima, Peru.'`
+VERIFICADO: `/api/trendmap` devuelve `variable_id: "T2M"` (antes "VAR") y el catálogo publica `available`/`planned`
+VERIFICADO: `scripts/gate.py` → smoke OK, validate_datasets OK (5 series), validate_knowledge OK; cierra por la roja ajena
+VERIFICADO (suite completa, regla 14) → `pytest -q` → 223 passed, 1 failed, 9 skipped (la roja: `test_published_nasa_benchmarks`, −9999 del hielo, carril antigravity-1)
+ESCRITO (sin ejecutar de punta a punta): nada del carril pendiente
+ROTO / NO HECHO: A5 sin URL pública (falta tu login en Fly); A6 sin regenerar (dom 10:00)
+Siguiente paso: esperar tu login de hosting; sin URL no hay entrega
+Necesito de: humano → `flyctl auth signup` y avisar; antigravity-1 → −9999 convertido en faltante (destraba la roja)
+Avisos para otros carriles: `/api/analyze|series|report` aceptan ahora `place=`; `/api/catalog/variables` trae `available` y `planned`; `/api/trendmap` ya no devuelve "VAR"
+<!-- ESTADO:FIN -->
+
 # Claude Omni 3 — API v2 y despliegue
 
 Carril: `feature/api` · Carpetas: `src/api/`, `tests/api/`, `Dockerfile`, `scripts/smoke_api.py`
@@ -342,3 +357,193 @@ UI /                             PASS       1ms  HTTP 200 bytes=6023
 - `/api/cases` en 503 hasta que Hermes 2 publique `data/cases/index.json`.
 - El catálogo sale de la semilla (`catalog.source = "seed"`) hasta que Hermes 1
   mergee `variables.json` a esta rama.
+
+---
+
+## A5 — preparación del despliegue (14-nov-2026, 18:10 hora de Perú)
+
+**Qué quedó** (A5 sigue sin URL: el login del hosting es del humano)
+
+Dos fallos del `Dockerfile` que habrían roto el despliegue en cualquier nube:
+
+1. **La imagen no llevaba los datos que la app lee en tiempo de ejecución.**
+   `src/api/config.py` usa `data/cases/` (`/api/cases`), `data/atlas/`
+   (`/api/atlas/{var}`) y `data/knowledge/` (corpus del RAG). Solo se copiaba
+   `data/catalog/`. En la nube esos tres endpoints habrían dado 503 aunque en
+   local funcionasen.
+2. **Puerto fijo en 8000.** Fly, Render y Koyeb inyectan `PORT`; con un puerto
+   fijo el health check falla y el despliegue se da por caído. Ahora el `CMD`
+   usa `${PORT:-8080}` y el `HEALTHCHECK` lee la misma variable.
+
+Además:
+
+- **`.dockerignore`**: el contexto de construcción pasa de **218 MB a 19 MB**.
+  Sin él, cada `fly deploy` subiría el `.venv` (196 MB) y el historial de git.
+- **`fly.toml`**: app `earthtrend-detective`, región `iad`, `shared-cpu-1x` con
+  512 MB, `auto_stop_machines = false` (un arranque en frío delante de un juez
+  es una página rota), health check en `/api/health/live`.
+- **Límite por IP detrás del proxy** (`src/api/main.py:_client_key`): usaba
+  `request.client.host`, que en la nube es la IP del proxy, de modo que **todos
+  los visitantes compartirían el cupo de 120 peticiones/min** y la demo se
+  bloquearía sola. Ahora lee la primera entrada de `X-Forwarded-For`.
+
+**Evidencia**
+
+```
+$ python -m pytest tests/api tests/test_system.py -q
+48 passed, 51 warnings in 5.11s
+
+$ verificación del COPY contra lo que la app lee
+COPY en la imagen: ['requirements.txt', 'src/', 'data/catalog/', 'data/cases/', 'data/atlas/', 'data/knowledge/', 'scripts/smoke_api.py']
+OK   data/catalog/      catálogo v2 (/api/catalog/variables)
+OK   data/cases/        /api/cases (index.json)
+OK   data/atlas/        /api/atlas/{var}
+OK   data/knowledge/    corpus del RAG (src/detective/corpus.py)
+
+$ IP tras el proxy
+varios usuarios -> 1.2.3.4 | 5.6.7.8      (antes: ambos 172.18.0.1)
+sin cabecera   -> 127.0.0.1
+```
+
+**Falta**
+
+- **No he construido la imagen**: esta máquina no tiene Docker ni flyctl. El
+  `Dockerfile` está verificado por lectura y por pruebas, no por `docker build`.
+  La primera compilación real será en `fly deploy` (construye en remoto).
+- URL pública: pendiente del login del humano.
+
+**Cómo desplegarlo** (para el humano)
+
+```bash
+# 1. Instalar flyctl (una vez)
+iwr https://fly.io/install.ps1 -useb | iex
+#    luego cerrar y reabrir la terminal para que tome el PATH
+
+# 2. Crear la cuenta e iniciar sesión (aquí no se puede automatizar)
+fly auth signup        # o: fly auth login
+
+# 3. Crear la app sin desplegar (usa el fly.toml de la raíz)
+cd C:\Users\USER37\work\etd
+fly launch --no-deploy --copy-config
+
+# 4. Desplegar (construye en remoto; no hace falta Docker local)
+fly deploy
+
+# 5. Comprobar
+fly status
+curl https://earthtrend-detective.fly.dev/api/health/live
+```
+
+Coste: `shared-cpu-1x` de 512 MB en `iad` son ~$3,5/mes. Fly condona las
+facturas por debajo de $5 en cuentas personales, así que en la práctica queda
+en $0 mientras no se pase de esa cifra. Si el nombre `earthtrend-detective`
+está cogido, `fly launch` pedirá otro y hay que actualizar `app` en `fly.toml`.
+
+Alternativas si no se quiere dar tarjeta en Fly:
+
+- **Koyeb** — un servicio free por organización, 512 MB / 0,1 vCPU, indefinido,
+  pero se apaga a la hora sin tráfico.
+- **Render** — 750 h/mes, se duerme a los 15 min y tarda ~1 min en despertar.
+
+---
+
+## Ronda 3 — tareas 1, 2 y 4 (14-nov-2026, 20:05 hora de Perú)
+
+Rama@commit: feature/api · fusionado `origin/main` (32d07e2) sin conflicto.
+
+### Tarea 1 — variables sin lugar (22:00)
+
+`GET /api/analyze?variable_id=SEAICE_EXTENT_N` y `GISTEMP_TANOM` devolvían 400
+«Faltan las coordenadas». La causa: `validation.point_or_bbox` exigía siempre
+lat/lon, aunque los conectores de GISTEMP y NSIDC ya devuelven series globales o
+hemisféricas sin coordenadas.
+
+- `validation.is_placeless(card)` deduce del **conector** (`gistemp`,
+  `nsidc_seaice`) si la variable se analiza sin lugar. No se decide por el id,
+  para que una variable nueva del mismo conector herede la regla.
+- Se responde en modo `global` y las variables locales siguen exigiendo
+  coordenadas (`T2M` sin coords sigue siendo 400).
+- Añadido a `smoke_api.py`, junto con el resto de comprobaciones nuevas.
+
+### Tarea 2 — `place`, `variable_id` en la rejilla y `planned` (22:00)
+
+1. **`place` → `region.name`.** `/api/analyze`, `/api/series` y `/api/report`
+   aceptan `place` (el nombre que devuelve `/api/geocode`) y lo escriben en
+   `region.name`, que llega vacío del ETL. Ahora `answers.where` dice
+   «Observed in Lima, Peru» y no «Observado en None» (§2.7). Para las variables
+   sin lugar se usa el nombre de la propia variable del catálogo
+   («Arctic sea ice extent»), nunca una ubicación inventada.
+   La clave de caché incluye `place`: dos nombres del mismo punto son respuestas
+   distintas.
+2. **`/api/trendmap` devolvía `variable_id: "VAR"`.** La rejilla del ETL no
+   trae ese campo y el motor ponía un relleno. La API —que sí conoce el id
+   pedido— lo inyecta antes de llamar al motor. Arreglado en mi carril, sin
+   depender de que antigravity-2 cambie el motor.
+3. **`/api/catalog/variables` publica `available` y `planned`.** Se deducen del
+   conector: `power`, `gistemp` y `nsidc_seaice` son servibles; `giovanni_csv`
+   es `planned` y nunca `available` (regla 16, condiciones de claude-omni-1b).
+   Si el catálogo ya los declara, se respeta su valor.
+
+### Tarea 4 — `scripts/gate.py` (23:30, adelantada)
+
+Un comando que corre la suite, el smoke, `validate_datasets.py` y
+`validate_knowledge.py`, y sale con código ≠ 0 si algo falla.
+
+- El smoke levanta su propio uvicorn en un puerto libre y lo detiene al acabar:
+  no depende de que algo esté corriendo.
+- `validate_datasets.py` solo entiende `timeseries/2`, así que el gate filtra
+  los congelados por `schema`. Pasarle `analysis.json`, `case.json` o los
+  `trendmap/2` del atlas producía 13 fallos de forma que no eran del contenido.
+- Los validadores de conocimiento van con `--offline` por defecto: la puerta no
+  debe caerse porque GitHub no responda, y las URLs ya se validan aparte.
+
+### Evidencia
+
+```
+$ python -m pytest tests/api/test_contract.py -q
+30 passed, 63 warnings in 23.50s
+
+$ python -m pytest -q            # regla 14, suite entera
+223 passed, 1 failed, 9 skipped in 141.26s
+  FAILED tests/stats/test_trend_engine.py::test_published_nasa_benchmarks
+  (causa: −9999 del hielo marino, carril de antigravity-1)
+
+$ python scripts/smoke_api.py http://127.0.0.1:8765
+CHECK                                   STATUS  TIME    DETAIL
+health                                  PASS      11ms  HTTP 200 ai_mode=extractive
+catalog/variables                       PASS       1ms  HTTP 200 variables=15
+analyze unknown variable -> 404         PASS       1ms  HTTP 404 code=VARIABLE_UNKNOWN
+analyze no coords -> 400                PASS       0ms  HTTP 400
+analyze Lima (G1)                       PASS      59ms  HTTP 200 schema=analysis/2 provenance=nasa_api n_obs=540
+analyze Lima (cache < 300ms)            PASS       1ms  HTTP 200 1ms
+trendmap                                PASS      23ms  HTTP 200 cells=63
+cases                                   PASS       1ms  HTTP 200
+report                                  PASS       1ms  HTTP 200 bytes=4358
+analyze placeless variable (no coords)  PASS      90ms  GISTEMP_TANOM:Global (all GISTEMP land+ocean cells) SEAICE_EXTENT_N:Arctic sea ice extent SEAICE_EXTENT_S:Antarctic sea ice extent
+analyze place -> region name            PASS      79ms  HTTP 200 where='Observed in Lima, Peru.'
+trendmap variable_id echo               PASS       2ms  HTTP 200 variable_id='T2M'
+catalog availability flags              PASS       2ms  HTTP 200 n=15 available=15 planned=0
+UI /                                    PASS      16ms  HTTP 200 bytes=17598
+
+14 passed · 0 skipped · 0 failed
+```
+
+```
+$ python scripts/gate.py --skip-suite --offline
+OK    smoke_api            exit=0      9.7s
+OK    validate_datasets    exit=0      0.1s     (5 series congeladas)
+OK    validate_knowledge   exit=0      0.1s     (15 variables, 168 documentos)
+PUERTA ABIERTA: todo en verde
+
+$ python scripts/gate.py --offline      # con suite
+FALLA  pytest               exit=1    141.4s   (la roja ajena de arriba)
+OK    smoke_api / validate_datasets / validate_knowledge
+PUERTA CERRADA: fallaron pytest
+```
+
+### Falta
+
+- **URL pública**: sigue bloqueada por el login del humano en Fly. La imagen y
+  `fly.toml` están listos desde la ronda anterior; no he podido ejecutar
+  `fly deploy` porque no hay sesión (`flyctl auth whoami` → no access token).
+- 5 pruebas nuevas en `tests/api/test_contract.py`.

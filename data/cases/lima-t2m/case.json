@@ -1,6 +1,10 @@
 {
  "id": "lima-t2m",
  "variable_id": "T2M",
+ "variable_name": {
+  "es": "Temperatura del aire a 2 m",
+  "en": "Air temperature at 2 m"
+ },
  "region": {
   "kind": "point",
   "name": null,
@@ -13,22 +17,29 @@
   "en": "Lima, Peru"
  },
  "titles": {
-  "es": "TODO_HUMANO",
-  "en": "TODO_HUMANO"
+  "en": "Lima, Peru: air temperature 1981-2025",
+  "es": "Lima, Peru: temperatura del aire 1981-2025"
  },
  "story": {
-  "es": [
-   "TODO_HUMANO"
-  ],
   "en": [
-   "TODO_HUMANO"
+   "Air temperature rose about 0.16 °C per decade (Theil-Sen, 1981-2025), a total of 0.71 °C. Mann-Kendall finds the trend significant; the least-squares test disagrees, so the verdict is SIGNIFICANT rather than strong.",
+   "TODO_HUMANO: the narrative is the human's decision."
+  ],
+  "es": [
+   "La temperatura del aire subio unos 0,16 °C por decada (Theil-Sen, 1981-2025), 0,71 °C en total. Mann-Kendall encuentra la tendencia significativa; la prueba de minimos cuadrados discrepa, por eso el veredicto es SIGNIFICANT y no fuerte.",
+   "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-14T21:43:02Z",
- "source": {
+ "frozen_at": "2026-11-15T00:49:44Z",
+ "verdict_code": "SIGNIFICANT",
+ "provenance": {
   "kind": "nasa_api",
   "source": "NASA POWER v2.10.0",
-  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-77.03&latitude=-12.05&start=1981&end=2025&format=JSON"
- },
- "significance": {}
+  "underlying": "MERRA-2",
+  "request_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-77.03&latitude=-12.05&start=1981&end=2025&format=JSON",
+  "retrieved_at": "2026-11-14T18:55:36Z",
+  "sha256": "8e74b53294f55792eecf610b32b340bb840c161787e66c354047206bf5831807",
+  "native_resolution": "0.5° x 0.625°",
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+ }
 }

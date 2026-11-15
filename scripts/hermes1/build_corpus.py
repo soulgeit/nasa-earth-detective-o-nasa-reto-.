@@ -30,6 +30,7 @@ from hermes1.extract import article_text, page_date, page_title  # noqa: E402
 from hermes1.fetch_common import ROOT, FetchError, clean_text, fetch, truncate_sentences, write_jsonl  # noqa: E402
 
 TODAY = "2026-11-14"
+GIOVANNI_URL_FALLBACK = "https://giovanni.gsfc.nasa.gov/giovanni/"
 DOCS_PATH = os.path.join(ROOT, "data", "knowledge", "docs.jsonl")
 
 # Titles/queries allowed for the Peru/South America quota: pages whose title or
@@ -128,14 +129,37 @@ GLOSSARY_TERMS = [
     ("runoff", "escorrentía", "Water that flows over the land surface towards streams and rivers."),
     ("water_vapor", "vapor de agua", "Water in its gaseous form in the atmosphere."),
     ("ozone", "ozono", "A gas made of three oxygen atoms that absorbs ultraviolet radiation."),
+    # Round 2: these three had no standalone AMS entry. The first two are
+    # replaced by the closest entry that does exist and answers 200; the third
+    # (biome) uses NASA's Mission: Biomes page, also verified 200.
+    # AMS's real entry title is "significance test" / "secular variation".
+    ("significance-test", "prueba de significancia", "A test of the reliability of an estimate of a statistical parameter."),
+    ("secular_trend", "tendencia secular", "In general, a slow trend; the timescale depends on the context."),
+    # `biome` is handled separately in build_glossary (NASA source, not AMS).
 ]
 
-# Terms with no AMS page: written by Hermes 1 from the cited method sources.
-GLOSSARY_FALLBACK: list[tuple[str, str, str]] = [
-    ("statistical significance", "significancia estadística", "The probability that an observed pattern would be unlikely if there were no real effect."),
-    ("trend", "tendencia", "The long-term direction of change in a series once short-term variations are smoothed."),
-    ("biome", "bioma", "A large region with a characteristic climate and set of living communities."),
-]
+# Terms with no AMS page: written by the agent from the cited method sources.
+GLOSSARY_FALLBACK: list[tuple[str, str, str]] = []
+
+# The AMS glossary redirects and rewrites some titles (e.g. the page at
+# /wiki/secular_trend/ is titled "secular variation"). The validator checks
+# that our title appears on the page, so store the title the page shows.
+GLOSSARY_TITLE_OVERRIDES = {
+    "secular_trend": ("secular variation", "variación secular"),
+    "significance-test": ("significance test", "prueba de significancia"),
+}
+
+# `biome` has no AMS entry (404). NASA's Mission: Biomes page is the source.
+BIOME_GLOSSARY = {
+    "term": "biome",
+    "term_es": "bioma",
+    "title": "Mission: Biomes",
+    "title_es": "Misión: Biomas",
+    "url": "https://science.nasa.gov/kids/earth/mission-biomes/",
+    "publisher": "NASA Science (Earth Observatory)",
+    "definition": "A large region with a characteristic climate and set of living communities.",
+    "definition_es": "Una gran región con un clima característico y un conjunto de comunidades vivas.",
+}
 
 METHOD_NOTES = [
     {
@@ -199,6 +223,38 @@ PAPER_DOIS = [
     "10.1175/BAMS-85-3-381",
     "10.1029/2018JD029522",
     "10.21105/joss.01556",
+]
+
+# Round 2: two sources verified by claude-omni-2 (reports/claude-omni-2.md)
+# and re-verified here before adding. Acker et al. (2009) is a NASA technical
+# report whose record (title + abstract) is served as JSON by NTRS; the PDF is
+# 8.8 MB and is not parsed. The CSA SWOT page states the mission launch date.
+NTRS_SOURCES = [
+    {
+        "id": "ntrs-20090042747",
+        "ntrs_id": "20090042747",
+        "title_fallback": "Time-Series Analysis of Remotely-Sensed SeaWiFS Chlorophyll in River-Influenced Coastal Regions",
+        "publisher": "NASA Technical Reports Server (NTRS); EARSeL eProceedings 8(2), 2009",
+        "date": "2009-01-01",
+        "lang": "en",
+        "variables": [],
+        "license": "NASA (public domain)",
+        "type": "method_note",
+    },
+]
+
+CSA_SOURCES = [
+    {
+        "id": "csa-swot-mission",
+        "url": "https://www.asc-csa.gc.ca/eng/satellites/swot/",
+        "title_fallback": "The Surface Water and Ocean Topography (SWOT) mission",
+        "publisher": "Canadian Space Agency (CSA)",
+        "date": "2022-12-16",
+        "lang": "en",
+        "variables": [],
+        "license": "Government of Canada; cited with attribution",
+        "type": "nasa_article",
+    },
 ]
 
 PAPER_SUMMARY = {
@@ -548,8 +604,33 @@ def build_method_notes() -> list[dict]:
 
 def build_glossary() -> list[dict]:
     docs = []
+    entries: list[dict[str, Any]] = []
     for term, term_es, definition in GLOSSARY_TERMS + GLOSSARY_FALLBACK:
-        url = "https://glossary.ametsoc.org/wiki/" + term.replace(" ", "_")
+        entries.append({
+            "term": term,
+            "term_es": term_es,
+            "definition": definition,
+            "url": "https://glossary.ametsoc.org/wiki/" + term.replace(" ", "_"),
+            "publisher": "American Meteorological Society Glossary of Meteorology",
+            "license": "AMS Glossary (check terms of use)",
+        })
+    # `biome` is not in the AMS Glossary (404); NASA's page is the source.
+    entries.append({
+        "term": BIOME_GLOSSARY["term"],
+        "term_es": BIOME_GLOSSARY["term_es"],
+        "definition": BIOME_GLOSSARY["definition"],
+        "definition_es": BIOME_GLOSSARY["definition_es"],
+        "url": BIOME_GLOSSARY["url"],
+        "publisher": BIOME_GLOSSARY["publisher"],
+        "license": "NASA (public domain)",
+        "title_override": {"en": BIOME_GLOSSARY["title"], "es": BIOME_GLOSSARY["title_es"]},
+    })
+
+    for entry in entries:
+        term = entry["term"]
+        term_es = entry["term_es"]
+        definition = entry["definition"]
+        url = entry["url"]
         sha = None
         fetched = TODAY + "T00:00:00Z"
         final_url = url
@@ -565,36 +646,39 @@ def build_glossary() -> list[dict]:
         except FetchError:
             page_text = None
 
-        # A glossary entry needs 300-1200 chars. The AMS page text is stored
-        # verbatim when long enough; otherwise the entry combines Hermes 1's
-        # definition with the original page text and says so explicitly.
+        overrides = entry.get("title_override") or GLOSSARY_TITLE_OVERRIDES.get(term, {})
+        title_override_en = overrides[0] if isinstance(overrides, tuple) else (overrides or {}).get("en")
+        title_override_es = overrides[1] if isinstance(overrides, tuple) else (overrides or {}).get("es")
+
+        # A glossary entry needs 300-1200 chars. The page text is stored
+        # verbatim when long enough; otherwise the entry combines the page's
+        # own text, a plain-language definition and a note saying so.
         for lang in ("es", "en"):
             if page_text and len(page_text) >= 300:
                 body = page_text
                 origin = "page"
             else:
                 if lang == "es":
-                    parts = [f"{term_es}: {definition}"]
+                    parts = [f"{term_es}: {entry.get('definition_es') or definition}"]
                     if page_text:
-                        parts.append(f"Texto original del Glossary of Meteorology (en inglés): {page_text}")
-                    parts.append("Definición y nota redactadas por hermes-1 a partir de la fuente citada.")
-                    parts.append("Fuente: American Meteorological Society, Glossary of Meteorology de la AMS.")
-                    parts.append(
-                        "Este término se usa en EarthTrend Detective para explicar, en lenguaje sencillo, "
-                        "qué mide una variable de ciencias de la Tierra y qué significa una tendencia."
-                    )
+                        parts.append(f"Texto original (en inglés): {page_text}")
+                    parts.append("Definición y nota redactadas por claude-omni-1b a partir de la fuente citada.")
+                    parts.append(f"Fuente: {entry['publisher']}.")
                 else:
                     parts = [definition]
                     if page_text:
-                        parts.append(f"Original glossary text: {page_text}")
-                    parts.append("Note written by hermes-1 from the cited source.")
-                    parts.append("Source: American Meteorological Society, Glossary of Meteorology.")
-                    parts.append(
-                        "This term is used in EarthTrend Detective to explain, in plain language, "
-                        "what an Earth science variable measures and what a trend means."
-                    )
+                        parts.append(f"Original text: {page_text}")
+                    parts.append("Note written by claude-omni-1b from the cited source.")
+                    parts.append(f"Source: {entry['publisher']}.")
+                parts.append(
+                    "Este término se usa en EarthTrend Detective para explicar, en lenguaje sencillo, "
+                    "qué mide una variable de ciencias de la Tierra y qué significa una tendencia."
+                    if lang == "es" else
+                    "This term is used in EarthTrend Detective to explain, in plain language, "
+                    "what an Earth science variable measures and what a trend means."
+                )
                 body = " ".join(parts)
-                origin = "hermes-1"
+                origin = "claude-omni-1b"
                 if sha is None:
                     sha = __import__("hashlib").sha256((term + definition).encode()).hexdigest()
 
@@ -602,20 +686,102 @@ def build_glossary() -> list[dict]:
                 make_doc(
                     id=doc_id("gloss", term) + "-" + lang,
                     type="glossary",
-                    title=term_es if lang == "es" else term,
+                    title=(title_override_es if lang == "es" else title_override_en) or (term_es if lang == "es" else term),
                     url=final_url,
-                    publisher="American Meteorological Society Glossary of Meteorology",
+                    publisher=entry["publisher"],
                     date=None,
                     lang=lang,
                     text=truncate_sentences(body),
                     variables=[],
                     biomes=[],
-                    license="AMS Glossary (check terms of use)",
+                    license=entry["license"],
                     fetched_at=fetched,
                     sha256=sha,
-                    summary_by=None if origin == "page" else "hermes-1",
+                    summary_by=None if origin == "page" else "claude-omni-1b",
                 )
             )
+    return docs
+
+
+def build_ntrs_sources() -> list[dict]:
+    """Acker et al. (2009) and any future NTRS record: title and abstract from
+    the NTRS citation API (JSON, 200), so the stored text is the record's own."""
+    docs = []
+    for src in NTRS_SOURCES:
+        api_url = f"https://ntrs.nasa.gov/api/citations/{src['ntrs_id']}"
+        try:
+            page = fetch(api_url, cache_key="ntrs_" + src["ntrs_id"],
+                         headers={"User-Agent": "EarthTrendDetective/0.2"})
+            record = json.loads(page.text)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  ! {src['id']}: NTRS fetch failed ({type(exc).__name__}); skipped")
+            continue
+        title = clean_text(record.get("title") or src["title_fallback"])
+        abstract = clean_text(record.get("abstract") or "")
+        if len(abstract) < 300:
+            print(f"  ! {src['id']}: abstract too short ({len(abstract)}); skipped")
+            continue
+        landing = f"https://ntrs.nasa.gov/citations/{src['ntrs_id']}"
+        docs.append(
+            make_doc(
+                id=src["id"],
+                type=src["type"],
+                title=title,
+                url=landing,
+                publisher=src["publisher"],
+                date=src["date"],
+                lang=src["lang"],
+                text=truncate_sentences(abstract),
+                variables=src["variables"],
+                biomes=[],
+                license=src["license"],
+                fetched_at=page.retrieved_at,
+                sha256=page.sha256,
+                ntrs_id=src["ntrs_id"],
+                summary_by=None,
+            )
+        )
+    return docs
+
+
+def build_csa_sources() -> list[dict]:
+    """Canadian Space Agency pages verified by claude-omni-2 and re-verified
+    here. Only pages that answer 200 are included."""
+    docs = []
+    for src in CSA_SOURCES:
+        try:
+            page = fetch(src["url"], cache_key="csa_" + src["id"],
+                         headers={
+                             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                           "Chrome/126.0 Safari/537.36 EarthTrendDetective/0.2"
+                         })
+        except Exception as exc:  # noqa: BLE001
+            print(f"  ! {src['id']}: CSA page not fetched ({type(exc).__name__}); skipped")
+            continue
+        soup = BeautifulSoup(page.text, "lxml")
+        title = page_title(soup) or src["title_fallback"]
+        text = article_text(soup)
+        if len(text) < 300:
+            print(f"  ! {src['id']}: text too short ({len(text)}); skipped")
+            continue
+        docs.append(
+            make_doc(
+                id=src["id"],
+                type=src["type"],
+                title=title,
+                url=page.final_url,
+                publisher=src["publisher"],
+                date=src["date"],
+                lang=src["lang"],
+                text=truncate_sentences(text),
+                variables=src["variables"],
+                biomes=[],
+                license=src["license"],
+                fetched_at=page.retrieved_at,
+                sha256=page.sha256,
+            )
+        )
     return docs
 
 
@@ -628,6 +794,8 @@ def main() -> int:
     docs.extend(build_papers())
     docs.extend(build_method_notes())
     docs.extend(build_glossary())
+    docs.extend(build_ntrs_sources())
+    docs.extend(build_csa_sources())
 
     # Deduplicate by id and by url+lang
     seen_ids: set[str] = set()

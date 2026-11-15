@@ -27,6 +27,7 @@ const STRINGS = {
     'panel.investigate': 'Investigate',
     'panel.investigating': 'Fetching real data…',
     'panel.report': 'Download report',
+    'panel.upload.csv': '📁 Upload Giovanni CSV',
 
     'results.empty.title': 'Pick a place to begin',
     'results.empty.body': 'Click anywhere on the map or search for a place, choose a variable, and press Investigate. Every number you will see comes from NASA data fetched for that exact point.',
@@ -141,7 +142,14 @@ const STRINGS = {
     'detective.scout.why': 'Why this matters here',
     'detective.scout.sources': 'Sources',
     'detective.explain.title': 'Detective Explanation',
-    'detective.explain.badge': 'AI-assisted synthesis from cited sources',
+        'detective.explain.badge.extractive': 'Excerpts from cited sources (no generative AI)',
+    'detective.explain.badge.full': 'AI-assisted synthesis from cited sources',
+    'verdict.tests_disagree.title': 'Why the statistical tests disagree',
+    'verdict.tests_disagree.body': 'The Mann-Kendall test detects persistent direction, but the autocorrelation-adjusted OLS t-test and confidence interval indicate the slope magnitude requires more observation time to achieve definitive certainty.',
+    'atlas.load.btn': '🌐 Load Global Atlas (T2M)',
+    'atlas.loading': 'Loading global grid atlas…',
+    'variable.global_series': 'Fixed global or polar series (no point selection required)',
+
     'detective.explain.level.school': 'School level',
     'detective.explain.level.uni': 'University level',
     'detective.explain.loading': 'Generating explanation with cited evidence…',
@@ -188,6 +196,7 @@ const STRINGS = {
     'panel.investigate': 'Investigar',
     'panel.investigating': 'Trayendo datos reales…',
     'panel.report': 'Descargar informe',
+    'panel.upload.csv': '📁 Subir CSV de Giovanni',
 
     'results.empty.title': 'Elige un lugar para empezar',
     'results.empty.body': 'Haz clic en el mapa o busca un lugar, elige una variable y pulsa Investigar. Cada número que veas sale de datos de la NASA pedidos para ese punto exacto.',
@@ -302,7 +311,14 @@ const STRINGS = {
     'detective.scout.why': 'Por qué importa aquí',
     'detective.scout.sources': 'Fuentes',
     'detective.explain.title': 'Explicación del Detective',
-    'detective.explain.badge': 'Síntesis asistida por IA a partir de las fuentes citadas',
+        'detective.explain.badge.extractive': 'Fragmentos de las fuentes citadas (sin IA generativa)',
+    'detective.explain.badge.full': 'Síntesis asistida por IA a partir de las fuentes citadas',
+    'verdict.tests_disagree.title': 'Por qué discrepan las pruebas estadísticas',
+    'verdict.tests_disagree.body': 'La prueba de Mann-Kendall detecta una dirección persistente, pero el test t de MCO ajustado por autocorrelación y el intervalo de confianza indican que la magnitud de la pendiente aún requiere más tiempo de observación para alcanzar certeza definitiva.',
+    'atlas.load.btn': '🌐 Cargar Atlas Global (T2M)',
+    'atlas.loading': 'Cargando atlas de cuadrícula global…',
+    'variable.global_series': 'Serie global o polar fija (no requiere selección de punto)',
+
     'detective.explain.level.school': 'Nivel escolar',
     'detective.explain.level.uni': 'Nivel universitario',
     'detective.explain.loading': 'Generando explicación con evidencia citada…',
@@ -329,9 +345,12 @@ const STRINGS = {
 };
 
 function detectLang() {
-  // English is the default for the judged submission.
-  const nav = (navigator.language || 'en').toLowerCase();
-  return nav.startsWith('es') ? 'es' : 'en';
+  // English is strictly the default for the judged submission (Ronda 3, Rule 16).
+  try {
+    const saved = localStorage.getItem('etd.lang');
+    if (saved === 'es') return 'es';
+  } catch (_) {}
+  return 'en';
 }
 
 function translate(key, vars) {

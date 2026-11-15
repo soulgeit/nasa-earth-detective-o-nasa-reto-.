@@ -154,7 +154,51 @@ def run(base: str, *, strict: bool) -> list[Check]:
         ok = status == 200 and body[:200].lower().startswith(b"<!doctype html")
         record("report", ok, f"HTTP {status} bytes={len(body)}", ms)
 
-    # 10. UI en /
+    # 10. variables sin lugar: no deben pedir coordenadas (RONDA_3 §4.1)
+    placeless_ok, placeless_bits = True, []
+    for vid in ("GISTEMP_TANOM", "SEAICE_EXTENT_N", "SEAICE_EXTENT_S"):
+        st, bd, ms_p, _ = _get(base, "/api/analyze", {"variable_id": vid}, timeout=180.0)
+        pl = _json(bd)
+        if st == 200 and pl:
+            region = (pl.get("region") or {}).get("name")
+            good = bool(region) and (pl.get("period") or {}).get("n_obs", 0) > 0
+            placeless_bits.append(f"{vid}:{region}")
+        elif st in {503, 504}:
+            good = not strict
+            placeless_bits.append(f"{vid}:{st}")
+        else:
+            good = False
+            placeless_bits.append(f"{vid}:{st}")
+        placeless_ok = placeless_ok and good
+    record("analyze placeless variable (no coords)", placeless_ok, " ".join(placeless_bits), ms_p)
+
+    # 11. el nombre del lugar llega al texto (RONDA_3 §2.7)
+    st, bd, ms_l, _ = _get(
+        base, "/api/analyze",
+        {"variable_id": "T2M", "lat": -12.05, "lon": -77.03, "place": "Lima, Peru"},
+        timeout=120.0,
+    )
+    pl = _json(bd) or {}
+    where = ((pl.get("answers") or {}).get("where") or {}).get("en", "")
+    ok = st == 200 and "Lima" in where and "None" not in where
+    record("analyze place -> region name", ok, f"HTTP {st} where={where[:44]!r}", ms_l)
+
+    # 12. trendmap lleva el id pedido y no "VAR" (RONDA_3 §2.5)
+    st, bd, ms_t, _ = _get(base, "/api/trendmap", {"variable_id": "T2M", "bbox": "-82,-7,-78,-3"}, timeout=180.0)
+    pl = _json(bd) or {}
+    vid_back = pl.get("variable_id")
+    record("trendmap variable_id echo", st == 200 and vid_back == "T2M", f"HTTP {st} variable_id={vid_back!r}", ms_t)
+
+    # 13. catálogo publica `available`/`planned` (RONDA_3 §4.1 claude-omni-1b)
+    st, bd, ms_c, _ = _get(base, "/api/catalog/variables", {"lang": "en"})
+    pl = _json(bd) or {}
+    vlist = pl.get("variables") or []
+    with_flags = [v for v in vlist if "available" in v and "planned" in v]
+    ok = st == 200 and len(with_flags) == len(vlist) and len(vlist) > 0
+    avail = sum(1 for v in vlist if v.get("available"))
+    record("catalog availability flags", ok, f"HTTP {st} n={len(vlist)} available={avail} planned={len(vlist) - avail}", ms_c)
+
+    # 14. UI en /
     status, body, ms, _ = _get(base, "/")
     record("UI /", status == 200 and len(body) > 0, f"HTTP {status} bytes={len(body)}", ms)
 

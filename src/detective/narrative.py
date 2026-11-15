@@ -52,24 +52,108 @@ def _is_significant(analysis: dict[str, Any]) -> bool | None:
     return value if isinstance(value, bool) else None
 
 
+def _variable_terms(analysis: dict[str, Any], lang: str) -> list[str]:
+    """Everything we know about the analysed variable, most specific first."""
+    variable = analysis.get("variable") or {}
+    terms: list[str] = []
+    names = variable.get("names")
+    if isinstance(names, dict):
+        for key in (lang, "en", "es"):
+            value = names.get(key)
+            if value:
+                terms.append(str(value))
+    elif names:
+        terms.append(str(names))
+    for key in ("id", "connector_param", "power_longname"):
+        if variable.get(key):
+            terms.append(str(variable[key]))
+    return [t for i, t in enumerate(dict.fromkeys(terms)) if t]
+
+
+def _documents_for_variable(variable_id: str, lang: str) -> list[dict[str, Any]]:
+    """The analysed variable's own cards, in the requested language first.
+
+    This is a direct corpus lookup, not a ranked search: when we know the id we do
+    not need BM25 to guess, and the explanation must never quote the English card
+    of a variable while answering in Spanish (RONDA_3 §4.1).
+    """
+    from .rag import corpus_documents
+
+    if not variable_id:
+        return []
+    docs = [d for d in corpus_documents() if variable_id in d.variables]
+    docs.sort(key=lambda d: (0 if d.lang == lang else 1, d.type != "variable_card", d.id))
+    return [d.to_public(1.0) for d in docs]
+
+
 def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES) -> list[dict[str, Any]]:
+    """Sources that are actually about the variable that was analysed.
+
+    RONDA_2 §6.1: the old query was one bag of words, so "T2M Lima" came back as
+    aerosol depth cards. Now we look the variable up directly, keep only documents
+    that really carry that variable id, and add at most one regional article.
+    """
     variable = analysis.get("variable") or {}
     region = analysis.get("region") or {}
-    name = variable.get("names")
-    if isinstance(name, dict):
-        name = name.get(lang) or name.get("en")
-    query = " ".join(str(x) for x in (name, variable.get("id"), region.get("name")) if x)
-    docs = retrieve(query, lang=lang, k=k)
+    variable_id = str(variable.get("id") or "").strip()
+    region_name = str(region.get("name") or "").strip()
+
+    chosen: list[tuple[Any, str]] = []
+    seen_ids: set[str] = set()
+    seen_sources: set[str] = set()
+
+    def _take(doc: dict[str, Any], role: str) -> bool:
+        if doc["id"] in seen_ids:
+            return False
+        # The same page in two languages, or twice from two files, is one source.
+        source_key = (doc.get("url") or "").split("?")[0].rstrip("/")
+        if source_key and source_key in seen_sources:
+            return False
+        seen_ids.add(doc["id"])
+        if source_key:
+            seen_sources.add(source_key)
+        chosen.append((doc, role))
+        return True
+
+    # 1) The variable's own cards, in the requested language (direct lookup).
+    for doc in _documents_for_variable(variable_id, lang):
+        if doc["type"] != "variable_card":
+            continue
+        _take(doc, "variable")
+        if sum(1 for _d, r in chosen if r == "variable") >= 1:
+            break
+
+    # 2) A regional article, only from the requested language and the same region.
+    if region_name:
+        region_key = region_name.lower().split(",")[0].strip()
+        for doc in retrieve(region_name, lang=lang, k=8, types=["nasa_article", "region_note"]):
+            if region_key not in (doc.get("title") or "").lower():
+                continue
+            if variable_id and variable_id not in (doc.get("variables") or []):
+                continue
+            if _take(doc, "context"):
+                break
+
+    # 3) A method note in the requested language fits any variable.
+    for doc in retrieve("trend significance Mann-Kendall", lang=lang, k=6, types=["method_note"]):
+        if doc.get("lang") != lang:
+            continue
+        _take(doc, "method")
+        break
+
     return [
         {
             "n": i,
-            "id": d["id"],
-            "title": d["title"],
-            "url": d["url"],
-            "type": d["type"],
-            "text": d["text"],
+            "id": doc["id"],
+            "title": doc["title"],
+            "url": doc["url"],
+            "type": doc["type"],
+            "lang": doc.get("lang"),
+            "publisher": doc.get("publisher"),
+            "role": role,
+            "text": doc["text"],
         }
-        for i, d in enumerate(docs, start=1)
+        for i, (doc, role) in enumerate(chosen[:k], start=1)
     ]
 
 
@@ -82,7 +166,7 @@ def _answer(analysis: dict[str, Any], key: str, lang: str) -> str:
 
 
 def extractive_text(analysis: dict[str, Any], *, lang: str, passages: list[dict[str, Any]]) -> str:
-    """Deterministic template: the app's own `answers` plus verbatim quotes."""
+    """Deterministic template: the app's own `answers` plus short, attributed quotes."""
     parts = [p for p in (
         _answer(analysis, "what", lang),
         _answer(analysis, "where", lang),
@@ -94,13 +178,27 @@ def extractive_text(analysis: dict[str, Any], *, lang: str, passages: list[dict[
 
     second_lines: list[str] = []
     for p in passages:
-        label = "Fragmento" if lang == "es" else "Passage"
-        second_lines.append(f"[{p['n']}] {p['title']}: \"{_clip(p['text'], 220)}\"")
-        _ = label
+        # A short quoted sentence, then the source it came from with its real URL.
+        quote = _first_sentence(p["text"], limit=180)
+        source = p.get("publisher") or p.get("type") or ""
+        attrib = f" — {source}" if source else ""
+        second_lines.append(f"[{p['n']}] {p['title']}{attrib}: \"{quote}\"\n     {p['url'] or ''}".rstrip())
     second = "\n".join(second_lines) if second_lines else (
         "No hay fuentes recuperadas para este caso." if lang == "es" else "No sources were retrieved for this case."
     )
     return f"{first}\n\n{second}"
+
+
+def _first_sentence(text: str, *, limit: int) -> str:
+    """A complete sentence from the document, trimmed to ``limit`` characters."""
+    clean = " ".join(str(text).split())
+    if not clean:
+        return ""
+    for end in (". ", "! ", "? "):
+        idx = clean.find(end)
+        if 0 < idx <= limit:
+            return clean[: idx + 1]
+    return _clip(clean, limit)
 
 
 def _fallback_summary(analysis: dict[str, Any], lang: str) -> str:
@@ -148,20 +246,32 @@ def _prompt(analysis: dict[str, Any], passages: list[dict[str, Any]], *, lang: s
     )
 
 
+def _public_citation(p: dict[str, Any]) -> dict[str, Any]:
+    """A human-readable citation: real title, real URL, real publisher — no internal ids.
+
+    RONDA_2 §6.1: the UI was showing ``[var-aod_55-es]`` and labelling every source
+    "NASA Earth Observatory". The id stays in the payload for tracing, but the
+    title/url/publisher now come from the document that was actually quoted.
+    """
+    return {
+        "n": p["n"],
+        "title": p["title"],
+        "url": p["url"],
+        "publisher": p.get("publisher") or "",
+        "source_id": p["id"],
+    }
+
+
 def _citations(text: str, passages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     from .guard import CITATION_RE
 
     used = sorted({int(n) for n in CITATION_RE.findall(text)})
     by_n = {p["n"]: p for p in passages}
-    return [
-        {"n": n, "title": by_n[n]["title"], "url": by_n[n]["url"], "id": by_n[n]["id"]}
-        for n in used
-        if n in by_n
-    ]
+    return [_public_citation(by_n[n]) for n in used if n in by_n]
 
 
 def _all_citations(passages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [{"n": p["n"], "title": p["title"], "url": p["url"], "id": p["id"]} for p in passages]
+    return [_public_citation(p) for p in passages]
 
 
 def explain(analysis: dict, *, level: str = "school", lang: str = "es") -> dict[str, Any]:

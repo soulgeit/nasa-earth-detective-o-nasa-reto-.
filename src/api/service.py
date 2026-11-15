@@ -56,6 +56,7 @@ def get_series(
     bbox: list[float] | None = None,
     start: str | None = None,
     end: str | None = None,
+    place: str | None = None,
 ) -> dict[str, Any]:
     fn: Callable[..., dict] = modules.require(modules.modules().get_series(), what="data (ETL)")
     # El catálogo se valida después del módulo: si el ETL no existe en esta rama
@@ -77,7 +78,38 @@ def get_series(
     except Exception as exc:  # red, timeout, parser roto
         raise _translate_etl_error(exc) from exc
     validate_series(ts, variable_id)
+    _apply_place(ts, place)
     return ts
+
+
+def _apply_place(ts: dict[str, Any], place: str | None) -> None:
+    """Escribe un nombre en `region.name` si el ETL no lo trajo.
+
+    Dos casos (RONDA_3 §2.7):
+    - punto o caja: el nombre lo aporta `/api/geocode` como `place`;
+    - variable sin lugar (hielo marino): el ETL devuelve `region_fixed = None`
+      del catálogo, así que se usa el nombre de la propia variable.
+
+    Nunca se inventa una ubicación: solo se rellena lo que el catálogo o el
+    usuario ya dijeron.
+    """
+    if not isinstance(ts, dict):
+        return
+    region = ts.get("region")
+    if not isinstance(region, dict) or region.get("name"):
+        return
+    if place:
+        region["name"] = place
+        return
+    if region.get("kind") == "named":
+        try:
+            card = catalog.get_variable(ts.get("variable_id", ""))
+        except ApiError:
+            return
+        names = card.get("names") or {}
+        label = names.get("en") or names.get("es")
+        if label:
+            region["name"] = label
 
 
 def validate_series(ts: dict[str, Any], variable_id: str) -> None:
@@ -108,13 +140,16 @@ def analyze(
     bbox: list[float] | None = None,
     start: str | None = None,
     end: str | None = None,
+    place: str | None = None,
 ) -> dict[str, Any]:
     """`/series` -> `analyze_series` + tarjeta del catálogo (contrato A2)."""
     card = catalog.get_variable(variable_id)
-    key = _normalize_key("analyze", variable_id, lat, lon, bbox, start, end, card.get("source", {}))
+    key = _normalize_key("analyze", variable_id, lat, lon, bbox, start, end, place, card.get("source", {}))
 
     def produce() -> dict[str, Any]:
-        ts = get_series(variable_id, lat=lat, lon=lon, bbox=bbox, start=start, end=end)
+        ts = get_series(
+            variable_id, lat=lat, lon=lon, bbox=bbox, start=start, end=end, place=place
+        )
         analyze_fn = modules.require(modules.modules().analyze_series(), what="statistics")
         try:
             result = analyze_fn(
@@ -132,6 +167,7 @@ def analyze(
         if not isinstance(result, dict) or result.get("schema") != "analysis/2":
             raise ApiError("UPSTREAM_ERROR", hint="stats returned an unexpected analysis schema.")
         result["variable"] = card
+        _apply_place(result, place)
         return result
 
     return analysis_cache.get_or_compute(key, produce)
@@ -182,6 +218,10 @@ def trendmap(
     def produce() -> dict[str, Any]:
         grid_fn = modules.require(modules.modules().get_grid(), what="grid data (ETL)")
         grid = grid_fn(variable_id, bbox, start=start, end=end)
+        # La rejilla del ETL no trae `variable_id`; sin esto el motor pone "VAR"
+        # de relleno (RONDA_3 §2.5). La API es quien conoce el id pedido.
+        if isinstance(grid, dict):
+            grid.setdefault("variable_id", variable_id)
         analyze_fn = modules.require(modules.modules().analyze_grid(), what="statistics")
         try:
             result = analyze_fn(grid)

@@ -42,9 +42,12 @@ ALIASES: dict[str, tuple[str, ...]] = {
     ),
     "GWETTOP": (
         "humedad del suelo", "suelo humedo", "tierra humeda", "agua en el suelo",
+        "turning into desert", "turning to desert",
+        "desertificacion", "el suelo se esta desertificando",
         "secando el suelo", "suelo seco", "tierra seca", "se seca",
         "soil moisture", "soil wetness", "wet soil", "dry soil", "drying soil",
-        "land drying", "desertification",
+        "land drying", "desertification", "desertificacion", "soil is drying",
+        "el suelo se seca", "se seca el suelo",
     ),
     "EVLAND": (
         "evaporacion", "evapotranspiracion", "se evapora",
@@ -55,8 +58,9 @@ ALIASES: dict[str, tuple[str, ...]] = {
         "snow", "snowfall", "snow depth", "glacier", "melting snow", "snowpack",
     ),
     "RH2M": (
-        "humedad", "humedad relativa", "humedo", "bochorno", "vapor",
-        "humidity", "relative humidity", "muggy", "damp",
+        "humedad", "humedad relativa", "humedad del aire", "humedo", "humeda",
+        "bochorno", "vapor", "aire humedo", "aire húmedo",
+        "humidity", "relative humidity", "air humidity", "muggy", "damp", "moist air",
     ),
     "TQV": (
         "vapor de agua", "agua precipitable", "columna de agua", "humedad total",
@@ -66,12 +70,14 @@ ALIASES: dict[str, tuple[str, ...]] = {
         "ozono", "capa de ozono", "agujero de ozono", "ozone", "ozone hole", "ozone column",
     ),
     "AOD_55": (
-        "aerosoles", "aerosol", "polvo", "smog", "contaminacion del aire", "bruma", "neblina",
-        "aerosol", "dust", "haze", "smoke", "air pollution", "particulate",
+        "aerosoles", "aerosol", "polvo", "bruma", "neblina", "calima", "humo", "humo en el cielo",
+        "smoke", "wildfire smoke", "incendios",
+        "contaminacion del aire", "aire contaminado", "calidad del aire",
+        "dust", "haze", "smoke", "particulate", "air pollution", "air quality", "polluted air",
     ),
     "CLOUD_AMT": (
-        "nubes", "nubosidad", "cielo cubierto", "nublado", "clouds", "cloud cover", "overcast",
-        "cloudiness",
+        "nubes", "nubosidad", "cielo cubierto", "nublado", "garua", "garúa",
+        "llovizna", "cielo", "clouds", "cloud cover", "overcast", "cloudiness", "drizzle",
     ),
     "ALLSKY_SFC_SW_DWN": (
         "radiacion solar", "sol", "energia solar", "luz del sol", "irradiancia",
@@ -128,12 +134,26 @@ for _vid, _aliases in ALIASES.items():
         for _term in normalize_terms(_alias):
             _ALIAS_TO_IDS.setdefault(_term, set()).add(_vid)
 
+# Multi-word aliases ("humedad del aire", "air pollution") are only evidence when
+# they appear as a phrase: their individual words are too common on their own.
+_PHRASES: list[tuple[str, str, float]] = []
+for _vid, _aliases in ALIASES.items():
+    for _alias in _aliases:
+        _terms = normalize_terms(_alias)
+        if len(_terms) >= 2:
+            _PHRASES.append((" ".join(_terms), _vid, 1.5))
+_PHRASES.sort(key=lambda item: -len(item[0]))
+
+
+def _normalized_text(query: str) -> str:
+    return " ".join(normalize_terms(query))
+
 
 def expand(query: str) -> dict[str, list[str]]:
     """variable_id -> the student's words that pointed at it (for the 'why' text)."""
     hits: dict[str, list[str]] = {}
-    terms = normalize_terms(query)
-    for term in terms:
+    text = _normalized_text(query)
+    for term in text.split():
         for vid in _ALIAS_TO_IDS.get(term, ()):
             bucket = hits.setdefault(vid, [])
             if term not in bucket:
@@ -169,17 +189,22 @@ def specificity_prior(query: str) -> dict[str, float]:
     """variable_id -> bonus in [0, 1].
 
     A term that points at exactly one variable ("lluvia" -> PRECTOTCORR) is worth
-    more than a term that points at six ("calor"). Used only as a tie-breaker on
-    top of BM25, so the tie between two air-temperature cards is settled in favour
-    of the parameter the student most likely means.
+    more than a term that points at six ("calor"). A multi-word phrase
+    ("humedad del aire") is worth more still, because it is a deliberate match.
+    Used only as a tie-breaker on top of BM25.
     """
     prior: dict[str, float] = {}
-    for term in normalize_terms(query):
+    text = _normalized_text(query)
+    words = text.split()
+    for term in words:
         ids = _ALIAS_TO_IDS.get(term)
         if not ids:
             continue
         weight = 1.0 / len(ids)
         for vid in ids:
+            prior[vid] = prior.get(vid, 0.0) + weight
+    for phrase, vid, weight in _PHRASES:
+        if f" {phrase} " in f" {text} ":
             prior[vid] = prior.get(vid, 0.0) + weight
     peak = max(prior.values()) if prior else 1.0
     return {vid: value / peak for vid, value in prior.items()}

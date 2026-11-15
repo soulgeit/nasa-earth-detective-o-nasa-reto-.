@@ -210,3 +210,67 @@ def test_unknown_page_falls_back_to_the_spa(client: TestClient) -> None:
     r = client.get("/some/deep/link")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
+
+
+# --- Ronda 3: variables sin lugar, nombre del lugar, eco del id -----------
+
+
+def test_placeless_variables_need_no_coordinates(client: TestClient) -> None:
+    """GISTEMP y el hielo marino son globales/hemisféricos: pedir lat/lon es un 400 artificial."""
+    for variable_id in ("GISTEMP_TANOM", "SEAICE_EXTENT_N", "SEAICE_EXTENT_S"):
+        r = client.get("/api/analyze", params={"variable_id": variable_id})
+        assert r.status_code == 200, f"{variable_id}: {r.text[:200]}"
+        body = r.json()
+        assert body["region"]["name"], f"{variable_id} sin nombre de región"
+        assert body["period"]["n_obs"] > 0
+
+
+def test_variable_with_place_still_requires_coordinates(client: TestClient) -> None:
+    """El cambio anterior no puede relajar las variables que sí son locales."""
+    r = client.get("/api/analyze", params={"variable_id": "T2M"})
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_place_reaches_the_answer_text(client: TestClient) -> None:
+    """`place` (lo que devuelve /api/geocode) sustituye al «None» del ETL."""
+    r = client.get(
+        "/api/analyze",
+        params={"variable_id": "T2M", "lat": -12.05, "lon": -77.03, "place": "Lima, Peru"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["region"]["name"] == "Lima, Peru"
+    assert "Lima" in body["answers"]["where"]["en"]
+    assert "None" not in body["answers"]["where"]["en"]
+
+
+def test_series_endpoint_accepts_place(client: TestClient) -> None:
+    r = client.get(
+        "/api/series",
+        params={"variable_id": "T2M", "lat": -12.05, "lon": -77.03, "place": "Lima, Peru"},
+    )
+    if r.status_code in {503, 504}:
+        pytest.skip("NASA POWER inaccesible en este entorno.")
+    assert r.status_code == 200, r.text
+    assert r.json()["region"]["name"] == "Lima, Peru"
+
+
+def test_trendmap_echoes_the_requested_variable_id(client: TestClient) -> None:
+    """El motor ponía `"VAR"` cuando la rejilla no traía id (RONDA_3 §2.5)."""
+    r = client.get("/api/trendmap", params={"variable_id": "T2M", "bbox": "-82,-7,-78,-3"})
+    if r.status_code in {503, 504}:
+        pytest.skip("POWER regional inaccesible en este entorno.")
+    assert r.status_code == 200, r.text
+    assert r.json()["variable_id"] == "T2M"
+
+
+def test_catalog_publishes_availability_flags(client: TestClient) -> None:
+    """`planned` y `available` explícitos: la UI no debe adivinar qué se puede analizar."""
+    r = client.get("/api/catalog/variables", params={"lang": "en"})
+    assert r.status_code == 200
+    variables = r.json()["variables"]
+    assert variables
+    for card in variables:
+        assert isinstance(card.get("available"), bool), card.get("id")
+        assert isinstance(card.get("planned"), bool), card.get("id")
