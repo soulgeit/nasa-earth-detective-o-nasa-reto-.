@@ -150,15 +150,20 @@ def health_live() -> dict[str, str]:
 def list_variables(lang: str = Query("es", pattern="^(es|en)$")) -> dict[str, Any]:
     cards = catalog.all_variables()
     meta = catalog.catalog_meta()
-    out = []
+    out: list[dict[str, Any]] = []
+    planned: list[dict[str, Any]] = []
     for card in cards:
         item = catalog.with_availability(card)
         for field in ("names", "simple_definition"):
             value = item.get(field)
             if isinstance(value, dict) and lang in value:
                 item[f"{field}_lang"] = value[lang]
-        out.append(item)
-    return {"catalog": meta, "variables": out}
+        (planned if catalog.is_planned(card) else out).append(item)
+    # Regla 19: las `planned` se publican aparte y no se cuentan como
+    # disponibles. La interfaz las muestra como «not loaded yet» y no las deja
+    # elegir; la API las rechaza con VARIABLE_PLANNED.
+    meta = dict(meta, n_available=len(out), n_planned=len(planned))
+    return {"catalog": meta, "variables": out, "planned": planned}
 
 
 @app.get("/api/catalog/regions", tags=["catalog"])
@@ -278,7 +283,7 @@ def _series_params(
     end: str | None,
     place: str | None = None,
 ) -> dict[str, Any]:
-    card = catalog.get_variable(variable_id)
+    card = validation.check_analyzable(variable_id)
     position, mode = validation.point_or_bbox(lat, lon, bbox, card=card)
     start, end = validation.check_period(start, end)
     params: dict[str, Any] = {
@@ -340,7 +345,7 @@ def trendmap_endpoint(
     end: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
 ) -> JSONResponse:
     _limit(request)
-    catalog.get_variable(variable_id)
+    validation.check_analyzable(variable_id)
     box = validation.check_bbox(bbox)
     assert box is not None
     start, end = validation.check_period(start, end)

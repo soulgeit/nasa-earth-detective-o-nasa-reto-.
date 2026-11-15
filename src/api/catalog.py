@@ -139,6 +139,21 @@ def has_connector(card: dict[str, Any], connector: str) -> bool:
 SERVABLE_CONNECTORS = frozenset({"power", "gistemp", "nsidc_seaice"})
 
 
+def is_planned(card: dict[str, Any]) -> bool:
+    """¿Es una variable planificada (no analizable todavía)?
+
+    Regla 19 (RONDA_4): una `planned` nunca es candidata. Si el catálogo declara
+    `available`/`planned` explícitos se respeta; si no, se deduce del conector:
+    solo son servibles power, gistemp y nsidc_seaice. Lo `planned` (Giovanni)
+    se carga subiendo su CSV y jamás se analiza por id.
+    """
+    if card.get("planned") is True:
+        return True
+    if card.get("available") is False:
+        return True
+    return card.get("connector") not in SERVABLE_CONNECTORS
+
+
 def with_availability(card: dict[str, Any]) -> dict[str, Any]:
     """Añade `available` y `planned` explícitos si el catálogo no los trae.
 

@@ -274,3 +274,65 @@ def test_catalog_publishes_availability_flags(client: TestClient) -> None:
     for card in variables:
         assert isinstance(card.get("available"), bool), card.get("id")
         assert isinstance(card.get("planned"), bool), card.get("id")
+
+
+# --- Ronda 4: regla 19, una planned nunca se analiza -----------------------
+
+
+def test_planned_variables_published_apart(monkeypatch) -> None:
+    from src.api import catalog as cat
+    import src.api.main as main_mod
+
+    cards = cat.all_variables() + [{
+        "id": "GPM_IMERG_PRECIP",
+        "connector": "giovanni_csv",
+        "connector_param": "precip",
+        "names": {"es": "Precipitación GPM", "en": "GPM precipitation"},
+        "available": False,
+        "planned": True,
+        "unit": "mm/day",
+        "_catalog_source": "catalog",
+    }]
+    monkeypatch.setattr(cat, "all_variables", lambda: cards)
+    main_mod.catalog.reload()
+
+    r = TestClient(main_mod.app).get("/api/catalog/variables", params={"lang": "en"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["catalog"]["n_available"] == len(body["variables"])
+    assert body["catalog"]["n_planned"] == len(body["planned"])
+    planned_ids = {v["id"] for v in body["planned"]}
+    avail_ids = {v["id"] for v in body["variables"]}
+    assert "GPM_IMERG_PRECIP" in planned_ids
+    assert "GPM_IMERG_PRECIP" not in avail_ids
+
+
+def test_analyze_rejects_a_planned_variable(monkeypatch) -> None:
+    from src.api import catalog as cat
+    import src.api.main as main_mod
+
+    cards = cat.all_variables() + [{
+        "id": "MODIS_LST_DAY",
+        "connector": "giovanni_csv",
+        "connector_param": "lst",
+        "names": {"es": "Temperatura MODIS", "en": "MODIS temperature"},
+        "available": False,
+        "planned": True,
+        "unit": "K",
+        "_catalog_source": "catalog",
+    }]
+    monkeypatch.setattr(cat, "all_variables", lambda: cards)
+    main_mod.catalog.reload()
+
+    client = TestClient(main_mod.app)
+    for path in ("/api/analyze", "/api/series"):
+        r = client.get(path, params={"variable_id": "MODIS_LST_DAY"})
+        assert r.status_code == 409, f"{path}: {r.text[:150]}"
+        err = r.json()["error"]
+        assert err["code"] == "VARIABLE_PLANNED"
+        assert "Giovanni" in err["message"]["en"]
+
+    # En el idioma pedido
+    r = client.get("/api/report", params={"variable_id": "MODIS_LST_DAY", "lang": "es"})
+    assert r.status_code == 409
+    assert "Giovanni" in r.json()["error"]["message"]["es"]
