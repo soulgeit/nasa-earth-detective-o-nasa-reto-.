@@ -70,6 +70,7 @@ const EN = {
   'engine.title.rules': 'This server answers with verified rules over a retrieval index (RAG). The LoRA planner is used when its model is loaded.',
   'engine.title.lora': 'This server uses the LoRA planner (SmolLM2-1.7B adapter); every plan is verified by rules.',
   'engine.unknown': 'Connecting…',
+  'engine.offline': 'Static copy · no live server',
   'about.open': 'How it works',
   'footer.ai': 'Built with AI assistance; the AI-use log is in the repository (docs/AI_USE_LOG.md).',
   'intro.note.static': 'Huiracocha AI is made in Peru and named after Wiracocha, the Andean creator deity. It works from the memory of its own server, with no third-party AI service: a retrieval index (RAG) over cited sources and a statistics engine that downloads the real NASA series. Its planner is a LoRA adapter on SmolLM2-1.7B trained on a single NVIDIA RTX 4070 SUPER GPU. It is built to be precise and traceable, not fast.',
@@ -182,6 +183,7 @@ const ES = {
   'engine.title.rules': 'Este servidor responde con reglas verificadas sobre un índice de recuperación (RAG). El planificador LoRA se usa cuando su modelo está cargado.',
   'engine.title.lora': 'Este servidor usa el planificador LoRA (adaptador de SmolLM2-1.7B); cada plan lo verifican las reglas.',
   'engine.unknown': 'Conectando…',
+  'engine.offline': 'Copia estática · sin servidor',
   'about.open': 'Cómo funciona',
   'footer.ai': 'Construida con asistencia de IA; el registro de uso de IA está en el repositorio (docs/AI_USE_LOG.md).',
   'intro.note.static': 'Huiracocha IA nace en el Perú y lleva el nombre de Wiracocha, la deidad creadora andina. Trabaja desde la memoria de su propio servidor, sin servicios de IA de terceros: un índice de recuperación (RAG) sobre fuentes citadas y un motor estadístico que descarga las series reales de la NASA. Su planificador es un adaptador LoRA sobre SmolLM2-1.7B entrenado en una sola GPU NVIDIA RTX 4070 SUPER. Está hecha para ser precisa y trazable, no rápida.',
@@ -252,6 +254,7 @@ let api = null;
 let ctx = {};
 let busy = false;
 let about = null;
+let aboutFailed = false;
 let els = {};
 
 const $ = (sel) => document.querySelector(sel);
@@ -785,8 +788,8 @@ function engineLabel(engine) {
 function renderBadge() {
   if (!els.badge) return;
   if (!about) {
-    els.badge.textContent = t('engine.unknown');
-    els.badge.dataset.engine = 'unknown';
+    els.badge.textContent = t(aboutFailed ? 'engine.offline' : 'engine.unknown');
+    els.badge.dataset.engine = aboutFailed ? 'offline' : 'unknown';
     els.badge.removeAttribute('title');
     return;
   }
@@ -905,9 +908,13 @@ function renderIntro() {
 async function loadAbout() {
   try {
     about = await api.apiGet('/api/ai/about', { lang: lang() });
+    aboutFailed = false;
   } catch (_) {
     about = null;
+    aboutFailed = true;
   }
+  const aboutBtn = $('#btn-about');
+  if (aboutBtn) aboutBtn.hidden = !about;
   renderBadge();
   renderNote();
   renderIntro();
