@@ -1,24 +1,17 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — hermes-2 — 2026-11-14 20:20 hora de Perú
-Rama@commit: feature/scrapes@921a01d · empujado: sí
-VERIFICADO: tarea 1 de la ronda 3 → `python -X utf8 -I scripts/regenerate_cases_v2.py --id lima-t2m` → `lima-t2m` queda SIGNIFICANT (antes SIGNIFICANT_STRONG), con TESTS_DISAGREE y HIGH_AUTOCORRELATION.
-VERIFICADO: Svalbard sigue SIGNIFICANT_STRONG y Piura SUGGESTIVE, regenerados con el motor de main.
-ROTO / NO HECHO: tarea 2 (casos de hielo) BLOQUEADA: main todavía entrega −9999 en 1987-12 y 1988-01 (`src/etl/nsidc_seaice.py` no lo filtra). No puedo cumplir «mínimo ≥ 0 y esos meses en null» hasta que antigravity-1 empuje su arreglo. Tarea 3 (casos con CSV de Giovanni) no empezada.
-Siguiente paso: en cuanto antigravity-1 avise, `scripts/regenerate_cases_v2.py` y comprobar mínimo ≥ 0 y el signo de OLS frente a Sen.
-Necesito de: antigravity-1: su arreglo de −9999 empujado; aviso en #general.
-Avisos para otros carriles: los casos de hielo congelados actuales siguen contaminados con −9999; no usarlos para capturas ni para la demo hasta regenerarlos.
-
-
-## ESTADO — hermes-2 — 2026-11-14 21:10 hora de Perú (Ronda 3)
-Rama@commit: feature/scrapes@59b6a49 · empujado: sí
-SUITE COMPLETA sobre main fusionado: `python -m pytest -q` → **1 failed, 223 passed, 9 skipped** (la roja es test_published_nasa_benchmarks, por el −9999 del hielo).
-VERIFICADO: casos regenerados con el motor v2 → lima-t2m queda **SIGNIFICANT** (era SIGNIFICANT_STRONG congelado); los 5 recomputados, no traducidos.
-VERIFICADO: 2 casos nuevos con los CSV reales de Giovanni → `amazonia-t2m` (SIGNIFICANT_STRONG, Sen 0,186 °C/década, 557 meses) y `amazonia-prectotcorr`, con `provenance.kind=user_upload` y la «URL to Reproduce Results».
-VERIFICADO: `/api/cases` sirve 7 casos (índice reconstruido desde los case.json).
-ROTO / NO HECHO: tarea 2 bloqueada. Los casos de hielo siguen con −9999 en 1987-12 y 1988-01 (min(series.raw) = −9999,0); la OLS sale +25,7 y +26,2 por década frente a Sen −0,50 y −0,03. El arreglo de antigravity-1 no está empujado (origin/feature/data-pipeline = 33e27fa, sin cambios en src/etl/nsidc_seaice.py).
-Siguiente paso: al llegar el commit de antigravity-1, `regenerate_cases_v2.py --id arctic-seaice` y `--id antarctic-seaice`, y comprobar min(raw) >= 0, los dos meses en null y OLS/Sen con el mismo signo.
-Necesito de: antigravity-1 (arreglo del −9999 en el conector NSIDC).
-Avisos para otros carriles: los dos CSV de Giovanni son de MERRA-2, no de GPM/MODIS/OMI; no presentarlos como instrumento distinto. El venv local necesitaba `pymannkendall` y `httpx`; instalados, sin tocar requirements.txt.<!-- ESTADO:FIN -->
+## ESTADO — hermes-2 — 2026-11-15 01:40 hora de Perú (Ronda 4)
+Rama@commit: feature/scrapes@2f6e137 · empujado: sí
+SUITE COMPLETA sobre main fusionado: `python -m pytest -q` → **3 failed, 235 passed, 9 skipped**. Las 3 rojas son de otros carriles (2 de variables planned en `tests/detective/test_pipeline.py`, 1 del respaldo silencioso de `src/ml/serve.py:65`). `test_published_nasa_benchmarks` está en verde.
+VERIFICADO: hielo marino sin relleno → `python -X utf8 -I scripts/verify_seaice_cases.py` → exit 0; arctic min=3,57 (Sen −0,4953 / OLS −0,5106), antarctic min=1,98 (Sen −0,0481 / OLS −0,0822); `1987-12` y `1988-01` en null; `n_missing=2`. El Ártico pasa a SIGNIFICANT_STRONG.
+VERIFICADO: 7/7 casos con título y frase de hallazgo en inglés y español; `index.json` sin títulos vacíos; cada cifra coincide con su `analysis.json`.
+VERIFICADO: defectos del dataset medidos en `data/lora/DATASET_CARD.md` (sección «Measured defects»): rangos sin años 92/4323 train (lectura estricta), 174 (amplia), val 70/97, test 51/63 — **el 132 del informe no se reproduce y se dice**; `out_of_scope` con variable 440/440 train, 83/83 val, 71/71 test, causa en `scripts/build_lora_dataset.py:815`.
+VERIFICADO: tabla comparativa de los 7 casos en el reporte, con pendiente, los cuatro valores p y los años que faltan.
+ESCRITO (sin ejecutar de punta a punta): nada.
+ROTO / NO HECHO: nada de mi carril. Los `.jsonl` del LoRA no se tocaron a propósito (el adaptador canónico se entrenó con ellos, regla 21).
+Siguiente paso: ninguno pendiente; si el arquitecto quiere, el caso protagonista sugerido es `arctic-seaice` (veredicto fuerte, ambos tests de acuerdo, p≈0) o `svalbard-t2m` (el cambio más rápido y más claro).
+Necesito de: nadie.
+Avisos para otros carriles: (1) claude-omni-2: las 2 rojas de `test_pipeline` son la regla 19, no los casos congelados. (2) antigravity-2: la roja de `test_lora_real` es el respaldo silencioso de `serve.py:65`. (3) claude-omni-1: `/api/cases` sirve los 7 casos con título; los dos de hielo ya tienen cifras limpias. (4) antigravity-2, para `docs/VALIDACION_ESTADISTICA.md`: los números del hielo ya sin −9999 están en la tabla del reporte.
+<!-- ESTADO:FIN -->
 
 # Reportes de Hermes 2
 
@@ -294,3 +287,71 @@ $ curl /api/cases
 Tarea 4 adelantada para los 5 casos estables (`scripts/write_case_copy.py`). Los dos de hielo se
 quedan sin texto a proposito: escribir una frase de hallazgo sobre una serie con −9999 seria
 publicar un numero falso.
+
+---
+
+## Ronda 4 — hermes-2 (2026-11-15 01:35 UTC-5)
+
+### Tarea 1 — LISTO: hielo marino sin −9999
+
+```
+$ python -X utf8 -I scripts/verify_seaice_cases.py
+arctic-seaice: min=3.57 | 1987-12=None 1988-01=None | Sen=-0.4953 OLS=-0.5106 -> OK
+antarctic-seaice: min=1.98 | 1987-12=None 1988-01=None | Sen=-0.0481 OLS=-0.0822 -> OK
+exit=0
+```
+
+Dos meses faltantes por hemisferio (`n_missing = 2`), no ceros. El Ártico pasa de
+`SIGNIFICANT` a **`SIGNIFICANT_STRONG`**: el relleno era lo que hacía discrepar a las pruebas.
+
+### Tarea 2 — LISTO: título y hallazgo de los 7 casos
+
+`scripts/write_case_copy.py` → 7/7 con `title` y `finding` en inglés y español;
+`index.json` sin títulos vacíos. Cada cifra del texto coincide con su `analysis.json`.
+
+### Tarea 3 — LISTO: defectos del dataset medidos
+
+En `data/lora/DATASET_CARD.md`, sección «Measured defects». Los `.jsonl` **no** se tocaron
+(el adaptador canónico se entrenó con ellos, regla 21).
+
+**a) Rangos sin años.** 92/4323 en train con el arquetipo literal `entre  y` / `between  and`
+(2,1 %); 174 con la lectura amplia (cualquier conector de rango sin año: 4,0 %). val 70/97,
+test 51/63. **No consigo reproducir el 132** del informe: publico las dos lecturas y el comando,
+en vez de una tercera cifra sin método.
+Causa: `build_lora_dataset.py` solo rellena `{year0}` en el 15 % de los casos.
+
+**b) `out_of_scope` con variable.** 440/440 en train, 83/83 en val, 71/71 en test: **el 100 %**.
+`investigate`/`compare` nunca van sin variable (0 de 3268/601/466) y `no_match` está bien.
+Causa exacta, `scripts/build_lora_dataset.py:815`:
+```python
+plan = make_plan(intent, vid if intent != "no_match" else None, ...)
+```
+`out_of_scope` debería estar en esa condición. Es un cambio de una línea, pero beneficia
+solo si se reentrena; fuera del alcance de la congelación (regla 18).
+
+### Suite completa sobre `main` fusionado (regla 14)
+
+```
+$ python -m pytest -q
+3 failed, 235 passed, 9 skipped, 66 warnings in 169.90s
+FAILED tests/detective/test_pipeline.py::test_pipeline_offline[what is soil moisture?-en-GWETTOP]
+FAILED tests/detective/test_pipeline.py::test_missing_variable_is_declared_not_substituted[...]
+FAILED tests/ml/test_lora_real.py::test_plan_with_lora_missing_adapter_raises_error
+```
+
+**Ninguna es de este carril.** Las dos de `test_pipeline` son la regla 19 (variables `planned`
+como candidatas, carril de claude-omni-2); la de `test_lora_real` es el respaldo silencioso de
+`src/ml/serve.py:65` (carril de antigravity-2). Los casos de hielo ya no rompen
+`test_published_nasa_benchmarks`, que está en verde.
+
+### Tarea 4 — LISTO: tabla comparativa para elegir el caso protagonista
+
+| caso | variable | veredicto | Sen/década | OLS/década | MK p | MK autocorr. p | MK anual p | t de OLS p | años que faltan |
+|---|---|---|---|---|---|---|---|---|---|
+| `lima-t2m` | T2M | **SIGNIFICANT** | 0.159 | 0.131 | 3.3e-15 | 3.9e-05 | 0.00826 | 0.0723 | 13.3 |
+| `svalbard-t2m` | T2M | **SIGNIFICANT_STRONG** | 0.699 | 0.772 | 0 | 6.0e-11 | 1.1e-07 | 2.5e-11 | 0.0 |
+| `piura-prectotcorr` | PRECTOTCORR | **SUGGESTIVE** | -0.011 | -0.0711 | 0.0753 | 0 | 0.0719 | 0.398 | 341.7 |
+| `arctic-seaice` | SEAICE_EXTENT_N | **SIGNIFICANT_STRONG** | -0.495 | -0.511 | 0 | 0 | 2.2e-16 | 5.9e-26 | 0.0 |
+| `antarctic-seaice` | SEAICE_EXTENT_S | **NOT_SIGNIFICANT** | -0.0481 | -0.0822 | 0.0259 | 0.631 | 0.461 | 0.235 | 84.8 |
+| `amazonia-t2m` | T2M | **SIGNIFICANT_STRONG** | 0.186 | 0.191 | 0 | 0 | 1.4e-06 | 6.3e-07 | 0.0 |
+| `amazonia-prectotcorr` | PRECTOTCORR | **NOT_SIGNIFICANT** | -0.0829 | -0.0605 | 0.34 | 0.237 | 0.484 | 0.604 | 82.5 |
