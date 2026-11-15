@@ -1248,41 +1248,86 @@ function renderCompareCharts(a, b) {
 
 let currentPlan = null;
 let currentExplainLevel = 'school';
+let currentChatContext = {};
 
-function getConversationalReply(question, lang) {
-  const q = (question || '').toLowerCase().trim().replace(/[¿?¡!.,;:_]/g, '');
-  const isEs = lang === 'es' || !/^(hello|hi|what|who|help)/i.test(q);
+function formatMarkdownMini(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/
 
-  // 1. Saludos
-  if (/^(hola|ola|buenos dias|buenas tardes|buenas noches|buenas|saludos|que tal|como estas|como te va|hey|hello|hi)$/i.test(q) ||
-      /^(hola|ola)\b/i.test(q)) {
-    return isEs
-      ? '¡Hola! Soy Huiracocha IA, tu asistente de ciencias de la Tierra y análisis climático con datos de la NASA. Puedo decirte si la temperatura, lluvias o sequías están cambiando de forma estadísticamente significativa en cualquier ciudad del mundo. ¿Qué lugar o clima te gustaría investigar?'
-      : 'Hello! I am Huiracocha AI, your NASA Earth science intelligence assistant. I can detect whether temperature, rainfall, or droughts are changing with statistical significance anywhere on Earth. Which place or climate trend would you like to explore?';
+/g, '<br><br>')
+    .replace(/
+• /g, '<br>• ')
+    .replace(/
+/g, '<br>');
+}
+
+function renderChatReply(data) {
+  const card = $('#detective-plan-card');
+  card.hidden = false;
+
+  const badge = $('#plan-meta-badge');
+  if (badge) {
+    badge.textContent = 'Huiracocha IA';
+    badge.className = 'plan-badge plan-badge-lora';
   }
 
-  // 2. ¿Qué haces? / ¿Para qué sirves?
-  if (/(que haces|para que sirves|para q sirves|que puedes hacer|cual es tu funcion|a que te dedicas|what do you do|what can you do|how does this work|como funciona)/i.test(q)) {
-    return isEs
-      ? 'Analizo más de 40 años de observaciones satelitales y estaciones históricas de la NASA (POWER, GISTEMP, MODIS, NSIDC) para verificar con rigor estadístico (Theil-Sen y Mann-Kendall) si el clima está cambiando. Prueba preguntando: "¿Llueve menos en Piura?" o "¿Sube la temperatura en Lima?".'
-      : 'I analyze 40+ years of NASA satellite and station observations (POWER, GISTEMP, MODIS, NSIDC) to verify whether climate trends are genuine using rigorous statistical tests (Theil-Sen & Mann-Kendall). Try asking: "Is it raining less in Piura?" or "Is temperature rising in Lima?".';
+  const intentText = $('#plan-intent-text');
+  if (intentText) {
+    intentText.innerHTML = formatMarkdownMini(data.reply);
   }
 
-  // 3. ¿Quién eres?
-  if (/(quien eres|quien sos|eres una ia|who are you|what are you)/i.test(q)) {
-    return isEs
-      ? 'Soy Huiracocha IA, una inteligencia artificial creada para el desafío de la NASA especializada en ciencias climáticas, detección de tendencias y análisis biofísico de la Tierra sin alucinaciones.'
-      : 'I am Huiracocha AI, an Earth science intelligence system developed for NASA Space Apps, specialized in climate trend detection and biophysical analysis using verified NASA data.';
+  // Sources
+  const sourcesEl = $('#plan-sources-list');
+  if (sourcesEl) {
+    if (data.sources && data.sources.length > 0) {
+      sourcesEl.hidden = false;
+      const title = state.lang === 'es' ? 'Fuentes oficiales consultadas:' : 'Official sources consulted:';
+      const items = data.sources.map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.title} (${s.publisher || 'Fuente'})</a></li>`).join('');
+      sourcesEl.innerHTML = `<strong>${title}</strong><ul style="margin:0.25rem 0 0 1.1rem;padding:0;">${items}</ul>`;
+    } else {
+      sourcesEl.hidden = true;
+      sourcesEl.innerHTML = '';
+    }
   }
 
-  // 4. Ayuda
-  if (/(ayuda|help|instrucciones|guia)/i.test(q)) {
-    return isEs
-      ? 'Para comenzar una investigación puedes:\n1. Escribir una pregunta aquí (ej. "¿Sube la temperatura en Lima?").\n2. Hacer clic en el mapa para seleccionar un punto.\n3. O explorar los "Casos congelados" más abajo.'
-      : 'To begin an investigation you can:\n1. Type a question here (e.g. "Is it raining less in Piura?").\n2. Click anywhere on the map to pick a location.\n3. Or explore the "Frozen cases" below.';
+  // Suggestions
+  const suggsEl = $('#plan-suggestions');
+  if (suggsEl) {
+    if (data.suggestions && data.suggestions.length > 0) {
+      suggsEl.hidden = false;
+      const title = state.lang === 'es' ? 'Sugerencias para continuar:' : 'Suggestions to continue:';
+      const btns = data.suggestions.map(sg => `<button type="button" class="plan-suggestion-chip">${sg}</button>`).join('');
+      suggsEl.innerHTML = `<span style="font-size:0.75rem;font-weight:600;color:var(--ink-2);">${title}</span><div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.25rem;">${btns}</div>`;
+      suggsEl.querySelectorAll('.plan-suggestion-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          $('#detective-input').value = btn.textContent;
+          askDetective(btn.textContent);
+        });
+      });
+    } else {
+      suggsEl.hidden = true;
+      suggsEl.innerHTML = '';
+    }
   }
 
-  return null;
+  // Confirm plan button
+  const confirmBtn = $('#plan-confirm-btn');
+  if (confirmBtn) {
+    if (data.plan && (data.action === 'analyze' || (data.plan.variable_ids && data.plan.variable_ids.length > 0))) {
+      currentPlan = data.plan;
+      confirmBtn.hidden = false;
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = state.lang === 'es' ? 'Investigar en el mapa con NASA' : 'Investigate on map with NASA';
+    } else {
+      confirmBtn.hidden = true;
+    }
+  }
 }
 
 async function askDetective(question) {
@@ -1291,39 +1336,36 @@ async function askDetective(question) {
   btn.disabled = true;
   btn.textContent = '…';
 
-  // Check conversational reply first
-  const conv = getConversationalReply(question, state.lang);
-  if (conv) {
-    btn.disabled = false;
-    btn.textContent = t('detective.ask');
-    const card = $('#detective-plan-card');
-    card.hidden = false;
-    $('#plan-intent-text').textContent = conv;
-    const badge = $('#plan-meta-badge');
-    if (badge) {
-      badge.textContent = state.lang === 'es' ? 'Huiracocha IA' : 'Huiracocha AI';
-      badge.className = 'plan-badge plan-badge-rules';
-    }
-    const noteEl = $('#plan-note-text');
-    if (noteEl) noteEl.hidden = true;
-    const confirmBtn = $('#plan-confirm-btn');
-    if (confirmBtn) confirmBtn.hidden = true;
-    return;
-  }
-
   try {
-    const qUrl = `${API_BASE}/api/ai/plan?question=${encodeURIComponent(question)}&lang=${state.lang}`;
-    const res = await fetch(qUrl, { method: 'POST', headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error('Planner error');
-    const planData = await res.json();
-    renderPlan(planData);
+    let chatData = null;
+    try {
+      const res = await fetch(`${API_BASE}/api/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ message: question.trim(), lang: state.lang, context: currentChatContext })
+      });
+      if (res.ok) {
+        chatData = await res.json();
+      }
+    } catch (_) {}
+
+    if (chatData && chatData.reply) {
+      if (chatData.context) currentChatContext = Object.assign(currentChatContext, chatData.context);
+      renderChatReply(chatData);
+    } else {
+      const qUrl = `${API_BASE}/api/ai/plan?question=${encodeURIComponent(question)}&lang=${state.lang}`;
+      const res = await fetch(qUrl, { method: 'POST', headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error('Planner error');
+      const planData = await res.json();
+      renderPlan(planData);
+    }
   } catch (err) {
     showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
-      ? 'El planificador con IA no está disponible en este momento. Selecciona lugar y variable manualmente.'
-      : 'AI planner is not available right now. Please select location and variable manually.'));
+      ? 'Huiracocha IA no está disponible en este momento. Selecciona lugar y variable manualmente.'
+      : 'Huiracocha AI is not available right now. Please select location and variable manually.'));
   } finally {
     btn.disabled = false;
-    btn.textContent = t('detective.ask');
+    btn.textContent = state.lang === 'es' ? 'Preguntar' : 'Ask';
   }
 }
 
@@ -1741,6 +1783,17 @@ function boot() {
   $('#place-search-btn-b').addEventListener('click', () => searchPlace($('#place-search-b').value, true));
   $('#btn-calc-trendmap').addEventListener('click', runTrendMap);
   $('#btn-load-atlas')?.addEventListener('click', loadGlobalAtlas);
+  
+  // Quick question chips for Huiracocha IA
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.dataset.q || btn.textContent;
+      const inp = $('#detective-input');
+      if (inp) inp.value = q;
+      askDetective(q);
+    });
+  });
+
   $('#detective-ask-btn')?.addEventListener('click', () => askDetective($('#detective-input').value));
   $('#detective-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askDetective($('#detective-input').value); } });
   $('#plan-confirm-btn')?.addEventListener('click', confirmPlan);
