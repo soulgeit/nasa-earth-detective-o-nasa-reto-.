@@ -1,21 +1,16 @@
-# SI-assisted: Antigravity 1 (Claude Opus 5.5)
+# SI-assisted: Antigravity 1 (Claude Opus 5.5 / Gemini 3.8 Flash)
 """
 Parser de CSV exportado de Giovanni (GES DISC) -> TimeSeries v2 (`user_upload`).
 
-ESTADO: PARCIAL (2026-11-14). En `data/raw/giovanni/` todavia no hay ninguna
-exportacion real, y la regla 3 del equipo prohibe programar contra un formato
-imaginado. Este modulo implementa solo lo que se puede afirmar sin muestra:
-
-- Giovanni antepone lineas de metadatos (`#` o texto) antes de la tabla: se saltan
-  hasta la primera linea que contenga comas y una columna de fecha reconocible.
-- La primera fila de la tabla se toma como cabecera; se localiza la columna de
-  fecha y la primera columna numerica del producto.
-- El valor de relleno se detecta por cabecera (`fill`, `missing`, `nodata`) y,
-  si no aparece, se tratan como nulos los valores negativos absurdos y los vacios
-  NO se inventan: se quedan en `null`.
-- Serie diaria -> mensual solo si el mes tiene >= 70 % de dias con dato (contrato §4).
-
-Pendiente de validar contra una exportacion real (tarea D5, bloqueada por el humano).
+Soporta:
+- Exportaciones oficiales de Giovanni GES DISC (con metadatos Title:, User Start Date:,
+  User Bounding Box:, URL to Reproduce Results:, Fill Value:, cabecera `time, <VAR>` y datos).
+- Exportaciones con cabeceras de comentarios `#` (formato estándar de tutoriales y API).
+- Detección automática de columnas de fecha y variable.
+- Detección de unidad y valor de relleno desde la cabecera / URL de reproducción.
+- Extracción de bounding box de la región en `region.bbox` y centroide `lat, lon`.
+- Agregación diaria -> mensual con umbral de representatividad >= 70% de días válidos.
+- Preservación de procedencia completa con `provenance.kind = "user_upload"`.
 """
 
 from __future__ import annotations
@@ -24,17 +19,19 @@ import csv
 import hashlib
 import io
 import re
+import urllib.parse
 from datetime import datetime, timezone
+from typing import Any
 
 from .errors import DataUnavailable
 
 _DATE_PATTERNS = (
-    re.compile(r"^\d{4}-\d{2}-\d{2}$"),
+    re.compile(r"^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2})?)?"),
     re.compile(r"^\d{4}-\d{2}$"),
-    re.compile(r"^\d{4}/\d{2}/\d{2}$"),
+    re.compile(r"^\d{2}/\d{2}/\d{4}([ T]\d{2}:\d{2}(:\d{2})?)?"),
+    re.compile(r"^\d{4}/\d{2}/\d{2}([ T]\d{2}:\d{2}(:\d{2})?)?"),
     re.compile(r"^\d{4}/\d{2}$"),
     re.compile(r"^\d{8}$"),
-    re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"),
 )
 _DATE_HEADER_HINTS = ("time", "date", "fecha", "year", "month", "day")
 
@@ -49,9 +46,20 @@ def _is_date(text: str) -> bool:
 
 def _to_iso(text: str) -> str | None:
     text = text.strip().strip('"')
-    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y/%m/%d", "%Y-%m", "%Y/%m", "%Y%m%d"):
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%d/%m/%Y %H:%M",
+        "%d/%m/%Y %H:%M:%S",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%Y-%m",
+        "%Y/%m",
+        "%Y%m%d",
+    ):
         try:
-            dt = datetime.strptime(text[: len("2026-11-14T00:00:00")], fmt)
+            dt = datetime.strptime(text[: len("2026-11-14 00:00:00")], fmt)
             return f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
         except ValueError:
             continue
@@ -65,20 +73,37 @@ def _clean(line: str) -> str:
 def _split_metadata(lines: list[str]) -> tuple[list[str], list[str], list[str]]:
     """Separa (metadatos, cabecera de la tabla, filas de datos).
 
-    La cabecera de la tabla es la ultima linea no comentada **antes** de la
-    primera fila con fecha. Sin esto se tomaba la primera fila de datos como
-    cabecera y se perdia ese dato (detectado por el test del otro agente).
+    Identifica la primera fila de datos reales donde la primera celda es una fecha
+    y la fila inmediatamente anterior no comentada ni de metadatos como cabecera.
     """
     for idx, line in enumerate(lines):
-        if "," not in line or line.lstrip().startswith("#"):
+        trimmed = line.strip()
+        if not trimmed or trimmed.startswith("#"):
             continue
-        cells = [_clean(c) for c in next(csv.reader([line]))]
-        if any(_is_date(c) for c in cells):
-            if idx == 0:
+
+        try:
+            cells = [_clean(c) for c in next(csv.reader([line]))]
+        except Exception:
+            continue
+
+        if not cells:
+            continue
+
+        # Líneas de metadatos tipo "User Start Date:," o "Title:,"
+        if cells[0].endswith(":"):
+            continue
+
+        # Si la primera celda es una fecha, encontramos la primera fila de datos
+        if _is_date(cells[0]):
+            header_idx = idx - 1
+            while header_idx >= 0 and not lines[header_idx].strip():
+                header_idx -= 1
+            if header_idx < 0:
                 raise DataUnavailable(
                     "UPSTREAM_ERROR", "CSV de Giovanni sin cabecera de columnas antes de los datos"
                 )
-            return lines[: idx - 1], [lines[idx - 1]], lines[idx:]
+            return lines[:header_idx], [lines[header_idx]], lines[idx:]
+
     raise DataUnavailable(
         "UPSTREAM_ERROR",
         "CSV de Giovanni sin fila de fechas reconocible; no se interpreta a ciegas",
@@ -107,18 +132,42 @@ def _pick_columns(header: list[str], variable_id: str | None) -> tuple[int, int]
 
 def _fill_from_header(meta: list[str]) -> float | None:
     for line in meta:
-        match = re.search(r"(fill|missing|nodata)[^0-9\-]*(-?\d+(?:\.\d+)?)", line, re.I)
+        match = re.search(r"(fill|missing|nodata)[^0-9\-]*([0-9eE\.\+\-]+)", line, re.I)
         if match:
-            return float(match.group(2))
+            try:
+                return float(match.group(2))
+            except ValueError:
+                pass
     return None
 
 
 def _unit_from_header(meta: list[str]) -> str | None:
     for line in meta:
-        match = re.search(r"unit[s]?\s*[:=]\s*([A-Za-z0-9%°/\.\^\-\+\*\s]+)", line, re.I)
+        unquoted = urllib.parse.unquote(line)
+        match = re.search(r"units?\s*[:=]\s*([A-Za-z0-9%°/\.\^\-\+\*\s]+)", unquoted, re.I)
         if match:
-            return match.group(1).strip()
+            u = match.group(1).split("&")[0].split(")")[0].strip()
+            if u.lower() in ("c", "celsius"):
+                return "°C"
+            return u
     return None
+
+
+def _bbox_from_header(meta: list[str]) -> tuple[list[float] | None, float | None, float | None]:
+    for line in meta:
+        match = re.search(r"bounding\s*box[^0-9\-]*([0-9\.\,\-\s]+)", line, re.I)
+        if match:
+            clean_str = match.group(1).strip().strip('"').strip("'")
+            parts = [p.strip() for p in clean_str.split(",")]
+            if len(parts) >= 4:
+                try:
+                    w, s, e, n = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
+                    lat = round((s + n) / 2.0, 4)
+                    lon = round((w + e) / 2.0, 4)
+                    return [w, s, e, n], lat, lon
+                except ValueError:
+                    pass
+    return None, None, None
 
 
 def parse_csv(text: str, variable_id: str | None = None) -> dict:
@@ -132,6 +181,7 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
     date_idx, value_idx = _pick_columns(header, variable_id)
     fill = _fill_from_header(meta_lines)
     unit = _unit_from_header(meta_lines)
+    bbox, center_lat, center_lon = _bbox_from_header(meta_lines)
 
     points: list[tuple[str, float | None]] = []
     for row in reader:
@@ -149,11 +199,11 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
         except ValueError:
             points.append((iso, None))
             continue
+
         if val is not None and (val == fill if fill is not None else False):
             val = None
-        elif val is not None and (val in DEFAULT_FILLS or val < -1e20):
-            # Sin cabecera de relleno, -999/-999.0/-9999 son relleno en Giovanni y
-            # en POWER. Es preferible un null a un numero inventado (contrato §3).
+        elif val is not None and (val in DEFAULT_FILLS or val >= 1e14 or val < -1e20):
+            # En Giovanni, valores >= 1e14 (ej. 1e15) o centinelas son relleno.
             val = None
         points.append((iso, val))
     if not points:
@@ -172,14 +222,20 @@ def parse_csv(text: str, variable_id: str | None = None) -> dict:
         "variable_id": variable_id or _guess_variable(header, value_idx),
         "unit": unit or "",
         "cadence": "monthly",
-        "region": {"kind": "named", "name": None, "lat": None, "lon": None, "bbox": None},
+        "region": {
+            "kind": "bbox" if bbox else "named",
+            "name": _guess_region_name(meta_lines),
+            "lat": center_lat,
+            "lon": center_lon,
+            "bbox": bbox,
+        },
         "aggregation": "area_mean_coslat",
         "data": data,
         "provenance": {
             "kind": "user_upload",
             "source": "Giovanni (GES DISC) CSV export",
             "underlying": _guess_product(meta_lines),
-            "request_url": None,
+            "request_url": _extract_reproduce_url(meta_lines),
             "retrieved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "sha256": sha,
             "native_resolution": None,
@@ -229,7 +285,23 @@ def _guess_variable(header: list[str], value_idx: int) -> str:
 
 def _guess_product(meta: list[str]) -> str | None:
     for line in meta:
-        match = re.search(r"(product|dataset|data field)\s*[:=]\s*(.+)", line, re.I)
+        match = re.search(r"(product|dataset|title|data field)\s*[:=]\s*(.+)", line, re.I)
         if match:
-            return match.group(2).strip().strip(",")[:200]
+            return match.group(2).strip().strip('"').strip(",")[:200]
+    return None
+
+
+def _guess_region_name(meta: list[str]) -> str | None:
+    for line in meta:
+        match = re.search(r"region\s*[:=]\s*(.+)", line, re.I)
+        if match:
+            return match.group(1).strip().strip('"').strip(",")
+    return None
+
+
+def _extract_reproduce_url(meta: list[str]) -> str | None:
+    for line in meta:
+        match = re.search(r"https?://[^\",\s\r\n]+", line, re.I)
+        if match:
+            return match.group(0).strip().strip('"').strip("'")
     return None
