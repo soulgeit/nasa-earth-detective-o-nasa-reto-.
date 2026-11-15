@@ -130,3 +130,39 @@ def test_nsidc_parse_csv_fill_values_and_satellite_gap():
     assert sample_by_date["1988-01"]["value"] is None
     assert sample_by_date["1988-02"]["value"] == 15.58
 
+
+def test_nsidc_underlying_sources_deduplicated_and_spaced(monkeypatch):
+    """Valida que underlying y source_splice dividen fuentes compuestas, eliminan repetidos y añaden espacios."""
+    from src.etl import nsidc_seaice
+
+    raw_sample = (
+        "year, mo,source_dataset, region, extent,   area\n"
+        "1987, 01,    NSIDC-0051,      S,  11.22,   9.80\n"
+        "1987, 02,    NSIDC-0051,NSIDC-0081, S,  12.34,  10.50\n"
+        "1987, 03,    NSIDC-0803,      S,  13.45,  11.20\n"
+    )
+    # Rellenar 12 meses para pasar el umbral mínimo
+    for m in range(4, 13):
+        raw_sample += f"1987, {m:02d},    NSIDC-0803,      S,  14.00,  12.00\n"
+
+    def fake_fetch_csv(url):
+        # Generar un mes correspondiente
+        m_str = url.split("_extent_v4.0.csv")[0][-2:]
+        m_int = int(m_str)
+        if m_int == 1:
+            content = "year, mo,source_dataset, region, extent, area\n1987, 01, NSIDC-0051, S, 11.22, 9.80\n"
+        elif m_int == 2:
+            content = 'year, mo,source_dataset, region, extent, area\n1987, 02, "NSIDC-0051,NSIDC-0081", S, 12.34, 10.50\n'
+        else:
+            content = f"year, mo,source_dataset, region, extent, area\n1987, {m_int:02d}, NSIDC-0803, S, 14.00, 12.00\n"
+        return content, {"sha256": "fake_hash", "fetched_at": "2026-11-15T00:00:00Z"}
+
+    monkeypatch.setattr(nsidc_seaice, "_fetch_csv", fake_fetch_csv)
+    s = nsidc_seaice.series("SEAICE_EXTENT_S")
+    prov = s["provenance"]
+
+    assert prov["underlying"] == "NSIDC-0051, NSIDC-0081, NSIDC-0803"
+    assert prov["source_splice"] == ["NSIDC-0051", "NSIDC-0081", "NSIDC-0803"]
+    assert "NSIDC-0051, NSIDC-0051" not in prov["underlying"]
+    assert ",NSIDC" not in prov["underlying"]
+
