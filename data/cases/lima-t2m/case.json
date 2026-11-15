@@ -28,8 +28,8 @@
    "TODO_HUMANO"
   ]
  },
- "frozen_at": "2026-11-15T00:09:17Z",
- "verdict_code": "SIGNIFICANT_STRONG",
+ "frozen_at": "2026-11-15T00:42:43Z",
+ "verdict_code": "SIGNIFICANT",
  "provenance": {
   "kind": "nasa_api",
   "source": "NASA POWER v2.10.0",
