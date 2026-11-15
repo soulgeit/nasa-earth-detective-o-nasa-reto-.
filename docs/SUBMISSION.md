@@ -131,7 +131,7 @@ makes it usable in a classroom rather than a demo.
 
 ### 5. What we hope to achieve
 
-`<<HUMANO: la decisión del equipo — qué esperáis conseguir (uso en aula, continuidad del proyecto, premio al que optáis).>>`
+`<<HUMANO: the team's decision — what you hope to achieve (classroom use, project continuity, which award you are aiming for).>>`
 
 ### 6. Tools
 
@@ -253,8 +253,15 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
    Documents that are literal text from the page are marked as quotations.
 
 **No images, video or audio were generated with SI.** All screenshots are captures of
-the running application with real data. The demo, if video is submitted, is a screen
-recording of the real app (`<<HUMANO: confirmar cuál se entrega>>`).
+the running application with real data. Both demo formats are screen recordings of the
+real app, with no synthetic voice and no music:
+
+- **Slides (option A):** `docs/demo/EarthTrend_Detective_slides.pdf` — 7 pages, 16:9,
+  in English (verified: exactly 7 pages).
+- **Video (option B):** `docs/demo/EarthTrend_Detective_30s.mp4` — 29.0 s, 1920×1080,
+  H.264, English captions (verified with `ffprobe`).
+
+`<<HUMANO: choose which of the two formats is submitted.>>`
 
 The scientific decisions — which tests, which corrections, which threshold, which
 cases — are documented with their references in `docs/VALIDACION_ESTADISTICA.md` and
@@ -264,11 +271,16 @@ were made by the team.
 
 ## Live links
 
-`<<HUMANO: URL de la aplicación completa cuando esté desplegada en Railway; si no llega, decir que la URL de entrega es la de GitHub Pages y que es el respaldo estático.>>`
+**Public URL (static backup, live):**
+`https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./`
 
-Known public link at the time of writing: the static backup of the 7 frozen cases
-(GitHub Pages). It does **not** provide live analysis, the detective, CSV upload or
-trend maps beyond the two precomputed ones.
+It serves the 7 frozen cases and 2 precomputed trend maps, in English and Spanish,
+with no server. It does **not** provide live analysis, the detective, CSV upload or
+trend maps beyond those two.
+
+`<<HUMANO: URL of the full application once it is deployed on Railway; if it does not
+arrive, state that the delivery URL is the GitHub Pages one and that it is the static
+backup.>>`
 
 ---
 
@@ -293,3 +305,19 @@ python -m pytest -q
 python scripts/smoke_api.py http://127.0.0.1:8791
 python scripts/gate.py --offline
 ```
+
+### Results of the last full run (2026-11-15)
+
+```
+$ python -m pytest -q
+287 passed, 10 skipped, 0 failed
+
+$ python scripts/gate.py --offline --skip-suite
+OK smoke_api · OK validate_datasets · OK validate_knowledge
+OK planned_not_analyzable · OK case_physical_ranges · OK no_secrets
+PUERTA ABIERTA: todo en verde
+```
+
+`scripts/test_ui_r5.py` is a browser walkthrough that needs `playwright`, which is not
+in `requirements-dev.txt`; it is excluded from the run above and does not affect the
+application.
