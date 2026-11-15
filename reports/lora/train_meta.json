@@ -1,0 +1,45 @@
+{
+  "base_model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+  "base_model_revision": "main",
+  "hyperparameters": {
+    "epochs": 1,
+    "max_steps": 150,
+    "per_device_batch_size": 2,
+    "gradient_accumulation_steps": 4,
+    "effective_batch_size": 8,
+    "learning_rate": 0.0002,
+    "max_length": 512,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "trainable_params": 6291456,
+    "all_params": 1717667840
+  },
+  "steps": 150,
+  "examples_seen": 1200,
+  "seed": 42,
+  "duration_seconds": 353.7,
+  "gpu": {
+    "available": true,
+    "device_name": "NVIDIA GeForce RTX 4070 SUPER",
+    "vram_gb": 11.99,
+    "peak_vram_mb": 2258.19
+  },
+  "libraries": {
+    "torch": "2.6.0+cu124",
+    "transformers": "5.23.0",
+    "peft": "0.21.3",
+    "python": "3.12.10"
+  },
+  "adapter": {
+    "model_dir": "models/etd-planner-lora",
+    "file": "adapter_model.safetensors",
+    "size_bytes": 25191536,
+    "sha256": "70314779040b656cc8ed5e4dac0f4285bd9efc7b392acfa870b003794327341c"
+  },
+  "metrics": {
+    "train_loss": 0.0607,
+    "eval_loss": 0.019839003682136536
+  },
+  "nvidia_smi": "Sat Nov 14 21:21:10 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 610.88                 KMD Version: 610.88        CUDA UMD Version: 13.3     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 4070 ...  WDDM  |   00000000:01:00.0 Off |                  N/A |\n|  0%   52C    P2             59W /  220W |    3615MiB /  12282MiB |     34%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A            4768    C+G   ..._cw5n1h2txyewy\\SearchHost.exe      N/A      |\n|    0   N/A  N/A            7072    C+G   ...cord\\app-1.0.9268\\Discord.exe      N/A      |\n|    0   N/A  N/A            7956    C+G   ...iles\\Riot Vanguard\\vgtray.exe      N/A      |\n|    0   N/A  N/A            9808    C+G   C:\\Windows\\explorer.exe               N/A      |\n|    0   N/A  N/A           10244    C+G   ...2txyewy\\CrossDeviceResume.exe      N/A      |\n|    0   N/A  N/A           11220    C+G   ...y\\StartMenuExperienceHost.exe      N/A      |\n|    0   N/A  N/A           13388    C+G   ....0.4341.57\\msedgewebview2.exe      N/A      |\n|    0   N/A  N/A           17376    C+G   ....0.4341.60\\msedgewebview2.exe      N/A      |\n|    0   N/A  N/A           18620    C+G   ...5n1h2txyewy\\TextInputHost.exe      N/A      |\n|    0   N/A  N/A           20380    C+G   ...Chrome\\Application\\chrome.exe      N/A      |\n|    0   N/A  N/A           22656    C+G   ...s\\antigravity\\Antigravity.exe      N/A      |\n|    0   N/A  N/A           23048    C+G   ...ntrolPanel\\SystemSettings.exe      N/A      |\n|    0   N/A  N/A           23296    C+G   ...__kzh8wxbdkxb8p\\DCv2\\DCv2.exe      N/A      |\n|    0   N/A  N/A           25288    C+G   ...1g1gvanyjgm\\WhatsApp.Root.exe      N/A      |\n|    0   N/A  N/A           25720    C+G   ....0.4341.57\\msedgewebview2.exe      N/A      |\n|    0   N/A  N/A           27120    C+G   ...2p2nqsd0c76g0\\app\\ChatGPT.exe      N/A      |\n|    0   N/A  N/A           28160    C+G   ...\\codex-computer-use-swift.exe      N/A      |\n|    0   N/A  N/A           30876    C+G   ...Chrome\\Application\\chrome.exe      N/A      |\n|    0   N/A  N/A           32420    C+G   ...xyewy\\ShellExperienceHost.exe      N/A      |\n|    0   N/A  N/A           34420    C+G   ...grams\\herdr-app\\herdr-app.exe      N/A      |\n|    0   N/A  N/A           34692    C+G   ...em32\\ApplicationFrameHost.exe      N/A      |\n|    0   N/A  N/A           35352    C+G   ...SnippingTool\\SnippingTool.exe      N/A      |\n|    0   N/A  N/A           36812    C+G   ...2p2nqsd0c76g0\\app\\ChatGPT.exe      N/A      |\n|    0   N/A  N/A           42492    C+G   ...ed_copilot\\copilotapphost.exe      N/A      |\n|    0   N/A  N/A           43468    C+G   ...t\\Edge\\Application\\msedge.exe      N/A      |\n|    0   N/A  N/A           43528    C+G   ...yb3d8bbwe\\WindowsTerminal.exe      N/A      |\n|    0   N/A  N/A           44452    C+G   ...8bbwe\\PhoneExperienceHost.exe      N/A      |\n|    0   N/A  N/A           49268    C+G   ...s\\antigravity\\Antigravity.exe      N/A      |\n|    0   N/A  N/A           50024    C+G   ..._pzs8sxrjxfjjc\\app\\claude.exe      N/A      |\n|    0   N/A  N/A           50636    C+G   ...ot\\Application\\copilotapp.exe      N/A      |\n|    0   N/A  N/A           51504    C+G   ....0.4341.60\\msedgewebview2.exe      N/A      |\n|    0   N/A  N/A           60828    C+G   ..._pzs8sxrjxfjjc\\app\\claude.exe      N/A      |\n|    0   N/A  N/A           63648    C+G   ...yb3d8bbwe\\Notepad\\Notepad.exe      N/A      |\n|    0   N/A  N/A           63772    C+G   ...IA App\\CEF\\NVIDIA Overlay.exe      N/A      |\n|    0   N/A  N/A           64748    C+G   ..._pzs8sxrjxfjjc\\app\\claude.exe      N/A      |\n|    0   N/A  N/A           71512    C+G   ...Chrome\\Application\\chrome.exe      N/A      |\n|    0   N/A  N/A           72056    C+G   ...Chrome\\Application\\chrome.exe      N/A      |\n|    0   N/A  N/A           74392    C+G   ...IA App\\CEF\\NVIDIA Overlay.exe      N/A      |\n|    0   N/A  N/A           75852      C   ...s\\Python\\Python312\\python.exe      N/A      |\n|    0   N/A  N/A           82660    C+G   ...indows\\System32\\ShellHost.exe      N/A      |\n+-----------------------------------------------------------------------------------------+\n"
+}

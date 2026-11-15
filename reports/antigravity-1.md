@@ -1,13 +1,15 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-1 — 2026-11-14 20:15 hora de Perú
-Rama@commit: feature/data-pipeline@f6f7d01 · empujado: sí
-VERIFICADO: Corrección -9999 en NSIDC Sea Ice Index v4 → 1987-12 y 1988-01 son null, n_missing contado en provenance → pytest tests/stats/test_trend_engine.py::test_published_nasa_benchmarks PASSED (veredicto Ártico SIGNIFICANT_STRONG con sen=-0.4989 y ols=-0.5154)
-VERIFICADO: Validación de rangos físicos por variable (Regla 12) en validate_datasets.py y validate.py → rechaza -9999 y fuera de rango; falla con data/cases/arctic-seaice actual y pasa con series limpias → pytest tests/etl/test_validate.py → 11 passed
-VERIFICADO: tests/test_system.py migrado a get_series de registro central; shims obsoletos get_power_point_series y get_power_regional_series eliminados de src/etl/power.py → pytest tests/test_system.py tests/etl/test_power.py → 23 passed, 1 skipped
-ROTO / NO HECHO: Ninguno en carril ETL / datos
-Siguiente paso: Apoyo a entrenamiento LoRA en RTX 4070 SUPER si Antigravity 2 no entrega adaptador a las 21:30
+## ESTADO — antigravity-1 — 2026-11-14 21:55 hora de Perú
+Rama@commit: feature/data-pipeline@HEAD · empujado: sí
+VERIFICADO: Suite completa sobre rama integrada: python -m pytest -q → 226 passed, 9 skipped, 0 failed en 84.41s (0 pruebas rojas; test_published_nasa_benchmarks en SIGNIFICANT_STRONG)
+VERIFICADO: Corrección -9999 en NSIDC Sea Ice Index v4 → 1987-12 y 1988-01 son null, n_missing contado en provenance (Tarea 1)
+VERIFICADO: Validación de rangos físicos por variable (Regla 12) en validate_datasets.py y validate.py → 11/11 tests passed (Tarea 2)
+VERIFICADO: tests/test_system.py migrado a get_series de registro central; shims obsoletos retirados de src/etl/power.py (Tarea 3)
+VERIFICADO: LoRA entrenado y evaluado en NVIDIA GeForce RTX 4070 SUPER (12 GB VRAM): train_loss=0.0607, eval_loss=0.0198 en 353.7s; evaluación sobre 200 casos (semilla 42) muestra 100% JSON válido, 100% esquema válido, 91.5% intención, 84.5% variables exactas (vs 15.5% reglas), 96.5% lugar (Tarea 4). Adaptador subido (25.2 MB, sha256 70314779040b656cc8ed5e4dac0f4285bd9efc7b392acfa870b003794327341c).
+ROTO / NO HECHO: Ninguno en carril ETL / datos ni en entrenamiento LoRA
+Siguiente paso: Facilitar integración de LoRA a claude-omni-2 (wizard) y apoyar en comparativa MERRA-2 POWER vs Giovanni
 Necesito de: hermes-2: regenerar casos congelados (arctic-seaice y antarctic-seaice) con el conector NSIDC corregido
-Avisos para otros carriles: Conector NSIDC y validador de datasets listos y empujados. Veredicto del Ártico en test_published_nasa_benchmarks restaurado a SIGNIFICANT_STRONG.
+Avisos para otros carriles: Adaptador LoRA listo en models/etd-planner-lora/ y models/planner-lora/. Reportes completos en reports/lora/. La suite completa está en 226 passed, 0 failed.
 <!-- ESTADO:FIN -->
 
 # Antigravity 1 — Datos NASA reales
@@ -483,4 +485,52 @@ Asi la UI recibe el sha256 y la URL exacta que exige el contrato §3 para que el
   - Retirados los adaptadores obsoletos `get_power_point_series` y `get_power_regional_series` de `src/etl/power.py`.
   - Actualizado `tests/etl/test_power.py`.
   - Suite de sistema y POWER: 23 passed, 1 skipped.
+
+### Tarea 4: Entrenamiento, Evaluación y Verificación Real de LoRA en GPU RTX 4070 SUPER
+- **Contexto**: A las 21:20 la rama `feature/stats` no disponía de adaptador LoRA entrenado ni evidencias en el repositorio. En coordinación con el usuario y según lo estipulado en `docs/RONDA_3.md` §4, se tomó el relevo en el PC local con GPU **NVIDIA GeForce RTX 4070 SUPER** (12 GB VRAM).
+- **Entrenamiento ejecutado (`src/ml/train_lora.py`)**:
+  - Modelo base: `HuggingFaceTB/SmolLM2-1.7B-Instruct` (cuantización NF4 4-bit, compute dtype `float16`).
+  - Hiperparámetros: 150 pasos, per_device_batch_size=2, gradient_accumulation_steps=4 (effective batch size=8, 1200 ejemplos vistos), lr=2e-4, lora_r=16, lora_alpha=32, lora_dropout=0.05. Parámetros entrenables: 6,291,456 (0.37% del total de 1.7B).
+  - Duración del entrenamiento: **353.7 segundos (~5.9 minutos)**. Pico de VRAM: 2,258 MB (~18% de los 12 GB disponibles).
+  - Convergencia: `train_loss` final = **0.0607**, `eval_loss` final = **0.0198** (evaluado sobre conjunto de validación `data/lora/val.jsonl`).
+  - Adaptador generado: `models/etd-planner-lora/adapter_model.safetensors` (peso: 25,191,536 bytes = **24.02 MB**, cumple holgadamente la regla ≤ 50 MB para control de versiones en git).
+  - Checksum SHA-256: `70314779040b656cc8ed5e4dac0f4285bd9efc7b392acfa870b003794327341c`.
+- **Evaluación comparativa real (`src/ml/eval_lora.py`)**:
+  - Evaluado sobre muestra fija de 200 casos del conjunto de test (`data/lora/test.jsonl`, semilla 42):
+  
+| Métrica | Reglas Heurísticas | Modelo Base SmolLM2 | Base + Adaptador LoRA |
+|---|:---:|:---:|:---:|
+| **JSON Válido** | 99.5 % | 35.0 % | **100.0 %** |
+| **Esquema Válido** | 99.5 % | 0.0 % | **100.0 %** |
+| **Intención Exacta** | 76.0 % | 3.0 % | **91.5 %** |
+| **Variables Exactas** | 15.5 % | 4.5 % | **84.5 %** |
+| **Lugar Exacto** | 73.5 % | 47.5 % | **96.5 %** |
+| **Hipótesis** | 78.5 % | 0.0 % | **71.0 %** |
+
+- **Inferencia en Producción (`src/ml/serve.py`)**:
+  - Comprobado en vivo: `plan_with_lora('¿Está lloviendo menos en Piura?')` genera en tiempo real:
+    ```json
+    {
+      "intent": "investigate",
+      "variable_ids": ["PRECTOTCORR"],
+      "place": "Piura",
+      "place_b": null,
+      "start_year": null,
+      "end_year": null,
+      "last_n_years": null,
+      "hypothesis": "down",
+      "lang": "es",
+      "mode": "lora"
+    }
+    ```
+  - `tests/ml/test_lora_real.py`: 4/4 PASSED (0.28s).
+- **Archivos y Evidencias Generadas en Repositorio**:
+  - `models/etd-planner-lora/adapter_model.safetensors` (25.2 MB) y `adapter_config.json`
+  - `models/planner-lora/adapter_model.safetensors` (compatibilidad con ambas rutas)
+  - `reports/lora/training_log.json`
+  - `reports/lora/train_log.txt` (registro paso a paso)
+  - `reports/lora/train_meta.json` (metadatos de GPU, hiperparámetros y `nvidia-smi`)
+  - `reports/lora/eval.json` (métricas de evaluación)
+  - `reports/lora/predictions.jsonl` (predicciones completas sobre el conjunto de test)
+
 

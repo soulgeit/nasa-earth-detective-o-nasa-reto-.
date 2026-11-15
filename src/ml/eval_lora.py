@@ -32,6 +32,10 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+ROOT = Path(__file__).resolve().parent.parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from src.detective.planner import _rules_plan, validate_plan
 
 
@@ -78,6 +82,7 @@ def evaluate_batch(
     adapter_path: str = "models/etd-planner-lora",
     test_file: str = "data/lora/test.jsonl",
     max_samples: Optional[int] = None,
+    seed: int = 42,
     output_eval: str = "reports/lora/eval.json",
     output_preds: str = "reports/lora/predictions.jsonl",
 ) -> Dict[str, Any]:
@@ -105,18 +110,24 @@ def evaluate_batch(
 
     base_path = resolve_model_path(base_model_id)
 
-    print(f"[LoRA Eval] Cargando dataset de prueba {test_path}...")
-    test_cases = []
+    print(f"[LoRA Eval] Cargando dataset de prueba {test_path}...", flush=True)
+    all_cases = []
     with open(test_path, "r", encoding="utf-8") as f:
-        for idx, line in enumerate(f):
-            if max_samples and idx >= max_samples:
-                break
+        for line in f:
             line = line.strip()
             if line:
-                test_cases.append(json.loads(line))
+                all_cases.append(json.loads(line))
+
+    if max_samples and len(all_cases) > max_samples:
+        import random
+        rnd = random.Random(seed)
+        test_cases = rnd.sample(all_cases, max_samples)
+        print(f"[LoRA Eval] Muestra fija seleccionada: {len(test_cases)} de {len(all_cases)} (semilla={seed})", flush=True)
+    else:
+        test_cases = all_cases
+        print(f"[LoRA Eval] Casos a evaluar: {len(test_cases)}", flush=True)
 
     n_cases = len(test_cases)
-    print(f"[LoRA Eval] Casos a evaluar: {n_cases}")
 
     print(f"[LoRA Eval] Cargando Tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(base_path, trust_remote_code=True)
@@ -199,13 +210,15 @@ def evaluate_batch(
             "rules": {"text": json.dumps(r_plan), "plan": pred_r, "is_json": is_j_r, "is_schema": is_s_r},
             "base": {"text": gen_base_text, "plan": pred_b, "is_json": is_j_b, "is_schema": is_s_b},
         })
+        if (idx + 1) % 25 == 0 or idx == n_cases - 1:
+            print(f"  [Base Eval] {idx + 1}/{n_cases} completados...", flush=True)
 
     # Cargar LoRA sobre el modelo
-    print(f"[LoRA Eval] Fase 2: Cargando adaptador LoRA {adapter_dir}...")
+    print(f"[LoRA Eval] Fase 2: Cargando adaptador LoRA {adapter_dir}...", flush=True)
     lora_model = PeftModel.from_pretrained(base_model, str(adapter_dir))
     lora_model.eval()
 
-    print("[LoRA Eval] Fase 3: Evaluación de Modelo LoRA Fine-Tuned...")
+    print("[LoRA Eval] Fase 3: Evaluación de Modelo LoRA Fine-Tuned...", flush=True)
     for item in base_outputs:
         idx = item["idx"]
         case = test_cases[idx]
@@ -241,6 +254,8 @@ def evaluate_batch(
             },
         }
         predictions_log.append(preds_record)
+        if (idx + 1) % 25 == 0 or idx == n_cases - 1:
+            print(f"  [LoRA Eval] {idx + 1}/{n_cases} completados...", flush=True)
 
         # Actualizar contadores
         eval_triplet = [
@@ -286,6 +301,7 @@ def evaluate_batch(
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "test_dataset": test_file,
         "test_samples_evaluated": n_cases,
+        "seed": seed if max_samples else None,
         "base_model": base_model_id,
         "adapter_path": adapter_path,
         "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
@@ -319,6 +335,7 @@ def main():
     parser.add_argument("--adapter", type=str, default="models/etd-planner-lora")
     parser.add_argument("--test-file", type=str, default="data/lora/test.jsonl")
     parser.add_argument("--max-samples", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output-eval", type=str, default="reports/lora/eval.json")
     parser.add_argument("--output-preds", type=str, default="reports/lora/predictions.jsonl")
     args = parser.parse_args()
@@ -328,6 +345,7 @@ def main():
         adapter_path=args.adapter,
         test_file=args.test_file,
         max_samples=args.max_samples,
+        seed=args.seed,
         output_eval=args.output_eval,
         output_preds=args.output_preds,
     )

@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-11-14 21:53:41",
+  "test_dataset": "data/lora/test.jsonl",
+  "test_samples_evaluated": 200,
+  "seed": 42,
+  "base_model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+  "adapter_path": "models/etd-planner-lora",
+  "device": "NVIDIA GeForce RTX 4070 SUPER",
+  "metrics": {
+    "rules": {
+      "valid_json_pct": 99.5,
+      "valid_schema_pct": 99.5,
+      "intent_accuracy_pct": 76.0,
+      "variable_exact_match_pct": 15.5,
+      "place_match_pct": 73.5,
+      "hypothesis_accuracy_pct": 78.5
+    },
+    "base_model": {
+      "valid_json_pct": 35.0,
+      "valid_schema_pct": 0.0,
+      "intent_accuracy_pct": 3.0,
+      "variable_exact_match_pct": 4.5,
+      "place_match_pct": 47.5,
+      "hypothesis_accuracy_pct": 0.0
+    },
+    "lora": {
+      "valid_json_pct": 100.0,
+      "valid_schema_pct": 100.0,
+      "intent_accuracy_pct": 91.5,
+      "variable_exact_match_pct": 84.5,
+      "place_match_pct": 96.5,
+      "hypothesis_accuracy_pct": 71.0
+    }
+  }
+}
