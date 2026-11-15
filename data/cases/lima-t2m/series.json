@@ -5,7 +5,7 @@
  "cadence": "monthly",
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Lima, Peru",
   "lat": -12.05,
   "lon": -77.03,
   "bbox": null
@@ -2181,6 +2181,7 @@
   "retrieved_at": "2026-11-14T18:55:36Z",
   "sha256": "8e74b53294f55792eecf610b32b340bb840c161787e66c354047206bf5831807",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }

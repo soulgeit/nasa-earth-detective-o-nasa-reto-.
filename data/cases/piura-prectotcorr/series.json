@@ -5,7 +5,7 @@
  "cadence": "monthly",
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Piura, Peru",
   "lat": -5.19,
   "lon": -80.63,
   "bbox": null
@@ -2181,6 +2181,7 @@
   "retrieved_at": "2026-11-15T00:49:47Z",
   "sha256": "cc74b0613583c42ecb17a0bc9189001853108e11515c16e116c21ac885f03189",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }

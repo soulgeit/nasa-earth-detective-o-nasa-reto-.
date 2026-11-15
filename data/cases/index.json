@@ -13,13 +13,13 @@
    },
    "region": {
     "kind": "point",
-    "name": null,
+    "name": "Lima, Peru",
     "lat": -12.05,
     "lon": -77.03,
     "bbox": null
    },
    "verdict_code": "SIGNIFICANT",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "frozen_at": "2026-11-15T12:03:20Z",
    "paths": {
     "series": "data/cases/lima-t2m/series.json",
     "analysis": "data/cases/lima-t2m/analysis.json",
@@ -53,13 +53,13 @@
    },
    "region": {
     "kind": "point",
-    "name": null,
+    "name": "Svalbard, Norway",
     "lat": 78.22,
     "lon": 15.65,
     "bbox": null
    },
    "verdict_code": "SIGNIFICANT_STRONG",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "frozen_at": "2026-11-15T12:03:22Z",
    "paths": {
     "series": "data/cases/svalbard-t2m/series.json",
     "analysis": "data/cases/svalbard-t2m/analysis.json",
@@ -93,13 +93,13 @@
    },
    "region": {
     "kind": "point",
-    "name": null,
+    "name": "Piura, Peru",
     "lat": -5.19,
     "lon": -80.63,
     "bbox": null
    },
    "verdict_code": "SUGGESTIVE",
-   "frozen_at": "2026-11-15T00:49:44Z",
+   "frozen_at": "2026-11-15T12:03:24Z",
    "paths": {
     "series": "data/cases/piura-prectotcorr/series.json",
     "analysis": "data/cases/piura-prectotcorr/analysis.json",
@@ -133,13 +133,13 @@
    },
    "region": {
     "kind": "named",
-    "name": null,
+    "name": "Arctic sea ice",
     "lat": null,
     "lon": null,
     "bbox": null
    },
    "verdict_code": "SIGNIFICANT_STRONG",
-   "frozen_at": "2026-11-15T04:45:29Z",
+   "frozen_at": "2026-11-15T12:03:25Z",
    "paths": {
     "series": "data/cases/arctic-seaice/series.json",
     "analysis": "data/cases/arctic-seaice/analysis.json",
@@ -149,7 +149,7 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T04:45:30Z"
+    "retrieved_at": "2026-11-15T12:03:26Z"
    },
    "title": {
     "en": "Arctic sea ice extent, 1978-2026",
@@ -173,13 +173,13 @@
    },
    "region": {
     "kind": "named",
-    "name": null,
+    "name": "Antarctic sea ice",
     "lat": null,
     "lon": null,
     "bbox": null
    },
    "verdict_code": "NOT_SIGNIFICANT",
-   "frozen_at": "2026-11-15T04:45:31Z",
+   "frozen_at": "2026-11-15T12:03:26Z",
    "paths": {
     "series": "data/cases/antarctic-seaice/series.json",
     "analysis": "data/cases/antarctic-seaice/analysis.json",
@@ -189,7 +189,7 @@
     "kind": "nasa_file",
     "source": "NSIDC Sea Ice Index v4",
     "request_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/south/monthly/data/S_01_extent_v4.0.csv",
-    "retrieved_at": "2026-11-15T04:45:32Z"
+    "retrieved_at": "2026-11-15T12:03:27Z"
    },
    "title": {
     "en": "Antarctic sea ice extent, 1978-2026",
@@ -224,7 +224,7 @@
     ]
    },
    "verdict_code": "SIGNIFICANT_STRONG",
-   "frozen_at": "2026-11-15T00:52:20Z",
+   "frozen_at": "2026-11-15T12:06:25Z",
    "paths": {
     "series": "data/cases/amazonia-t2m/series.json",
     "analysis": "data/cases/amazonia-t2m/analysis.json",
@@ -234,7 +234,7 @@
     "kind": "user_upload",
     "source": "Giovanni (GES DISC) CSV export",
     "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
-    "retrieved_at": "2026-11-15T00:52:21Z"
+    "retrieved_at": "2026-11-15T12:06:26Z"
    },
    "title": {
     "en": "Amazon basin: air temperature 1980-2026 (user CSV)",
@@ -269,7 +269,7 @@
     ]
    },
    "verdict_code": "NOT_SIGNIFICANT",
-   "frozen_at": "2026-11-15T00:52:21Z",
+   "frozen_at": "2026-11-15T12:06:26Z",
    "paths": {
     "series": "data/cases/amazonia-prectotcorr/series.json",
     "analysis": "data/cases/amazonia-prectotcorr/analysis.json",
@@ -279,7 +279,7 @@
     "kind": "user_upload",
     "source": "Giovanni (GES DISC) CSV export",
     "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
-    "retrieved_at": "2026-11-15T00:52:22Z"
+    "retrieved_at": "2026-11-15T12:06:27Z"
    },
    "title": {
     "en": "Amazon basin: precipitation 1980-2026 (user CSV)",

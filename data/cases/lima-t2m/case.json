@@ -7,7 +7,7 @@
  },
  "region": {
   "kind": "point",
-  "name": null,
+  "name": "Lima, Peru",
   "lat": -12.05,
   "lon": -77.03,
   "bbox": null
@@ -30,7 +30,7 @@
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T00:49:44Z",
+ "frozen_at": "2026-11-15T12:03:20Z",
  "verdict_code": "SIGNIFICANT",
  "provenance": {
   "kind": "nasa_api",
@@ -40,6 +40,7 @@
   "retrieved_at": "2026-11-14T18:55:36Z",
   "sha256": "8e74b53294f55792eecf610b32b340bb840c161787e66c354047206bf5831807",
   "native_resolution": "0.5° x 0.625°",
-  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/"
+  "citation": "NASA Prediction Of Worldwide Energy Resources (POWER) project; https://power.larc.nasa.gov/",
+  "n_missing": 0
  }
 }

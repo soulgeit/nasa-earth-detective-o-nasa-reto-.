@@ -35,17 +35,18 @@
    "TODO_HUMANO: la narrativa la decide el humano."
   ]
  },
- "frozen_at": "2026-11-15T00:52:20Z",
+ "frozen_at": "2026-11-15T12:06:25Z",
  "verdict_code": "SIGNIFICANT_STRONG",
  "provenance": {
   "kind": "user_upload",
   "source": "Giovanni (GES DISC) CSV export",
   "underlying": "\"Time Series, Area-Averaged of 2-meter air temperature - daily mean monthly 0.5 x 0.625 (monthly)",
   "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
-  "retrieved_at": "2026-11-15T00:52:21Z",
+  "retrieved_at": "2026-11-15T12:06:26Z",
   "sha256": "655ce00c1cd4404f9cdaeb1e2c79e56c18c43b1bbcb857882a5ce9e05e42bb10",
   "native_resolution": null,
   "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+  "n_missing": 0,
   "header_metadata": [
    "Title:,\"Time Series, Area-Averaged of 2-meter air temperature - daily mean monthly 0.5 x 0.625 (monthly)\"",
    "User Start Date:,1980-01-01T00:00:00Z",
