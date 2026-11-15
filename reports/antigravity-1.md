@@ -1,13 +1,13 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-1 — 2026-11-14 18:45 hora de Perú
-Rama@commit: feature/data-pipeline@64f7714 · empujado: sí
-VERIFICADO: D5 Giovanni parser con CSVs reales de GES DISC → `pytest tests/etl/test_giovanni.py` → 7 passed in 0.1s
-VERIFICADO: validación de CSVs en data/raw/giovanni/ → `validate_document()` → 2 archivos reales (557 meses c/u, mm/day y °C), 0 errores
-VERIFICADO: precalentamiento de caché de demostración → `python -m src.etl.preheat` → 7/7 casos en caché local (1980–2026)
-ROTO / NO HECHO: ninguno en carril ETL
-Siguiente paso: apoyar a Hermes 2 / Antigravity 2 con sweep de rejillas o soporte de atlas si se requiere
-Necesito de: arquitecto: migrar `tests/test_system.py` a `get_series` para eliminar definitivamente los shims obsoletos
-Avisos para otros carriles: `parse_giovanni_csv` soporta 100% el formato oficial GES DISC con metadatos de cabecera y URL de reproducción
+## ESTADO — antigravity-1 — 2026-11-14 20:15 hora de Perú
+Rama@commit: feature/data-pipeline@f6f7d01 · empujado: sí
+VERIFICADO: Corrección -9999 en NSIDC Sea Ice Index v4 → 1987-12 y 1988-01 son null, n_missing contado en provenance → pytest tests/stats/test_trend_engine.py::test_published_nasa_benchmarks PASSED (veredicto Ártico SIGNIFICANT_STRONG con sen=-0.4989 y ols=-0.5154)
+VERIFICADO: Validación de rangos físicos por variable (Regla 12) en validate_datasets.py y validate.py → rechaza -9999 y fuera de rango; falla con data/cases/arctic-seaice actual y pasa con series limpias → pytest tests/etl/test_validate.py → 11 passed
+VERIFICADO: tests/test_system.py migrado a get_series de registro central; shims obsoletos get_power_point_series y get_power_regional_series eliminados de src/etl/power.py → pytest tests/test_system.py tests/etl/test_power.py → 23 passed, 1 skipped
+ROTO / NO HECHO: Ninguno en carril ETL / datos
+Siguiente paso: Apoyo a entrenamiento LoRA en RTX 4070 SUPER si Antigravity 2 no entrega adaptador a las 21:30
+Necesito de: hermes-2: regenerar casos congelados (arctic-seaice y antarctic-seaice) con el conector NSIDC corregido
+Avisos para otros carriles: Conector NSIDC y validador de datasets listos y empujados. Veredicto del Ártico en test_published_nasa_benchmarks restaurado a SIGNIFICANT_STRONG.
 <!-- ESTADO:FIN -->
 
 # Antigravity 1 — Datos NASA reales
@@ -453,3 +453,34 @@ provenance = dict(power_data.get("provenance") or {})   # copiar el del ETL
 provenance["analysis_engine"] = "EarthTrend Detective v2"
 ```
 Asi la UI recibe el sha256 y la URL exacta que exige el contrato §3 para que el juez pueda auditar.
+
+---
+
+## Ronda 3 — Tareas 1, 2 y 3 (2026-11-14)
+
+### Tarea 1: Enmascaramiento de -9999 en NSIDC Sea Ice y Restauración de Benchmark Ártico
+- **Causa raíz identificada**: NSIDC Sea Ice Index v4 marca los meses faltantes por el hueco instrumental satelital (especialmente diciembre de 1987 y enero de 1988) con `-9999.0` en `extent` y `area`, y `source_dataset = "-9999"`. Al procesarse como número real, la pendiente OLS del Ártico se disparaba a `+25.7` millones de km²/década (mientras Theil-Sen daba `-0.50`), provocando discrepancia paramétrica/no-paramétrica que degradaba el veredicto a `SIGNIFICANT` y rompía `tests/stats/test_trend_engine.py::test_published_nasa_benchmarks`.
+- **Solución implementada**:
+  - `src/etl/nsidc_seaice.py`: `parse_csv` convierte valores `< 0`, `== -9999` o `== -999` a `None` (`value: null`), limpia el área y excluye `"-9999"` de los conjuntos de fuentes.
+  - Se calcula `n_missing` y se almacena en `provenance["n_missing"]`.
+  - Lo mismo se verificó y garantizó en `src/etl/gistemp.py` y `src/etl/giovanni.py`.
+  - Se añadió prueba unitaria estricta en `tests/etl/test_additional_sources.py` con el fixture real `tests/fixtures/real/nsidc_seaice_N_monthly_all.csv`, confirmando que ningún valor es negativo y que `1987-12` y `1988-01` faltan (`None`).
+- **Resultado verificado**:
+  - `tests/stats/test_trend_engine.py::test_published_nasa_benchmarks` PASSED (veredicto Ártico: `SIGNIFICANT_STRONG`, OLS = `-0.5154`, Sen = `-0.4989`).
+  - Total `tests/stats`: 7/7 PASSED.
+
+### Tarea 2: Validación de Rangos Físicos por Variable (Regla 12)
+- **Implementación**:
+  - Se extendió `src/etl/validate.py` con `PHYSICAL_RANGES` exhaustivo para cada variable física del catálogo (`SEAICE_EXTENT_N/S` en `[0, 30]`, `T2M` en `[-90, 65]`, precipitaciones `[0, 500]`, etc.) y `SENTINEL_FILLS` (`-9999`, `-999`, `1e14+`).
+  - Se actualizó `scripts/validate_datasets.py` para aplicar estas reglas.
+  - Ejecución con serie no corregida de hielo marino (`data/cases/arctic-seaice/series.json`): Falla con código 1 y detecta los rellenos en índices 109 y 110.
+  - Ejecución con serie corregida: Pasa exitosamente con código 0.
+  - 11 pruebas unitarias en `tests/etl/test_validate.py` 100% verdes.
+
+### Tarea 3: Migración de `tests/test_system.py` y Retiro de Shims Obsoletos
+- **Implementación**:
+  - `tests/test_system.py` migrado de `etl_power.get_power_point_series` al dispatcher central oficial `get_series("T2M", lat=-12.05, lon=-77.03)`.
+  - Retirados los adaptadores obsoletos `get_power_point_series` y `get_power_regional_series` de `src/etl/power.py`.
+  - Actualizado `tests/etl/test_power.py`.
+  - Suite de sistema y POWER: 23 passed, 1 skipped.
+
