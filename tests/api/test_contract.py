@@ -336,3 +336,87 @@ def test_analyze_rejects_a_planned_variable(monkeypatch) -> None:
     r = client.get("/api/report", params={"variable_id": "MODIS_LST_DAY", "lang": "es"})
     assert r.status_code == 409
     assert "Giovanni" in r.json()["error"]["message"]["es"]
+
+
+# --- caso congelado completo (arquitecto, Ronda 5) ---------------------------
+
+def test_frozen_case_is_served_as_it_was_frozen(client: TestClient) -> None:
+    """La galeria abre el caso guardado: mismas cifras que el archivo, sin recalcular."""
+    import json as _json
+
+    from src.api.config import CASES_DIR
+
+    listing = client.get("/api/cases")
+    if listing.status_code == 503:
+        pytest.skip("no hay casos congelados en esta rama")
+    cases = listing.json()["cases"]
+    assert cases, "el indice de casos esta vacio"
+    for case in cases:
+        r = client.get(f"/api/cases/{case['id']}")
+        assert r.status_code == 200, (case["id"], r.text[:200])
+        body = r.json()
+        assert body["case"]["id"] == case["id"]
+        analysis = body["analysis"]
+        on_disk = _json.loads((CASES_DIR / case["id"] / "analysis.json").read_text(encoding="utf-8"))
+        assert analysis["schema"] == "analysis/2"
+        # Lo congelado no se toca: tendencia, veredicto, serie y procedencia son los del archivo.
+        for key in ("trend", "significance", "tests", "series", "provenance", "period"):
+            assert analysis[key] == on_disk[key], (case["id"], key)
+        # Lo unico que se anade es rotulo: la tarjeta del catalogo y el nombre del lugar.
+        assert analysis["variable"]["id"] == case["variable_id"]
+        assert analysis["region"].get("name")
+        # Regla 12: ningun valor centinela llega a la pantalla.
+        raw = [v for v in analysis["series"]["raw"] if v is not None]
+        assert min(raw) > -900, (case["id"], min(raw))
+
+
+def test_unknown_frozen_case_is_a_contract_error(client: TestClient) -> None:
+    if client.get("/api/cases").status_code == 503:
+        pytest.skip("no hay casos congelados en esta rama")
+    for bad in ("no-such-case", "..%2F..%2Frequirements.txt", "lima-t2m%2F..%2F..%2F..%2FREADME.md"):
+        r = client.get(f"/api/cases/{bad}")
+        assert r.status_code == 404, (bad, r.status_code)
+        _assert_error_shape(r.json())
+        assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+# --- la seccion `planned` del catalogo REAL (arquitecto, Ronda 5) ------------
+# Las dos pruebas de arriba inyectan una tarjeta planned de mentira. Con el
+# archivo real la API publicaba 0 planned y respondia VARIABLE_UNKNOWN: el
+# catalogo las guarda en una clave aparte (`planned`) que el cargador no leia.
+
+def _real_planned_ids() -> list[str]:
+    import json as _json
+
+    from src.api.catalog import CATALOG_PATH
+
+    if not CATALOG_PATH.exists():
+        return []
+    raw = _json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    return [v["id"] for v in (raw.get("planned") or []) if isinstance(v, dict) and v.get("id")]
+
+
+def test_real_catalog_planned_section_is_published(client: TestClient) -> None:
+    planned_ids = _real_planned_ids()
+    if not planned_ids:
+        pytest.skip("el catalogo de esta rama no trae seccion planned")
+    body = client.get("/api/catalog/variables", params={"lang": "en"}).json()
+    published = {v["id"] for v in body["planned"]}
+    assert published == set(planned_ids)
+    assert body["catalog"]["n_planned"] == len(planned_ids)
+    available = {v["id"] for v in body["variables"]}
+    assert not (published & available)
+    for card in body["planned"]:
+        assert card["planned"] is True and card["available"] is False, card["id"]
+
+
+def test_real_planned_variable_is_refused_with_how_to_load_it(client: TestClient) -> None:
+    planned_ids = _real_planned_ids()
+    if not planned_ids:
+        pytest.skip("el catalogo de esta rama no trae seccion planned")
+    for vid in planned_ids:
+        r = client.get("/api/analyze", params={"variable_id": vid, "lat": -12.05, "lon": -77.03})
+        assert r.status_code == 409, (vid, r.status_code, r.text[:160])
+        err = r.json()["error"]
+        assert err["code"] == "VARIABLE_PLANNED", vid
+        assert "Giovanni" in err["message"]["en"]

@@ -174,3 +174,21 @@ def test_missing_ui_file_fails_loudly(staged_repo: Path) -> None:
     result = _build(staged_repo)
     assert result.returncode != 0
     assert "i18n.js" in (result.stdout + result.stderr)
+
+
+# --- arquitecto, Ronda 5 -----------------------------------------------------
+
+def test_shim_serves_the_frozen_case_route(staged_repo: Path) -> None:
+    """La interfaz abre un caso con GET /api/cases/<id>; el respaldo debe responderlo."""
+    assert _build(staged_repo).returncode == 0
+    shim = (staged_repo / "dist" / "static-api.js").read_text(encoding="utf-8")
+    assert "path.indexOf('/api/cases/') === 0" in shim
+    assert "analysis: INDEX['analyze__' + caseId].payload" in shim
+
+
+def test_bbox_is_compared_as_numbers(staged_repo: Path) -> None:
+    """'-71' (JavaScript) y '-71.0' (Python) son la misma caja."""
+    assert _build(staged_repo).returncode == 0
+    shim = (staged_repo / "dist" / "static-api.js").read_text(encoding="utf-8")
+    assert "parseFloat(a[k]) - parseFloat(b[k])" in shim
+    assert "baked === want" not in shim

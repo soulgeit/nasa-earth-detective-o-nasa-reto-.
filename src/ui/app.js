@@ -24,6 +24,7 @@ const state = {
   pointCompareB: null,
   locationName: null,
   locationNameB: null,
+  placeLabel: null, // real place name (geocoder or frozen case); null for a bare map click
   bbox: null,
   lang: window.__etdLang || 'en',
 };
@@ -248,6 +249,7 @@ function initMap() {
 function setPoint(lat, lon, label) {
   state.point = { lat, lon };
   state.bbox = null;
+  state.placeLabel = label || null;
   state.locationName = label || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
   if (map) {
     if (marker) marker.remove();
@@ -288,6 +290,7 @@ function setPointB(lat, lon, label) {
 function setBBox(bbox) {
   state.bbox = bbox;
   state.point = null;
+  state.placeLabel = null;
   state.locationName = `[${bbox.map(v => v.toFixed(2)).join(', ')}]`;
   if (map) {
     if (marker) { marker.remove(); marker = null; }
@@ -413,12 +416,35 @@ async function loadCases() {
   }
   for (const c of state.cases) {
     const btn = el('button', { type: 'button', class: 'btn case-btn' });
-    const nameSpan = el('span', null, c.region_name || c.id || c.region_id);
-    btn.appendChild(nameSpan);
-    if (c.description) btn.appendChild(el('small', null, c.description));
+    btn.appendChild(el('span', null, caseTitle(c)));
+    const sub = caseVerdictLabel(c) || c.description;
+    if (sub) btn.appendChild(el('small', null, sub));
     btn.addEventListener('click', () => openCase(c));
     list.appendChild(btn);
   }
+}
+
+/* The index publishes bilingual `title`, `names` and `finding`; older builds had `region_name`. */
+function caseTitle(c) {
+  const L = state.lang;
+  return c.title?.[L] || c.title?.en || c.names?.[L] || c.names?.en || c.region_name || c.id || c.region_id;
+}
+
+function casePlace(c) {
+  const L = state.lang;
+  return c.names?.[L] || c.names?.en || c.region?.name || c.region_name || c.id;
+}
+
+function caseVerdictLabel(c) {
+  if (!c.verdict_code) return '';
+  const key = `verdict.${c.verdict_code}`;
+  const label = t(key);
+  return label && label !== key ? label : '';
+}
+
+function caseFinding(c) {
+  const L = state.lang;
+  return c.finding?.[L] || c.finding?.en || c.description || '';
 }
 
 async function openCase(c) {
@@ -428,12 +454,38 @@ async function openCase(c) {
     select.value = c.variable_id;
     onVariableChange();
   }
-  if (c.lat !== undefined && c.lon !== undefined && c.lat !== null && c.lon !== null) {
-    setPoint(c.lat, c.lon, c.region_name || c.id);
-    if (map) map.setView([c.lat, c.lon], 5);
-  } else if (c.bbox) {
-    setBBox(c.bbox);
-    if (map) map.fitBounds([[c.bbox[1], c.bbox[0]], [c.bbox[3], c.bbox[2]]]);
+  // The position lives under `region` in /api/cases; the static backup also copies it to the root.
+  const r = c.region || {};
+  const lat = c.lat ?? r.lat;
+  const lon = c.lon ?? r.lon;
+  const bbox = c.bbox || r.bbox;
+  const hasPoint = lat !== undefined && lat !== null && lon !== undefined && lon !== null;
+  if (bbox && (r.kind === 'bbox' || !hasPoint)) {
+    setBBox(bbox);
+    if (map) map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
+  } else if (hasPoint) {
+    setPoint(Number(lat), Number(lon), casePlace(c));
+    if (map) map.setView([Number(lat), Number(lon)], 5);
+  } else {
+    // Hemispheric or global case: it has no place, so forget the one chosen before.
+    state.point = null;
+    state.bbox = null;
+    state.placeLabel = null;
+    state.locationName = casePlace(c);
+    if (marker) { marker.remove(); marker = null; }
+    if (rect) { rect.remove(); rect = null; }
+    const chosen = $('#place-chosen');
+    if (chosen) chosen.textContent = state.locationName;
+  }
+  // A frozen case is shown exactly as it was frozen: same series, same numbers, same provenance.
+  if (c.id) {
+    try {
+      const frozen = await apiGet(`/api/cases/${encodeURIComponent(c.id)}`);
+      if (frozen && frozen.analysis && frozen.analysis.schema === 'analysis/2') {
+        renderAnalysis(frozen.analysis);
+        return;
+      }
+    } catch (_) { /* a build without this route: fall through to the live analysis */ }
   }
   investigate();
 }
@@ -477,6 +529,8 @@ async function investigate() {
     } else if (state.point) {
       params.lat = Number(state.point.lat).toFixed(4);
       params.lon = Number(state.point.lon).toFixed(4);
+      // The API writes this name into region.name, so the text says "Lima, Peru" and not coordinates.
+      if (state.placeLabel && !isGlobal) params.place = state.placeLabel;
     }
 
     state.analysis = await apiGet('/api/analyze', params);
@@ -1376,8 +1430,8 @@ async function loadDemoCase(idx) {
 
   const c = state.cases[idx % state.cases.length];
   $('#demo-counter').textContent = t('demo.step', { curr: (idx % state.cases.length) + 1, total: state.cases.length });
-  $('#demo-case-title').textContent = c.region_name || c.id;
-  $('#demo-case-text').textContent = c.description || (state.lang === 'es' ? 'Caso emblemático con datos satelitales reales.' : 'Real satellite observation case.');
+  $('#demo-case-title').textContent = caseTitle(c);
+  $('#demo-case-text').textContent = caseFinding(c) || (state.lang === 'es' ? 'Caso emblemático con datos satelitales reales.' : 'Real satellite observation case.');
 
   const fill = $('#demo-progress-fill');
   if (fill) {

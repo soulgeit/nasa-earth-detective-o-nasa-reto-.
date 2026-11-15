@@ -82,6 +82,16 @@ def _load() -> tuple[list[dict[str, Any]], str, str]:
     full = _read_json(CATALOG_PATH)
     if full and isinstance(full.get("variables"), list):
         cards = [dict(v, _catalog_source="catalog") for v in full["variables"]]
+        # El catálogo guarda las variables planificadas en una clave aparte
+        # (`planned`), no dentro de `variables`. Sin leerla, la API publicaba 0
+        # planned y respondía VARIABLE_UNKNOWN («no está en el catálogo») a una
+        # variable que sí está, en vez de VARIABLE_PLANNED con la forma de
+        # cargarla. Se cargan marcadas: nunca cuentan como disponibles (regla 19).
+        seen = {c.get("id") for c in cards}
+        for v in full.get("planned") or []:
+            if isinstance(v, dict) and v.get("id") and v["id"] not in seen:
+                seen.add(v["id"])
+                cards.append(dict(v, planned=True, available=False, _catalog_source="catalog"))
         return cards, "catalog", datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     seed = _read_json(SEED_PATH)

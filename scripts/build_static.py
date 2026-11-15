@@ -123,6 +123,39 @@ def _normalize_case(case: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _catalog_cards() -> dict[str, dict[str, Any]]:
+    """Tarjetas del catálogo por id (vacío si el catálogo no está en esta rama)."""
+    path = REPO_ROOT / "data" / "catalog" / "variables.json"
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    items = raw.get("variables", []) if isinstance(raw, dict) else raw
+    return {str(c.get("id")): c for c in items if isinstance(c, dict) and c.get("id")}
+
+
+def _decorate_analysis(
+    analysis: dict[str, Any], case: dict[str, Any], cards: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Lo mismo que hace `GET /api/cases/{id}` en la API viva.
+
+    El `analysis.json` congelado no repite la tarjeta de la variable ni el nombre
+    del lugar. Se copian del catálogo y del índice (no se calcula ni se inventa
+    nada) para que el respaldo rotule nombre y unidad igual que la aplicación.
+    """
+    out = dict(analysis)
+    if not out.get("variable"):
+        card = cards.get(str(case.get("variable_id")))
+        if card:
+            out["variable"] = card
+    region = out.get("region")
+    if isinstance(region, dict) and not region.get("name"):
+        names = case.get("names") or {}
+        label = names.get("en") or names.get("es")
+        if label:
+            out["region"] = {**region, "name": label}
+    return out
+
+
 def build_from_cases() -> dict[str, int]:
     """Sin API: usa solo los archivos congelados de `data/cases` y `data/atlas`."""
     dist_api = DIST / "api"
@@ -138,6 +171,7 @@ def build_from_cases() -> dict[str, int]:
     cases = cases.get("cases", cases) if isinstance(cases, dict) else cases
     cases = [_normalize_case(c) for c in cases]
     _write(dist_api, "cases", {"cases": cases})
+    cards = _catalog_cards()
     for case in cases:
         # `index.json` publica rutas (`paths.analysis`), no el análisis inline.
         # Aceptamos las dos formas para no romper llamadas anteriores.
@@ -150,7 +184,7 @@ def build_from_cases() -> dict[str, int]:
                     analysis = json.loads(path.read_text(encoding="utf-8"))
         if analysis:
             case_id = case.get("id") or case.get("region_id")
-            _write(dist_api, f"analyze__{case_id}", analysis)
+            _write(dist_api, f"analyze__{case_id}", _decorate_analysis(analysis, case, cards))
             counts["analyses"] += 1
     counts["cases"] = len(cases)
 
@@ -253,7 +287,14 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
     // con la variable correcta basta, igual que en la API real.
     if (!baked || baked === 'null,null' || baked === 'null' || baked.indexOf('null') === 0) return true;
     var want = params.get('bbox');
-    if (want) return baked === want.replace(/\s+/g, '');
+    if (want) {
+      var a = baked.split(','), b = want.replace(/\s+/g, '').split(',');
+      if (a.length !== b.length) return false;
+      for (var k = 0; k < a.length; k++) {
+        if (Math.abs(parseFloat(a[k]) - parseFloat(b[k])) > 5e-4) return false;
+      }
+      return true;
+    }
     var lat = parseFloat(params.get('lat'));
     var lon = parseFloat(params.get('lon'));
     if (baked.indexOf(',') < 0 || isNaN(lat) || isNaN(lon)) return false;
@@ -265,6 +306,10 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
     if (path === '/api/health' || path === '/health') return 'health';
     if (path === '/api/catalog/variables') return 'catalog_variables';
     if (path === '/api/cases') return 'cases';
+    if (path.indexOf('/api/cases/') === 0) {
+      var cid = decodeURIComponent(path.slice('/api/cases/'.length));
+      return INDEX['analyze__' + cid] ? 'case__' + cid : null;
+    }
     if (path.indexOf('/api/atlas/') === 0) return 'atlas__' + decodeURIComponent(path.slice('/api/atlas/'.length));
     if (path === '/api/analyze' || path === '/api/series') {
       var vid = params.get('variable_id');
@@ -289,6 +334,14 @@ STATIC_API_JS = r"""/* SI-assisted: claude-omni-3 (Claude Opus 5.5)
     }
 
     var key = slug(url.pathname, url.searchParams);
+    if (key && key.indexOf('case__') === 0) {
+      // Same shape as GET /api/cases/{id}: the index card plus the frozen analysis.
+      var caseId = key.slice('case__'.length);
+      var list = (INDEX.cases && INDEX.cases.payload && INDEX.cases.payload.cases) || [];
+      var card = null;
+      for (var i = 0; i < list.length; i++) { if (list[i] && list[i].id === caseId) card = list[i]; }
+      return Promise.resolve(jsonResponse({ case: card, analysis: INDEX['analyze__' + caseId].payload }, 200));
+    }
     if (key && INDEX[key]) {
       var entry = INDEX[key];
       var body = entry.payload;
