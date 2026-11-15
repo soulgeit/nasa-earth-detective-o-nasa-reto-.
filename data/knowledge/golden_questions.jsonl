@@ -21,7 +21,7 @@
 {"question": "¿La nieve de los Andes se derrite antes ahora?", "lang": "es", "expected_variable_ids": ["SNODP", "T2M"]}
 {"question": "¿Las olas de calor en la selva son más largas?", "lang": "es", "expected_variable_ids": ["T2M"]}
 {"question": "¿El polvo del desierto de Sechura llega más lejos ahora?", "lang": "es", "expected_variable_ids": ["AOD_55"]}
-{"question": "¿La radiación ultravioleta en la puna ha cambiado?", "lang": "es", "expected_variable_ids": ["TO3", "ALLSKY_SFC_SW_DWN"]}
+{"question": "¿La radiación ultravioleta en la puna ha cambiado?", "lang": "es", "expected_variable_ids": ["ALLSKY_SFC_UV_INDEX", "TO3", "ALLSKY_SFC_SW_DWN"]}
 {"question": "¿Las lluvias de El Niño son más intensas en Tumbes?", "lang": "es", "expected_variable_ids": ["PRECTOTCORR"]}
 {"question": "Is it raining less in Piura than it used to?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}
 {"question": "Is Lima getting hotter over the decades?", "lang": "en", "expected_variable_ids": ["T2M"]}
@@ -46,5 +46,5 @@
 {"question": "Is Andean snow melting earlier now?", "lang": "en", "expected_variable_ids": ["SNODP", "T2M"]}
 {"question": "Are heat waves in the rainforest getting longer?", "lang": "en", "expected_variable_ids": ["T2M"]}
 {"question": "Is dust from the Sechura Desert travelling farther now?", "lang": "en", "expected_variable_ids": ["AOD_55"]}
-{"question": "Has ultraviolet radiation on the high plateau changed?", "lang": "en", "expected_variable_ids": ["TO3", "ALLSKY_SFC_SW_DWN"]}
+{"question": "Has ultraviolet radiation on the high plateau changed?", "lang": "en", "expected_variable_ids": ["ALLSKY_SFC_UV_INDEX", "TO3", "ALLSKY_SFC_SW_DWN"]}
 {"question": "Are El Nino rains stronger in Tumbes?", "lang": "en", "expected_variable_ids": ["PRECTOTCORR"]}

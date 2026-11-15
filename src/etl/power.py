@@ -63,7 +63,10 @@ def default_period(card: dict) -> tuple[str, str]:
     por eso el fin por defecto es el 31-dic del ano pasado (hoy 2026 -> 2025-12),
     que es exactamente lo que exige el criterio de aceptacion D1 (540 puntos).
     """
-    start = str(card.get("start") or "1981-01")
+    # El catalogo completo guarda el inicio en `source.start`; la semilla, en `start`.
+    # Leer solo `start` hacia que AOD_55 (datos desde 2001) se pidiera desde 1981 y
+    # el motor respondiera "datos insuficientes: cobertura 55,6 %" en cualquier lugar.
+    start = str(card.get("start") or (card.get("source") or {}).get("start") or "1981-01")
     last_full_year = datetime.now(timezone.utc).year - 1
     return start, f"{last_full_year}-12"
 

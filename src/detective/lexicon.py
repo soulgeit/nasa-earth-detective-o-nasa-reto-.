@@ -125,7 +125,45 @@ ALIASES: dict[str, tuple[str, ...]] = {
         "land surface temperature", "surface heat", "urban heat",
     ),
     "MODIS_AOD": ("aerosoles", "polvo", "smog", "aerosol", "dust", "haze", "fine particles"),
+    # --- RONDA_7: the 20 POWER variables added to the catalogue --------------
+    # Single distinctive words on purpose. A multi-word alias also lends its words
+    # as loose aliases, so "temperatura maxima" would make every "temperatura"
+    # question hesitate between T2M and T2M_MAX.
+    "T2M_MAX": ("maxima", "maximas", "maximum", "highs"),
+    "T2M_MIN": ("minima", "minimas", "minimum", "lows", "friaje", "friajes"),
+    "T2M_RANGE": ("amplitud", "oscilacion", "diurnal"),
+    "T2MDEW": ("rocio", "dew", "dewpoint"),
+    "QV2M": ("especifica", "specific"),
+    "PS": ("presion", "barometro", "pressure", "barometer", "barometric"),
+    "WS2M": (
+        "viento", "vientos", "ventoso", "brisa", "rafagas", "vendaval", "ventarron",
+        "wind", "winds", "windy", "windier", "windiest", "breeze", "gusts", "gale",
+    ),
+    "WS10M": ("anemometro", "anemometer", "stilling"),
+    "WS50M": ("eolica", "eolico", "aerogenerador", "aerogeneradores", "turbina", "turbine", "turbines"),
+    "GWETROOT": ("raices", "raiz", "roots", "rootzone"),
+    "GWETPROF": ("perfil", "profile"),
+    "PRECSNOLAND": ("nevazon", "snowstorm"),
+    "FROST_DAYS": ("helada", "heladas", "hiela", "escarcha", "frost", "frosts", "freezing", "hoarfrost"),
+    "TSOIL1": ("germinacion", "germination", "subsuelo", "seedbed"),
+    "ALLSKY_SFC_LW_DWN": ("infrarroja", "infrarrojo", "invernadero", "longwave", "infrared", "greenhouse"),
+    "CLRSKY_SFC_SW_DWN": ("despejado", "dimming", "brightening", "cloudless"),
+    "ALLSKY_KT": ("claridad", "clearness"),
+    "ALLSKY_SFC_UV_INDEX": ("ultravioleta", "uv", "quemadura", "bloqueador", "ultraviolet", "sunburn", "sunscreen"),
+    "ALLSKY_SFC_PAR_TOT": ("fotosintesis", "fotosintetica", "photosynthesis", "photosynthetic"),
+    "ALLSKY_SRF_ALB": ("albedo", "reflectividad", "reflectancia", "reflectivity", "reflectance"),
 }
+
+# RONDA_7: the catalogue grew from 15 to 35 variables. The additions are
+# specialised views of something the catalogue already had (the monthly maximum,
+# the wind at 50 m, the root zone...). They are proposed when the student names
+# them; otherwise the general variable stays the default, so "is it getting
+# hotter?" keeps meaning air temperature and not "the hottest hour of the month".
+SPECIALISED: frozenset[str] = frozenset({
+    "T2M_MAX", "T2M_MIN", "T2M_RANGE", "T2MDEW", "QV2M", "PS", "WS2M", "WS10M", "WS50M",
+    "GWETROOT", "GWETPROF", "PRECSNOLAND", "FROST_DAYS", "TSOIL1", "ALLSKY_SFC_LW_DWN",
+    "CLRSKY_SFC_SW_DWN", "ALLSKY_KT", "ALLSKY_SFC_UV_INDEX", "ALLSKY_SFC_PAR_TOT", "ALLSKY_SRF_ALB",
+})
 
 # Reverse map built once: normalised alias -> ids
 # Words that must not become loose aliases even though they appear inside a
@@ -134,11 +172,16 @@ ALIASES: dict[str, tuple[str, ...]] = {
 _PHRASE_ONLY_WORDS = frozenset({"desert", "turning", "turn", "into"})
 
 _ALIAS_TO_IDS: dict[str, set[str]] = {}
+# term -> ids for which the term IS the alias (not a word lent by a phrase).
+# "temperatura" is T2M's own alias; TS only lends it through "temperatura de la
+# superficie". The prior must tell the two apart (RONDA_7).
+_DIRECT_ALIAS: dict[str, set[str]] = {}
 for _vid, _aliases in ALIASES.items():
     for _alias in _aliases:
         _terms = normalize_terms(_alias)
         if len(_terms) == 1:
             _ALIAS_TO_IDS.setdefault(_terms[0], set()).add(_vid)
+            _DIRECT_ALIAS.setdefault(_terms[0], set()).add(_vid)
         else:
             # A multi-word alias contributes its words ("soil", "drying") so a
             # question that separates them still matches — "Is the soil in Ica
@@ -209,6 +252,9 @@ def variables_for_terms(text: str) -> list[str]:
     return sorted(expand(text))
 
 
+LOOSE_WORD_WEIGHT = 0.35
+
+
 def specificity_prior(query: str) -> dict[str, float]:
     """variable_id -> bonus in [0, 1].
 
@@ -224,8 +270,11 @@ def specificity_prior(query: str) -> dict[str, float]:
         ids = _ALIAS_TO_IDS.get(term)
         if not ids:
             continue
-        weight = 1.0 / len(ids)
+        direct = _DIRECT_ALIAS.get(term, set())
         for vid in ids:
+            # The variable whose own alias this word is gets the full share; one
+            # that only lends the word from a longer phrase gets a small one.
+            weight = (1.0 / len(direct)) if vid in direct else (LOOSE_WORD_WEIGHT / len(ids))
             prior[vid] = prior.get(vid, 0.0) + weight
     for phrase, vid, weight in _PHRASES:
         if f" {phrase} " in f" {text} ":

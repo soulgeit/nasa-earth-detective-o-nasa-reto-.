@@ -301,6 +301,10 @@ def _region_lookup(q: str, *, limit: int = 5) -> list[dict[str, Any]]:
     return out
 
 
+_WORD_RE = re.compile(r"\w+")
+_MAX_SPAN_WORDS = 7  # "Santiago de los Caballeros de Mérida" is six
+
+
 def find_in_text(text: str, *, limit: int = 3) -> list[tuple[Place, str]]:
     """Longest gazetteer spellings that appear literally inside ``text``.
 
@@ -313,30 +317,39 @@ def find_in_text(text: str, *, limit: int = 3) -> list[tuple[Place, str]]:
     if not text or not places:
         return []
     folded = fold(text)
-    hits: list[tuple[Place, str, int]] = []
-    for place in places:
-        best: tuple[str, int] | None = None
-        for variant in _fields(place):
-            needle = variant.strip()
-            if len(needle) < 3:
+    # RONDA_7: this used to compile one regular expression per spelling of every
+    # city (58 000 per question, 1.3 s measured), which made each chat message
+    # feel slow. Every spelling is already a key of the exact index, so it is
+    # enough to look up the word-bounded spans of the question itself.
+    exact, _prefix = _fields_index()
+    tokens = [(m.start(), m.end()) for m in _WORD_RE.finditer(folded)]
+    best: dict[int, tuple[str, int]] = {}
+    for i, (start, _end) in enumerate(tokens):
+        for j in range(i, min(i + _MAX_SPAN_WORDS, len(tokens))):
+            span = folded[start : tokens[j][1]]
+            if len(span) < 3:
                 continue
-            for match in re.finditer(rf"(?<!\w){re.escape(needle)}(?!\w)", folded):
-                span = folded[match.start():match.end()]
-                if best is None or len(span) > len(best[0]):
-                    best = (span, match.start())
-        if best is None:
-            continue
-        span_text, start = best
-        original = text[start : start + len(span_text)]
-        hits.append((place, original, len(span_text)))
+            for idx in exact.get(span, ()):
+                current = best.get(idx)
+                if current is None or len(span) > len(current[0]):
+                    best[idx] = (span, start)
+    hits: list[tuple[Place, str, int, int]] = [
+        (places[idx], text[start : start + len(span)], len(span), start) for idx, (span, start) in best.items()
+    ]
     hits.sort(key=lambda h: (-h[2], -(h[0].population or 0), fold(h[0].name)))
     out: list[tuple[Place, str]] = []
     seen: set[str] = set()
-    for place, span, _len in hits:
+    taken: list[tuple[int, int]] = []
+    for place, span, length, start in hits:
         key = fold(span)
         if key in seen:
             continue
+        # A shorter name inside a longer one already accepted is not a second
+        # place: "San" (a city in Mali) inside "San Juan" must not become place B.
+        if any(start < t_end and t_start < start + length for t_start, t_end in taken):
+            continue
         seen.add(key)
+        taken.append((start, start + length))
         out.append((place, span))
         if len(out) >= limit:
             break

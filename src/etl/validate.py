@@ -54,6 +54,24 @@ PHYSICAL_RANGES: dict[str, tuple[float, float]] = {
     # Temperaturas extremas en °C
     "T2M_MAX": (-90.0, 75.0),
     "T2M_MIN": (-95.0, 65.0),
+    # --- RONDA_7: el resto de variables POWER añadidas al catálogo ----------
+    "T2M_RANGE": (0.0, 90.0),            # diferencia entre máxima y mínima, °C
+    "T2MDEW": (-100.0, 45.0),            # punto de rocío, °C
+    "TSOIL1": (-80.0, 80.0),             # temperatura del suelo 2-10 cm, °C
+    "QV2M": (0.0, 50.0),                 # humedad específica, g/kg
+    "PS": (30.0, 110.0),                 # presión en superficie, kPa (Everest ~31, mar ~101)
+    "WS10M": (0.0, 150.0),
+    "WS50M": (0.0, 150.0),
+    "GWETROOT": (0.0, 1.0),
+    "GWETPROF": (0.0, 1.0),
+    "PRECSNOLAND": (0.0, 500.0),         # mm/día de agua equivalente
+    "FROST_DAYS": (0.0, 31.0),           # días por mes
+    "ALLSKY_SFC_LW_DWN": (0.0, 60.0),    # MJ/m²/día
+    "CLRSKY_SFC_SW_DWN": (0.0, 50.0),
+    "ALLSKY_SFC_PAR_TOT": (0.0, 25.0),
+    "ALLSKY_KT": (0.0, 1.0),
+    "ALLSKY_SFC_UV_INDEX": (0.0, 25.0),
+    "ALLSKY_SRF_ALB": (0.0, 1.0),
 }
 
 SENTINEL_FILLS = {-9999.0, -9999, -999.0, -999, -99999.0, -99999, 1e14, 1e15, 1e20}

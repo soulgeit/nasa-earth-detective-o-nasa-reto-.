@@ -38,12 +38,31 @@ def test_ice_question_has_a_variable_and_no_place():
     assert result["place"] is None
 
 
-def test_wind_is_an_unknown_variable():
-    """There is no wind variable in the catalogue: say so, do not answer with RH2M."""
+def test_wind_is_a_real_variable_since_round_7():
+    """RONDA_7 added WS2M to the catalogue: a wind question is now investigated.
+
+    Until then the honest answer was "no_match, WS2M is missing" (never RH2M).
+    """
     result = detective.plan("Is the wind getting stronger in Punta Arenas?", lang="en")
-    assert result["intent"] == "no_match"
-    assert result["variable_ids"] == []
-    assert "WS2M" in (result.get("missing_ids") or [])
+    assert result["intent"] == "investigate"
+    assert result["variable_ids"] == ["WS2M"]
+    assert result["place"] == "Punta Arenas"
+    assert not result.get("missing_ids")
+
+
+def test_a_city_question_never_gets_a_global_only_series():
+    """"temperatura en Huancayo" used to return the GISTEMP *global* anomaly."""
+    for question in ("temperatura en Huancayo", "temperature in Ayacucho"):
+        result = detective.plan(question, lang="es")
+        assert result["variable_ids"] == ["T2M"], result
+    # a named region keeps its hemispheric series
+    arctic = detective.plan("Is Arctic sea ice shrinking?", lang="en")
+    assert arctic["variable_ids"] == ["SEAICE_EXTENT_N"], arctic
+
+
+def test_a_name_inside_a_longer_name_is_not_a_second_place():
+    result = detective.plan("calor en San Juan de Lurigancho", lang="es")
+    assert result["place_b"] is None, result
 
 
 def test_meaning_of_life_is_out_of_scope():

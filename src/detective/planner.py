@@ -144,6 +144,31 @@ def _years(question: str) -> tuple[int | None, int | None, int | None]:
     return None, None, last_n
 
 
+# Everyday words that are also the name of a city in the gazetteer (measured
+# against its 8 109 entries): Como (IT), Nice (FR), Man (CI), Male (MV), San (ML)...
+# "Hola, ¿cómo estás?" produced ``place: "cómo"`` (RONDA_7).
+_COMMON_WORD_CITIES = frozenset(
+    "bath cerro como male man mobile nada nice orange pueblo reading san split van".split()
+)
+
+
+def _is_common_word(span: str, question: str) -> bool:
+    """True when the span is an ordinary word, not that city.
+
+    It counts as the city only when the student wrote it as a proper name:
+    capitalised, with the city's own spelling (no added accent), and not as the
+    first word of the sentence, where every word is capitalised.
+    """
+    from .text_norm import strip_accents
+
+    if fold(span).strip() not in _COMMON_WORD_CITIES:
+        return False
+    position = question.find(span)
+    opening = question[:position].strip(" ¿¡\"'«(") == "" if position >= 0 else True
+    proper = span[:1].isupper() and strip_accents(span) == span
+    return not (proper and not opening)
+
+
 def _resolved_places(question: str, *, limit: int = 2) -> list[str]:
     """Places the gazetteer or the regions file can actually resolve (RONDA_4 §4.2).
 
@@ -152,11 +177,32 @@ def _resolved_places(question: str, *, limit: int = 2) -> list[str]:
     """
     resolved: list[str] = []
     for span in extract_places(question, limit=limit + 2):
+        if _is_common_word(span, question):
+            continue
         if resolve_place(span):
             resolved.append(span)
         if len(resolved) >= limit:
             break
     return resolved
+
+
+POINT_CONNECTORS = ("power", "giovanni_csv")
+
+
+def _is_global_only(card: dict[str, Any]) -> bool:
+    """True for a retrieved card whose variable is one global or hemispheric series."""
+    variable_id = (card.get("variables") or [None])[0]
+    catalog_card = _catalog_card(variable_id) if variable_id else None
+    if not catalog_card:
+        return False
+    return str(catalog_card.get("connector") or "power") not in POINT_CONNECTORS
+
+
+def _is_city(span: str) -> bool:
+    """A gazetteer city, as opposed to a named region such as "Arctic"."""
+    from .gazetteer import _region_lookup
+
+    return bool(span) and not _region_lookup(span)
 
 
 def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: str = "rules") -> dict[str, Any]:
@@ -170,6 +216,17 @@ def _rules_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: 
     places = _resolved_places(question, limit=2)
     start, end, last_n = _years(question)
     chosen = next((c for c in cards if c.get("available", True)), cards[0] if cards else None)
+    # RONDA_7: a question about a city is a local question. A global-only series
+    # (the GISTEMP global anomaly, the hemispheric sea-ice extent) cannot answer
+    # "temperatura en Huancayo", so the first variable that can be fetched for a
+    # point wins. Named regions (the Arctic, Antarctica) keep the original choice.
+    if chosen and places and _is_city(places[0]) and _is_global_only(chosen):
+        local = next(
+            (c for c in cards if c.get("available", True) and not _is_global_only(c)),
+            None,
+        )
+        if local is not None:
+            chosen = local
     variables = (chosen.get("variables") or []) if chosen else []
     plan = {
         "intent": _intent(question),

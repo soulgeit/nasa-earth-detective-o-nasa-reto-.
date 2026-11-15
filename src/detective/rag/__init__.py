@@ -24,7 +24,7 @@ from typing import Any, Iterable, Sequence
 from ..bm25 import BM25Index
 from ..config import SETTINGS
 from ..corpus import Document, corpus_fingerprint, load_corpus
-from ..lexicon import expansion_terms, specificity_prior
+from ..lexicon import SPECIALISED, expand, expansion_terms, specificity_prior
 from ..llm import AIUnavailable
 from ..text_norm import detect_language
 from .embeddings import VectorIndex, query_vector, try_load_or_build
@@ -37,6 +37,9 @@ TIER_PLANNED_FACTOR = 0.75
 EXPANSION_WEIGHT = 1.0  # measured best on the 50 golden questions (P@1 0.960, P@3 1.000)
 # How much an exact colloquial-alias hit may outrank a looser textual match.
 PRIOR_WEIGHT = 0.5  # measured on the 50 golden questions: P@1 0.960 -> 0.980
+# RONDA_7: a specialised variable that the student did not name ranks below the
+# general ones (see lexicon.SPECIALISED). It is still a candidate, never hidden.
+SPECIALISED_FACTOR = 0.55
 
 
 @dataclass
@@ -176,12 +179,22 @@ def retrieve(
     if prior:
         peak = max(prior.values()) or 1.0
         prior = {vid: value / peak for vid, value in prior.items()}
+    named = set(expand(query))
+
+    def _tier(doc: Document) -> float:
+        factor = 1.0 if doc.available else TIER_PLANNED_FACTOR
+        if doc.type == "variable_card" and doc.variables:
+            own = set(doc.variables)
+            if own & SPECIALISED and not own & named:
+                factor *= SPECIALISED_FACTOR
+        return factor
+
     weighted = {
         idx: (
             normalized_scores.get(idx, 0.0)
             + PRIOR_WEIGHT * max((prior.get(v, 0.0) for v in corpus.docs[idx].variables), default=0.0)
         )
-        * (1.0 if corpus.docs[idx].available else TIER_PLANNED_FACTOR)
+        * _tier(corpus.docs[idx])
         for idx in fused
     }
 
