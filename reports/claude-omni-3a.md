@@ -1,14 +1,15 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-3a — 2026-11-15 07:05 hora de Perú
-Rama@commit: feature/static@(ronda5) · empujado: sí (gh-pages@4e526a2 → pendiente el push de la 07:10)
+Rama@commit: feature/static@8eebe38 · empujado: sí · **gh-pages@bbf6e10** (antes 4e526a2)
 VERIFICADO (R5 · tarea 1): `python scripts/build_static.py --from-cases` → 7 casos, 7 análisis, 2 atlas, 0 errores; `.nojekyll` presente en dist/
 VERIFICADO (R5 · tarea 1): Playwright sirviendo dist/ bajo subcarpeta `/nasa-earth-detective-o-nasa-reto-./` a 1440 y 390 px → **los 7 casos abren** con su verdict_code y su pendiente, con unidad, **0 errores de consola**
 VERIFICADO (R5 · tarea 1): cifras de la UI = `analysis.json` en los 7: lima +0.159 SIGNIFICANT · svalbard +0.699 SIGNIFICANT_STRONG · piura −0.011 SUGGESTIVE · arctic −0.495 SIGNIFICANT_STRONG · antarctic −0.048 NOT_SIGNIFICANT · amazonia-t2m +0.186 SIGNIFICANT_STRONG · amazonia-prectotcorr −0.083 NOT_SIGNIFICANT
 VERIFICADO (R5 · tarea 1): `pytest tests/api/test_static_build.py` → 11 passed (2 pruebas nuevas: `.nojekyll` y `GET /api/cases/<id>` en el shim)
+VERIFICADO (R5 · tarea 3): URL pública `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` → HTTP 200, `Last-Modified: Sun, 15 Nov 2026 12:01:47 GMT` (sello nuevo); con y sin barra final, a 1440 y 390 px: **7 de 7 casos abren con veredicto, pendiente y unidad, 0 errores de consola**; los 2 de la Amazonía ya abren (+0.186 °C/década y −0.083 mm/día)
 ROTO / NO HECHO: —
-Siguiente paso: tarea 3 — abrir la URL pública tras el push y comprobar los 7 casos, 1440 y 390 px
+Siguiente paso: tarea 2 (avisos de lo que necesita la API) y tarea 4 (regenerar tras las integraciones de 10:00 y 15:00)
 Necesito de: nadie
-Avisos para otros carriles: `analysis.json` no lleva `variable.unit`; la unidad la pone el catálogo (`_decorate_analysis`). El respaldo ya responde `GET /api/cases/<id>`.
+Avisos para otros carriles: GitHub rechaza la API de Pages para este token (404 en `/pages`), pero el sitio publica solo; la comprobación fiable es `curl -I` + Playwright, no `Invoke-WebRequest` (falla por IPv6). `analysis.json` no lleva `variable.unit`: la pone el catálogo (`_decorate_analysis`).
 <!-- ESTADO:FIN -->
 
 ## Estado anterior (Ronda 4, 01:15)
