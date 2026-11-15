@@ -1,16 +1,15 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3 — 2026-11-14 20:05 (hora de Perú)
-Rama@commit: feature/api@90744f5 (Ronda 3, fusionado origin/main 32d07e2) · empujado: sí
-VERIFICADO: variables sin lugar sin coordenadas → `pytest tests/api/test_contract.py -q` → 30 passed; smoke 14/14
-VERIFICADO: `place` de /api/geocode llega a `region.name` y al texto → `where='Observed in Lima, Peru.'`
-VERIFICADO: `/api/trendmap` devuelve `variable_id: "T2M"` (antes "VAR") y el catálogo publica `available`/`planned`
-VERIFICADO: `scripts/gate.py` → smoke OK, validate_datasets OK (5 series), validate_knowledge OK; cierra por la roja ajena
-VERIFICADO (suite completa, regla 14) → `pytest -q` → 223 passed, 1 failed, 9 skipped (la roja: `test_published_nasa_benchmarks`, −9999 del hielo, carril antigravity-1)
-ESCRITO (sin ejecutar de punta a punta): nada del carril pendiente
-ROTO / NO HECHO: A5 sin URL pública (falta tu login en Fly); A6 sin regenerar (dom 10:00)
-Siguiente paso: esperar tu login de hosting; sin URL no hay entrega
-Necesito de: humano → `flyctl auth signup` y avisar; antigravity-1 → −9999 convertido en faltante (destraba la roja)
-Avisos para otros carriles: `/api/analyze|series|report` aceptan ahora `place=`; `/api/catalog/variables` trae `available` y `planned`; `/api/trendmap` ya no devuelve "VAR"
+## ESTADO — claude-omni-3 — 2026-11-15 01:30 (hora de Perú)
+Rama@commit: feature/api@<hash> (Ronda 4, fusionado origin/main 55869e8) · empujado: sí
+VERIFICADO: regla 19 → `pytest tests/api/test_contract.py -q` → planned publicadas aparte; analyze/series/report/trendmap → 409 VARIABLE_PLANNED en el idioma pedido
+VERIFICADO: `requirements.txt` con `==` (10 paquetes) e instalación en venv limpio (`cleanenv`, pip 25.0.1) → `smoke_api.py` → **15 passed · 0 skipped · 0 failed**
+VERIFICADO: 20 simultáneas → misma clave 366,9 req/s (máx 50 ms) · 20 claves distintas 2,9 req/s (mediana 3703 ms), 20/20 HTTP 200
+VERIFICADO: `scripts/gate.py` con 3 comprobaciones nuevas → planned OK, no_secrets OK (294 archivos, positivo y negativo probados), rangos FALLA por el −9999 de los casos de hielo (carril hermes-2)
+VERIFICADO (suite entera, regla 14) → `pytest -q` → **237 passed, 3 failed, 9 skipped**; las 3 rojas son ajenas (detective ×2, ml ×1)
+ROTO / NO HECHO: URL pública (Railway, la despliega el arquitecto); A6 pasa a claude-omni-3a
+Siguiente paso: esperar la URL para el smoke remoto a las 12:00, 16:00 y 19:00
+Necesito de: hermes-2 → regenerar los casos de hielo (mi gate los marca); arquitecto → desplegar en Railway
+Avisos para otros carriles: `/api/catalog/variables` devuelve ahora `{catalog, variables, planned}` y `catalog.n_available`/`n_planned`; nuevo código de error `VARIABLE_PLANNED` (HTTP 409)
 <!-- ESTADO:FIN -->
 
 # Claude Omni 3 — API v2 y despliegue
@@ -547,3 +546,116 @@ PUERTA CERRADA: fallaron pytest
   `fly.toml` están listos desde la ronda anterior; no he podido ejecutar
   `fly deploy` porque no hay sesión (`flyctl auth whoami` → no access token).
 - 5 pruebas nuevas en `tests/api/test_contract.py`.
+
+---
+
+## Ronda 4 — tareas 1, 2 y 3 (15-nov-2026, 01:30 hora de Perú)
+
+Rama@commit: feature/api · fusionado `origin/main` (55869e8) sin conflicto.
+
+### Tarea 1 — regla 19: una `planned` nunca se analiza (01:30)
+
+- **`VARIABLE_PLANNED` (HTTP 409)**, código nuevo en `src/api/errors.py` con
+  mensaje bilingüe. El texto dice qué variable es, que está planificada y cómo
+  cargarla («descarga su CSV de Giovanni y súbelo en *Analizar un CSV*»), en el
+  idioma pedido.
+- **`catalog.is_planned(card)`**: respeta `planned`/`available` si el catálogo
+  los declara y, si no, lo deduce del conector (`power`, `gistemp`,
+  `nsidc_seaice` son servibles; el resto —Giovanni— no). Así funciona hoy,
+  antes de que claude-omni-1b añada las fichas `planned`.
+- **`validation.check_analyzable`** se usa en `/api/analyze`, `/api/series`,
+  `/api/report` y `/api/trendmap`.
+- **`/api/catalog/variables` publica las `planned` aparte**:
+  `{catalog, variables, planned}` con `catalog.n_available` y `n_planned`. Nunca
+  se cuentan como disponibles (regla 16).
+- Añadido a `smoke_api.py` y con 2 pruebas de contrato que inyectan una ficha
+  `planned` y comprueban el 409 y el reparto del catálogo.
+
+### Tarea 2 — versiones fijadas, entorno limpio y 20 simultáneas (04:00, adelantada)
+
+**`requirements.txt` con `==`**, las 10 del entorno que pasa la suite:
+
+```
+fastapi==0.163.0      starlette==1.10.0        uvicorn==0.54.0
+pydantic==2.14.3      python-multipart==0.0.33 requests==2.34.2
+certifi==2026.10.23   numpy==2.5.4             scipy==1.18.1
+pymannkendall==1.4.3
+```
+
+`starlette` y `certifi` se fijan aunque lleguen como dependencias: el código
+importa `starlette` directamente, y `requests` usa `certifi` para TLS.
+
+**Arranque en entorno limpio**: venv nuevo (`C:\Users\USER37\cleanenv`, Python
+3.12.14, pip 25.0.1), `pip install -r requirements.txt` y arranque con las
+variables del `Dockerfile` (`AI_MODE=extractive`, `ALLOW_FIXTURES=0`). El smoke
+completo pasa contra ese servidor: **15/15**.
+
+**20 peticiones simultáneas** (`scripts/load_test.py`, IP distinta por petición
+para medir concurrencia y no el cupo de 120/min):
+
+```
+20 simultáneas, misma clave (caché)
+  códigos              : {200: 20}
+  total (pared)        : 55 ms
+  latencia min/med/max : 7 / 43 / 50 ms
+  throughput           : 366,9 req/s
+
+20 simultáneas, 20 claves distintas (motor sin caché)
+  códigos              : {200: 20}
+  total (pared)        : 6 807 ms
+  latencia min/med/max : 20 / 3 703 / 6 803 ms
+  throughput           : 2,9 req/s
+```
+
+Lectura honesta: **no se pierde ninguna petición** (20/20 HTTP 200 en los dos
+casos) y la caché absorbe bien. Pero 20 análisis distintos a la vez tardan
+~3,7 s de mediana porque el proceso es de un solo worker y el motor es CPU puro.
+Con la caché caliente —el caso normal en una demo, donde los jueces abren los
+mismos casos— la respuesta es de decenas de milisegundos. Si el jurado pulsa 20
+puntos distintos a la vez, espera unos segundos; no hay error ni caída.
+
+### Tarea 3 — `scripts/gate.py` con las tres comprobaciones nuevas (09:00, adelantada)
+
+1. **`planned_not_analyzable`** — regla 19: comprueba que ninguna `planned` se
+   publica como disponible y que la API responde `VARIABLE_PLANNED` a cada una.
+   Funciona con `--base URL` o en proceso (offline).
+2. **`case_physical_ranges`** — regla 12: recorre los `series.json` de
+   `data/cases/` con `src/etl/validate.py` (que es la autoridad de los rangos) y
+   además revisa cada valor contra `PHYSICAL_RANGES`. **Hoy falla**, y hace bien:
+   `arctic-seaice` y `antarctic-seaice` siguen con −9999 en `data[109]` y
+   `data[110]` (1987-12 y 1988-01). Es el carril de hermes-2.
+3. **`no_secrets`** — regla 23: busca la forma de un secreto (tokens de GitHub,
+   AWS, HF, Google, claves privadas) en el árbol versionado, no la palabra
+   «token». Verificado con un positivo de prueba (lo detecta) y con el
+   repositorio (0 hallazgos en 294 archivos).
+
+```
+$ python scripts/gate.py --skip-suite --offline
+OK    smoke_api               exit=0     16.2s
+OK    validate_knowledge      exit=0      0.2s
+OK    planned_not_analyzable  exit=0      0.2s
+OK    no_secrets              exit=0      1.1s
+FALLA validate_datasets      exit=1      0.2s   ← −9999 del hielo (hermes-2)
+FALLA case_physical_ranges   exit=1      0.1s   ← el mismo −9999, detectado por mi comprobación
+PUERTA CERRADA
+```
+
+### Suite completa (regla 14)
+
+```
+$ python -m pytest -q
+237 passed, 3 failed, 9 skipped in 201.99s
+  FAILED tests/detective/test_pipeline.py::test_pipeline_offline[what is soil moisture?-en-GWETTOP]
+  FAILED tests/detective/test_pipeline.py::test_missing_variable_is_declared_not_substituted[...]
+  FAILED tests/ml/test_lora_real.py::test_plan_with_lora_missing_adapter_raises_error
+```
+
+Las tres rojas son ajenas: dos de `src/detective` (carril claude-omni-2) y una
+de `src/ml/serve.py` (carril antigravity-2). **No integro en `main`** (regla 25:
+solo con la suite entera sin rojas).
+
+### Falta
+
+- **URL pública**: la despliega el arquitecto desde el PC1 en Railway. En cuanto
+  exista, `smoke_api.py` contra ella a las 12:00, 16:00 y 19:00.
+- El respaldo estático (A6) ya no es mío: pasó a claude-omni-3a.

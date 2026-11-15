@@ -96,6 +96,37 @@ def check_bbox(raw: str | list[float] | None) -> list[float] | None:
     return [float(v) for v in values]
 
 
+def check_analyzable(variable_id: str) -> dict[str, Any]:
+    """Tarjeta de la variable, si la API puede analizarla hoy.
+
+    Una variable `planned` no se analiza nunca por id (regla 19, RONDA_4):
+    responde un error claro en el idioma pedido que dice cómo cargarla. El
+    límite del carril de la API es este: el catálogo las publica aparte.
+    """
+    card = catalog.get_variable(variable_id)
+    if catalog.is_planned(card):
+        names = card.get("names") or {}
+        name = names.get("es") or names.get("en") or variable_id
+        raise ApiError(
+            "VARIABLE_PLANNED",
+            message={
+                "es": (
+                    f"«{name}» todavía no está cargada: es una variable planificada. "
+                    "Descarga su CSV de Giovanni y súbelo en «Analizar un CSV»."
+                ),
+                "en": (
+                    f"“{name}” is not loaded yet: it is a planned variable. "
+                    "Download its Giovanni CSV and upload it with “Analyze a CSV”."
+                ),
+            },
+            hint=(
+                f"{variable_id} is planned (connector={card.get('connector')!r}); "
+                "upload a Giovanni CSV via POST /api/analyze/upload"
+            ),
+        )
+    return card
+
+
 def check_variable(variable_id: str) -> dict[str, Any]:
     if not variable_id:
         raise _bad("Falta variable_id.", "Missing variable_id.")

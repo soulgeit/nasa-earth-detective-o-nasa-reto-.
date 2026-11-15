@@ -198,7 +198,25 @@ def run(base: str, *, strict: bool) -> list[Check]:
     avail = sum(1 for v in vlist if v.get("available"))
     record("catalog availability flags", ok, f"HTTP {st} n={len(vlist)} available={avail} planned={len(vlist) - avail}", ms_c)
 
-    # 14. UI en /
+    # 14. regla 19: las `planned` se publican aparte y no se analizan
+    st, bd, ms_c, _ = _get(base, "/api/catalog/variables", {"lang": "en"})
+    pl = _json(bd) or {}
+    planned_list = pl.get("planned") or []
+    available_list = pl.get("variables") or []
+    overlap = {v.get("id") for v in planned_list} & {v.get("id") for v in available_list}
+    ok = st == 200 and not overlap
+    detail = f"HTTP {st} available={len(available_list)} planned={len(planned_list)}"
+    if planned_list:
+        pid = planned_list[0].get("id")
+        st2, bd2, ms2, _ = _get(base, "/api/analyze", {"variable_id": pid, "lat": 0, "lon": 0})
+        pl2 = _json(bd2) or {}
+        code2 = (pl2.get("error") or {}).get("code")
+        if st2 != 409 or code2 != "VARIABLE_PLANNED":
+            ok = False
+        detail += f" | {pid} -> HTTP {st2} {code2}"
+    record("planned not analyzable (rule 19)", ok, detail, ms_c)
+
+    # 15. UI en /
     status, body, ms, _ = _get(base, "/")
     record("UI /", status == 200 and len(body) > 0, f"HTTP {status} bytes={len(body)}", ms)
 

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -149,6 +150,195 @@ def _frozen_files() -> list[str]:
     return series
 
 
+def _http_json(url: str) -> tuple[int, object, int, str]:
+    """GET que devuelve JSON tambien en los errores (4xx traen el contrato §7)."""
+    started = time.perf_counter()
+    try:
+        with urllib.request.urlopen(url, timeout=120) as resp:
+            return resp.status, json.loads(resp.read().decode("utf-8")), int((time.perf_counter() - started) * 1000), url
+    except urllib.error.HTTPError as exc:
+        try:
+            payload = json.loads(exc.read().decode("utf-8"))
+        except Exception:  # noqa: BLE001
+            payload = {}
+        return exc.code, payload, int((time.perf_counter() - started) * 1000), url
+
+
+def _in_process_catalog() -> dict:
+    """Catalogo sin levantar servidor, para que la puerta funcione offline."""
+    sys.path.insert(0, str(ROOT))
+    from src.api import catalog  # noqa: PLC0415
+
+    available, planned = [], []
+    for card in catalog.all_variables():
+        item = catalog.with_availability(card)
+        (planned if catalog.is_planned(card) else available).append(item)
+    return {"variables": available, "planned": planned}
+
+
+def _analyzable_probe(base: str | None, variable_id: str) -> tuple[int, str]:
+    """Pide la variable y devuelve (status, codigo de error)."""
+    if base:
+        status, payload, _ms, _url = _http_json(f"{base}/api/analyze?variable_id={variable_id}")
+    else:
+        sys.path.insert(0, str(ROOT))
+        from fastapi.testclient import TestClient  # noqa: PLC0415
+        from src.api.main import app  # noqa: PLC0415
+
+        r = TestClient(app).get("/api/analyze", params={"variable_id": variable_id})
+        status, payload = r.status_code, r.json()
+    code = ""
+    if isinstance(payload, dict):
+        code = (payload.get("error") or {}).get("code", "")
+    return status, code
+
+
+def _check_no_planned_analyzable(base: str | None) -> tuple[str, int, str, float]:
+    """Regla 19: ninguna variable `planned` puede analizarse.
+
+    Se comprueba donde importa: el catalogo las publica aparte y la API las
+    rechaza con VARIABLE_PLANNED. Sin servidor vivo se hace en proceso.
+    """
+    started = time.perf_counter()
+    print("\n=== planned no analizable (regla 19) ===")
+    code = 0
+    lines: list[str] = []
+    try:
+        if base:
+            _st, payload, _ms, _url = _http_json(f"{base}/api/catalog/variables?lang=en")
+            payload = payload if isinstance(payload, dict) else {}
+        else:
+            payload = _in_process_catalog()
+        planned = payload.get("planned") or []
+        available = {v.get("id") for v in (payload.get("variables") or [])}
+        overlap = {v.get("id") for v in planned} & available
+        if overlap:
+            code = 1
+            lines.append(f"FALLA: planned tambien publicadas como disponibles: {sorted(overlap)}")
+        for item in planned:
+            vid = item.get("id")
+            if not vid:
+                continue
+            status, err = _analyzable_probe(base, vid)
+            if err != "VARIABLE_PLANNED":
+                code = 1
+                lines.append(f"FALLA: {vid} es planned pero la API responde {status} {err}")
+        lines.insert(0, f"planned={len(planned)} available={len(available)} solapamiento={bool(overlap)}")
+        if not planned:
+            lines.append("(el catalogo actual no declara planned: comprobacion vacia, no es un fallo)")
+    except Exception as exc:  # noqa: BLE001
+        code = 1
+        lines.append(f"FALLA: no se pudo comprobar: {type(exc).__name__}: {exc}")
+    for line in lines:
+        print("  " + line)
+    elapsed = time.perf_counter() - started
+    print(f"-> exit {code} en {elapsed:.1f}s")
+    return "planned_not_analyzable", code, "\n".join(lines), elapsed
+
+
+def _check_case_ranges() -> tuple[str, int, str, float]:
+    """Regla 12: ningun valor fuera del rango fisico dentro de data/cases/.
+
+    Se apoya en `src/etl/validate.py`, que es la autoridad de los rangos. Un
+    -9999 en el hielo marino cae aqui.
+    """
+    started = time.perf_counter()
+    print("\n=== rangos fisicos en data/cases/ (regla 12) ===")
+    sys.path.insert(0, str(ROOT))
+    from src.etl.validate import PHYSICAL_RANGES, validate_file  # noqa: PLC0415
+
+    cases_dir = ROOT / "data" / "cases"
+    files = sorted(cases_dir.rglob("series.json")) if cases_dir.exists() else []
+    code, problems, checked, values = 0, [], 0, 0
+    for path in files:
+        errors = validate_file(str(path))
+        if errors:
+            code = 1
+            problems.append(f"FALLA: {path.relative_to(ROOT)}")
+            problems.extend("   - " + e for e in errors[:5])
+            continue
+        checked += 1
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        var_id = doc.get("variable_id")
+        bounds = PHYSICAL_RANGES.get(var_id)
+        if not bounds:
+            continue
+        low, high = bounds
+        for point in doc.get("data") or []:
+            val = point.get("value")
+            if val is None:
+                continue
+            values += 1
+            if not (low <= float(val) <= high):
+                code = 1
+                problems.append(
+                    f"FALLA: {path.relative_to(ROOT)} {point.get('date')}={val} "
+                    f"fuera de {var_id} [{low}, {high}]"
+                )
+    summary = f"{checked}/{len(files)} series validas; {values} valores dentro de rango"
+    if not files:
+        summary = "no hay series en data/cases/ (nada que comprobar)"
+    print("  " + summary)
+    for line in problems[:20]:
+        print("  " + line)
+    elapsed = time.perf_counter() - started
+    print(f"-> exit {code} en {elapsed:.1f}s")
+    return "case_physical_ranges", code, summary + "\n" + "\n".join(problems), elapsed
+
+
+#: Patrones de credencial (regla 23). Se busca la forma del secreto, no la
+#: palabra «token»: un README puede explicar que no se pegue sin ser hallazgo.
+_SECRET_PATTERNS = [
+    (re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"), "token de GitHub"),
+    (re.compile(r"github_pat_[A-Za-z0-9_]{20,}"), "token fine-grained de GitHub"),
+    (re.compile(r"sk-[A-Za-z0-9]{20,}"), "clave de API estilo OpenAI"),
+    (re.compile(r"AKIA[0-9A-Z]{16}"), "access key de AWS"),
+    (re.compile(r"hf_[A-Za-z0-9]{20,}"), "token de Hugging Face"),
+    (re.compile(r"AIza[0-9A-Za-z_\-]{30,}"), "clave de Google"),
+    (re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"), "clave privada"),
+]
+
+#: Solo lo que puede llevar un secreto versionado. `.git` guarda los mismos
+#: objetos y multiplicaria los hallazgos por cada commit.
+_SKIP_DIRS = {".git", ".venv", ".venv-ml", "node_modules", "__pycache__", "models", "dist", ".pytest_cache"}
+_BINARY_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".pdf", ".mp4", ".safetensors", ".zip", ".nc", ".gz"}
+
+
+def _check_no_secrets() -> tuple[str, int, str, float]:
+    """Regla 23: ninguna credencial en el repositorio."""
+    started = time.perf_counter()
+    print("\n=== credenciales en el repositorio (regla 23) ===")
+    hits: list[str] = []
+    scanned = 0
+    for path in ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        if any(part in _SKIP_DIRS for part in path.parts):
+            continue
+        if path.suffix.lower() in _BINARY_SUFFIXES:
+            continue
+        try:
+            if path.stat().st_size > 2_000_000:
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        scanned += 1
+        for pattern, label in _SECRET_PATTERNS:
+            if pattern.search(text):
+                hits.append(f"FALLA: {path.relative_to(ROOT)} parece contener un {label}")
+    code = 1 if hits else 0
+    print(f"  {scanned} archivos revisados; {len(hits)} hallazgos")
+    for hit in hits:
+        print("  " + hit)
+    elapsed = time.perf_counter() - started
+    print(f"-> exit {code} en {elapsed:.1f}s")
+    return "no_secrets", code, f"{scanned} archivos; {len(hits)} hallazgos\n" + "\n".join(hits), elapsed
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Puerta de calidad de EarthTrend Detective")
     parser.add_argument("--base", default=None, help="API viva; si se omite se levanta una local")
@@ -181,6 +371,11 @@ def main(argv: list[str]) -> int:
         if args.offline:
             knowledge_cmd.append("--offline")
         results.append(_run("validate_knowledge", knowledge_cmd, timeout=900))
+
+    # RONDA_4 §4: las tres comprobaciones nuevas de la puerta.
+    results.append(_check_no_planned_analyzable(args.base))
+    results.append(_check_case_ranges())
+    results.append(_check_no_secrets())
 
     print("\n" + "=" * 66)
     print("RESUMEN DE LA PUERTA")
