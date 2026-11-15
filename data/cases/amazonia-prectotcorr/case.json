@@ -1,0 +1,57 @@
+{
+ "id": "amazonia-prectotcorr",
+ "variable_id": "PRECTOTCORR",
+ "variable_name": {
+  "es": "Precipitación corregida",
+  "en": "Precipitation (corrected)"
+ },
+ "region": {
+  "kind": "bbox",
+  "name": "Amazon (lower Amazon basin)",
+  "lat": 1.275,
+  "lon": -70.42,
+  "bbox": [
+   -71.0,
+   0.85,
+   -69.84,
+   1.7
+  ]
+ },
+ "names": {
+  "es": "Amazonía (cuenca baja del Amazonas)",
+  "en": "Amazon (lower Amazon basin)"
+ },
+ "titles": {
+  "es": "TODO_HUMANO",
+  "en": "TODO_HUMANO"
+ },
+ "story": {
+  "es": [
+   "TODO_HUMANO"
+  ],
+  "en": [
+   "TODO_HUMANO"
+  ]
+ },
+ "frozen_at": "2026-11-15T00:52:21Z",
+ "verdict_code": "NOT_SIGNIFICANT",
+ "provenance": {
+  "kind": "user_upload",
+  "source": "Giovanni (GES DISC) CSV export",
+  "underlying": "\"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)",
+  "request_url": "https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71",
+  "retrieved_at": "2026-11-15T00:52:22Z",
+  "sha256": "04274ffea92b26525d7dc2b51622d8696657092dc2b14640213cf46b1f3cd0e1",
+  "native_resolution": null,
+  "citation": "NASA Giovanni, GES DISC; https://giovanni.gsfc.nasa.gov/",
+  "header_metadata": [
+   "Title:,\"Time Series, Area-Averaged of Bias corrected total surface precipitation monthly 0.5 x 0.625 (monthly)\"",
+   "User Start Date:,1980-01-01T00:00:00Z",
+   "User End Date:,2026-05-31T23:59:59Z",
+   "User Bounding Box:,\"-71,0.85,-69.84,1.7\"",
+   "Data Bounding Box:,\"-70.625,1,-70,1.5\"",
+   "URL to Reproduce Results:,\"https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=1980-01-01T00:00:00Z&endtime=2026-05-31T23:59:59Z&bbox=-71,0.85,-69.84,1.7&data=M2TMNXLND_5_12_4_PRECTOTLAND%2CM2TMNXFLX_5_12_4_PRECTOTCORR(units%3Dmm%2Fday)&dataKeyword=Precipitation&portal=GIOVANNI&format=json\"",
+   "Fill Value (M2TMNXFLX_5_12_4_PRECTOTCORR):, 1000000000000000"
+  ]
+ }
+}
