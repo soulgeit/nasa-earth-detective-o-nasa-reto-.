@@ -6,7 +6,7 @@
 
 const STRINGS = {
   en: {
-    'app.title': 'EarthTrend Detective',
+    'app.title': 'Huiracocha IA',
     'app.tagline': 'Investigate a place on Earth with real NASA Earth science data.',
     'lang.label': 'Language',
     'nav.skip': 'Skip to results',
@@ -178,7 +178,7 @@ const STRINGS = {
   },
 
   es: {
-    'app.title': 'EarthTrend Detective',
+    'app.title': 'Huiracocha IA',
     'app.tagline': 'Investiga un lugar del planeta con datos reales de ciencias de la Tierra de la NASA.',
     'lang.label': 'Idioma',
     'nav.skip': 'Ir a los resultados',

@@ -1249,11 +1249,67 @@ function renderCompareCharts(a, b) {
 let currentPlan = null;
 let currentExplainLevel = 'school';
 
+function getConversationalReply(question, lang) {
+  const q = (question || '').toLowerCase().trim().replace(/[¿?¡!.,;:_]/g, '');
+  const isEs = lang === 'es' || !/^(hello|hi|what|who|help)/i.test(q);
+
+  // 1. Saludos
+  if (/^(hola|ola|buenos dias|buenas tardes|buenas noches|buenas|saludos|que tal|como estas|como te va|hey|hello|hi)$/i.test(q) ||
+      /^(hola|ola)\b/i.test(q)) {
+    return isEs
+      ? '¡Hola! Soy Huiracocha IA, tu asistente de ciencias de la Tierra y análisis climático con datos de la NASA. Puedo decirte si la temperatura, lluvias o sequías están cambiando de forma estadísticamente significativa en cualquier ciudad del mundo. ¿Qué lugar o clima te gustaría investigar?'
+      : 'Hello! I am Huiracocha AI, your NASA Earth science intelligence assistant. I can detect whether temperature, rainfall, or droughts are changing with statistical significance anywhere on Earth. Which place or climate trend would you like to explore?';
+  }
+
+  // 2. ¿Qué haces? / ¿Para qué sirves?
+  if (/(que haces|para que sirves|para q sirves|que puedes hacer|cual es tu funcion|a que te dedicas|what do you do|what can you do|how does this work|como funciona)/i.test(q)) {
+    return isEs
+      ? 'Analizo más de 40 años de observaciones satelitales y estaciones históricas de la NASA (POWER, GISTEMP, MODIS, NSIDC) para verificar con rigor estadístico (Theil-Sen y Mann-Kendall) si el clima está cambiando. Prueba preguntando: "¿Llueve menos en Piura?" o "¿Sube la temperatura en Lima?".'
+      : 'I analyze 40+ years of NASA satellite and station observations (POWER, GISTEMP, MODIS, NSIDC) to verify whether climate trends are genuine using rigorous statistical tests (Theil-Sen & Mann-Kendall). Try asking: "Is it raining less in Piura?" or "Is temperature rising in Lima?".';
+  }
+
+  // 3. ¿Quién eres?
+  if (/(quien eres|quien sos|eres una ia|who are you|what are you)/i.test(q)) {
+    return isEs
+      ? 'Soy Huiracocha IA, una inteligencia artificial creada para el desafío de la NASA especializada en ciencias climáticas, detección de tendencias y análisis biofísico de la Tierra sin alucinaciones.'
+      : 'I am Huiracocha AI, an Earth science intelligence system developed for NASA Space Apps, specialized in climate trend detection and biophysical analysis using verified NASA data.';
+  }
+
+  // 4. Ayuda
+  if (/(ayuda|help|instrucciones|guia)/i.test(q)) {
+    return isEs
+      ? 'Para comenzar una investigación puedes:\n1. Escribir una pregunta aquí (ej. "¿Sube la temperatura en Lima?").\n2. Hacer clic en el mapa para seleccionar un punto.\n3. O explorar los "Casos congelados" más abajo.'
+      : 'To begin an investigation you can:\n1. Type a question here (e.g. "Is it raining less in Piura?").\n2. Click anywhere on the map to pick a location.\n3. Or explore the "Frozen cases" below.';
+  }
+
+  return null;
+}
+
 async function askDetective(question) {
-  if (!question || question.trim().length < 3) return;
+  if (!question || question.trim().length < 2) return;
   const btn = $('#detective-ask-btn');
   btn.disabled = true;
   btn.textContent = '…';
+
+  // Check conversational reply first
+  const conv = getConversationalReply(question, state.lang);
+  if (conv) {
+    btn.disabled = false;
+    btn.textContent = t('detective.ask');
+    const card = $('#detective-plan-card');
+    card.hidden = false;
+    $('#plan-intent-text').textContent = conv;
+    const badge = $('#plan-meta-badge');
+    if (badge) {
+      badge.textContent = state.lang === 'es' ? 'Huiracocha IA' : 'Huiracocha AI';
+      badge.className = 'plan-badge plan-badge-rules';
+    }
+    const noteEl = $('#plan-note-text');
+    if (noteEl) noteEl.hidden = true;
+    const confirmBtn = $('#plan-confirm-btn');
+    if (confirmBtn) confirmBtn.hidden = true;
+    return;
+  }
 
   try {
     const qUrl = `${API_BASE}/api/ai/plan?question=${encodeURIComponent(question)}&lang=${state.lang}`;

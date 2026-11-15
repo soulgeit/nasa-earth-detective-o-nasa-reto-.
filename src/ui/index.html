@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EarthTrend Detective</title>
+  <title>Huiracocha IA</title>
   <meta name="description" content="Investigate a place on Earth with real NASA Earth science data: what changes, where, how much, and whether it is significant.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23125e5a'/%3E%3Cpath d='M8 22 L14 16 L18 19 L24 10' stroke='%23f4e5ce' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='10' r='2.5' fill='%23a2610f'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="assets/huiracocha_ia_navbar_128.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=3.0">
 </head>
 <body>
   <a class="skip-link" href="#results" data-i18n="nav.skip">Skip to results</a>
@@ -18,8 +18,13 @@
   <header class="masthead">
     <div class="masthead-inner">
       <div class="product">
-        <h1 data-i18n="app.title">EarthTrend Detective</h1>
-        <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
+        <div class="brand-header">
+          <img src="assets/huiracocha_ia_navbar_128.png" alt="Huiracocha IA" class="brand-logo" width="48" height="48">
+          <div class="brand-titles">
+            <h1 data-i18n="app.title">Huiracocha IA</h1>
+            <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
+          </div>
+        </div>
       </div>
             <nav class="mode-switch" role="tablist" aria-label="Investigation mode">
         <button type="button" role="tab" id="mode-single" class="mode-tab is-active" aria-selected="true" data-i18n="nav.mode.single">Single point</button>
@@ -358,9 +363,9 @@
 
   <div id="glossary-pop" role="tooltip" hidden></div>
 
-  <script src="i18n.js?v=2.2"></script>
+  <script src="i18n.js?v=3.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=2.2"></script>
+  <script src="app.js?v=3.0"></script>
 </body>
 </html>
