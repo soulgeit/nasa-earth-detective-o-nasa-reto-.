@@ -1,19 +1,18 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-2 — 2026-11-15 08:20 (hora de Perú)
-Rama@commit: feature/wizard@e701385 · empujado: sí · base: integracion/ronda5
-VERIFICADO: suite completa → `python -m pytest -q` → 284 passed, 0 failed, 10 skipped
-VERIFICADO: §4.1 docs/SUBMISSION.md → un apartado por campo de KIT_ENTREGA §4; todas las cifras con su comando; enlaces comprobados (200)
-VERIFICADO: §4.2 uso de IA → párrafo del formulario + dos filas nuevas en docs/AI_USE_LOG.md
-VERIFICADO: §4.3 fuentes de la explicación → `grep -c "Hermes 1" data/knowledge/docs.jsonl` → 0; validate_knowledge 168 documentos sin fallos; texto sin URLs y con el editor real
-VERIFICADO: §4.4 docs/EVAL_IA.md → LoRA 40/50 en GPU (2,2 s) + 37/50 en CPU (13,7 s) + reglas 50/50; decisión escrita: el producto planifica con reglas
-VERIFICADO: §4.5 reglas 50/50 = 1.000 y recuperación P@1 1.000 (era 49/50 y 0.980)
-VERIFICADO: tests/detective → 155 passed
-ESCRITO (sin ejecutar de punta a punta): nada pendiente en mi carril
-ROTO / NO HECHO: el LoRA no se re-evaluó en GPU desde este equipo (no hay RTX 4070 aquí); la cifra 40/50 y 2,2 s es la del arquitecto, citada como suya
-Siguiente paso: si el humano escribe «integra», nada más por mi parte; la Ronda 5 cierra mi carril
-Necesito de: humano: decidir equipo/miembros, URL de la app completa y caso de la demo (los tres están como <<HUMANO>> en docs/SUBMISSION.md)
-Avisos para otros carriles: el léxico del detective ahora trata las frases multi-palabra como frases; si alguien añade alias, que use la frase completa ("turning into desert") y no la palabra suelta
-Avisos: los textos de SUBMISSION citan 50/50 y 40/50 juntos; si antigravity-1 entrega el LoRA v2, hay que rehacer las dos cifras
+## ESTADO — claude-omni-2 — 2026-11-15 13:10 (hora de Perú) · REPORTE FINAL
+Rama@commit: feature/wizard@7dec1be (contenido idéntico a origin/main) · empujado: sí
+VERIFICADO: RONDA_6 §3 → docs/SUBMISSION.md 100 % en inglés, 7 campos de KIT_ENTREGA §4 + 3 secciones; 5 marcadores <<HUMANO>> visibles (equipo, visión, Railway, formato de demo)
+VERIFICADO: RONDA_6 §3 → docs/AI_USE_LOG.md 100 % en inglés; las 21 filas históricas conservadas + la nueva
+VERIFICADO: métricas del §3.2 comprobadas → reglas 50/50 · LoRA 40/50 GPU y 37/50 CPU · 200 casos 84,5 %/15,5 %
+VERIFICADO: `python -m pytest -q --ignore=scripts/test_ui_r5.py` → 287 passed, 0 failed, 10 skipped
+VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA, 6/6
+VERIFICADO: enlaces de SUBMISSION → 200 (salvo la request_url truncada de ejemplo, marcada así)
+VERIFICADO: demo → PDF 7 páginas, vídeo 29,0 s (pypdf, ffprobe)
+ROTO / NO HECHO: nada en mi carril
+HALLAZGO AJENO: `scripts/test_ui_r5.py` necesita playwright, que no está en requirements-dev.txt, así que `python -m pytest -q` no colecciona (carril de claude-omni-1). Reproducir: `python -m pytest -q` → ERROR de colección.
+HALLAZGO AJENO: la app completa no está desplegada (no hay URL de Railway en el repo); SUBMISSION lo declara como limitación.
+Necesito de: humano (3 decisiones): equipo y miembros · URL de Railway si se despliega · láminas o vídeo · caso protagonista
+Avisos: si se despliega Railway, actualizar «Live links» y la limitación 1 de SUBMISSION
 <!-- ESTADO:FIN -->
 
 # claude-omni-2 — detective con IA (RAG, planificador, explicación con guardián)
@@ -302,3 +301,93 @@ no las provisionales:
 
 Subió de 0.880 a 0.960 P@1 tras añadir humo, garúa y la coincidencia por frase.
 Tabla completa y comando en `docs/EVAL_IA.md`.
+
+---
+
+# FINAL REPORT — claude-omni-2 (detective with AI) · Round 6
+
+Scope: `src/detective/`, `tests/detective/`, `docs/EVAL_IA.md`, `docs/SUBMISSION.md`,
+`docs/AI_USE_LOG.md`, `data/knowledge/docs.jsonl` (authorised in Round 5).
+
+## What this lane delivered across the six rounds
+
+| Round | Work | Evidence |
+|---|---|---|
+| 1 | BM25 + vector + RRF retrieval, planner with hard validation, geocoder, Köppen, explanation with a deterministic guard | 98 tests |
+| 2 | Citations fixed to the analysed variable; `no_match` for products we do not carry | 108 tests |
+| 3 | Gazetteer with `alt_names`/`ascii` (1,300 ms → 4 ms per query); `scout` closed with the real ETL; `wizard.py` deleted; `local-lora` wired | 117 tests |
+| 4 | Rule 19: a `planned` variable is never a candidate; no invented places; LoRA measured on CPU | 147 tests |
+| 5 | Explanation sources carry their real publisher; LoRA GPU + CPU published; rules 50/50 | 155 tests |
+| 6 | Submission texts and AI declaration in English, verified | 287 passed, gate open |
+
+## Final verified state
+
+```
+$ python -m pytest -q --ignore=scripts/test_ui_r5.py
+287 passed, 10 skipped, 0 failed
+
+$ python scripts/gate.py --offline --skip-suite
+OK smoke_api · OK validate_datasets · OK validate_knowledge
+OK planned_not_analyzable · OK case_physical_ranges · OK no_secrets
+PUERTA ABIERTA: todo en verde
+
+$ python -m src.detective.rag.eval_plan
+| rules | 50/50 = 1.000 | 50 |
+```
+
+## Round 6 — what I actually changed
+
+**`docs/AI_USE_LOG.md` was entirely in Spanish.** Rewritten in English. All 21
+historical rows are preserved one by one, including Antigravity's duplicated rows,
+because rule 7 forbids deleting other agents' entries. One row added for this round.
+
+**`docs/SUBMISSION.md` had three Spanish placeholders** inside an otherwise English
+document. Translated. Also corrected against reality:
+
+1. The demo section said "if video is submitted". Both formats exist and are verified
+   here: the PDF has exactly 7 pages (`pypdf`) and the video is 29.0 s (`ffprobe`).
+2. The public URL was only a `<<HUMANO>>` placeholder. The GitHub Pages link is live
+   (HTTP 200, `Last-Modified` today), so it is now written out; the placeholder is
+   kept only for the full app, which is not deployed.
+3. Added the measured results of the last full run, with the commands.
+
+## Figures re-measured in this session (not copied from a report)
+
+| Claim | Command | Result |
+|---|---|---|
+| Rules on 50 reference questions | `python -m src.detective.rag.eval_plan` | 50/50 = 1.000 |
+| Corpus size | `wc -l data/knowledge/docs.jsonl` | 168 |
+| Frozen cases | `data/cases/index.json` | 7 |
+| Atlas maps | `ls data/atlas/` | 2 (`T2M`, `GISTEMP_TANOM`) |
+| Available variables | `data/catalog/variables.json` | 15 (`WS2M` absent) |
+| NSIDC gap is null, not −9999 | read `arctic-seaice/analysis.json` | `1987-12` and `1988-01` are `None`, min raw 3.57 |
+| LoRA on 200 test cases | `reports/lora/eval.json` | 84.5 % vs 15.5 % for rules |
+| Slides | `pypdf` | 7 pages |
+| Video | `ffprobe` | 29.0 s |
+| Links in SUBMISSION | `requests`, all URLs | 200, except the deliberately truncated example |
+
+LoRA on GPU (40/50, 2.2 s) is **the architect's measurement** on the RTX 4070; this
+machine has a GTX 1650 SUPER, where I measured 37/50 on CPU. Both are stated together
+in `docs/EVAL_IA.md` and in the submission texts, as rule 20 requires.
+
+## Defects found in other lanes (reported, not fixed — rule 9/24)
+
+1. **The test suite does not collect from a clean checkout.**
+   `python -m pytest -q` stops with `ModuleNotFoundError: No module named 'playwright'`
+   because `scripts/test_ui_r5.py` imports it and `requirements-dev.txt` lists only
+   `pytest` and `httpx`. Owner: claude-omni-1 (its own walkthrough script). Fix:
+   add `playwright` to `requirements-dev.txt`, or move the script out of pytest's
+   collection path. Until then the suite runs with `--ignore=scripts/test_ui_r5.py`.
+2. **The full application is not deployed.** No Railway URL exists anywhere in the
+   repository; the only live link is the static backup on GitHub Pages. The submission
+   text states this as a limitation rather than implying otherwise. Owner: architect /
+   human (`railway login`).
+
+## What I would do with more time
+
+- The reference set is 50 hand-written questions: enough to compare two planners, not
+  enough for a general accuracy claim. A larger set with adversarial phrasings would
+  probably find more lexicon failures of the kind fixed in Round 5 (`desert` as a
+  place vs. as a process).
+- The LoRA's test set comes from the same generator as its training data. A held-out
+  set written by a different person would give a more honest number than 84.5 %.
