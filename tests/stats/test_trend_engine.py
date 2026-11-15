@@ -134,8 +134,10 @@ def test_contrast_against_real_lima_fixture():
 
     res = analyze_series(ts)
 
-    # 1. Verificar veredicto
-    assert res["significance"]["verdict_code"] == "SIGNIFICANT_STRONG"
+    # 1. Verificar veredicto (en Ronda 2, MCO discrepa p=0.072 y faltan años de detectabilidad -> SIGNIFICANT)
+    assert res["significance"]["verdict_code"] == "SIGNIFICANT"
+    assert res["significance"]["tests_agree"] is False
+    assert "TESTS_DISAGREE" in res["warnings"]
     assert res["significance"]["is_significant"] is True
     assert res["trend"]["direction"] == "up"
     assert res["trend"]["sen_slope_per_decade"] > 0.0
@@ -259,17 +261,75 @@ def test_grid_fdr_and_compare():
 
 def test_published_nasa_benchmarks():
     """Valida la reproducción de valores oficiales publicados por NASA GISS y NOAA/NSIDC."""
+    import csv
     from src.etl.registry import get_series
 
+    root_dir = Path(__file__).resolve().parent.parent.parent
+
+    # Helper fallback para entorno offline/sandbox
+    def _load_gistemp_fixture():
+        pts = []
+        months = ['01','02','03','04','05','06','07','08','09','10','11','12']
+        with open(root_dir / 'tests' / 'fixtures' / 'real' / 'gistemp_glb_monthly.csv', 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('Land') or line.startswith('Year'):
+                    continue
+                parts = line.split(',')
+                yr = int(parts[0])
+                if 1970 <= yr <= 2024:
+                    for m_idx, m_str in enumerate(months):
+                        val_str = parts[m_idx + 1]
+                        val = float(val_str) if val_str not in ('***', '') else None
+                        pts.append({'date': f'{yr}-{m_str}', 'value': val})
+        return {
+            'schema': 'timeseries/2',
+            'variable_id': 'GISTEMP_TANOM',
+            'unit': '°C',
+            'cadence': 'monthly',
+            'region': {'kind': 'named', 'name': 'Global (Land-Ocean)', 'lat': None, 'lon': None, 'bbox': None},
+            'aggregation': 'area_mean_coslat',
+            'data': pts,
+            'provenance': {'kind': 'nasa_file', 'source': 'NASA GISS GISTEMP v4', 'sha256': 'fixture'}
+        }
+
+    def _load_nsidc_fixture(path_csv, var_id, name):
+        pts = []
+        with open(path_csv, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                d = r['date']
+                if '1979-01' <= d <= '2024-12':
+                    v = r['extent_million_sq_km'].strip()
+                    pts.append({'date': d, 'value': float(v) if v else None})
+        return {
+            'schema': 'timeseries/2',
+            'variable_id': var_id,
+            'unit': '10^6 km^2',
+            'cadence': 'monthly',
+            'region': {'kind': 'named', 'name': name, 'lat': None, 'lon': None, 'bbox': None},
+            'aggregation': 'total',
+            'data': pts,
+            'provenance': {'kind': 'nasa_file', 'source': 'NSIDC Sea Ice Index v4', 'sha256': 'fixture'}
+        }
+
     # 1. Calentamiento global GISTEMP 1970-2024
-    s_gis = get_series("GISTEMP_TANOM", start="1970-01", end="2024-12")
+    try:
+        s_gis = get_series("GISTEMP_TANOM", start="1970-01", end="2024-12")
+    except Exception:
+        s_gis = _load_gistemp_fixture()
+
     res_gis = analyze_series(s_gis)
     sen_gis = res_gis["trend"]["sen_slope_per_decade"]
     assert 0.17 <= sen_gis <= 0.22, f"Pendiente GISTEMP fuera de rango esperado: {sen_gis}"
     assert res_gis["significance"]["verdict_code"] == "SIGNIFICANT_STRONG"
 
     # 2. Deshielo Ártico mensual 1979-2024
-    s_arc = get_series("SEAICE_EXTENT_N", start="1979-01", end="2024-12")
+    try:
+        s_arc = get_series("SEAICE_EXTENT_N", start="1979-01", end="2024-12")
+    except Exception:
+        s_arc = _load_nsidc_fixture(root_dir / 'tests' / 'fixtures' / 'real' / 'nsidc_seaice_N_monthly_all.csv', 'SEAICE_EXTENT_N', 'Northern Hemisphere / Arctic')
+
     res_arc = analyze_series(s_arc)
     sen_arc = res_arc["trend"]["sen_slope_per_decade"]
     assert -0.65 <= sen_arc <= -0.40, f"Pendiente Ártico fuera de rango esperado: {sen_arc}"
@@ -277,7 +337,11 @@ def test_published_nasa_benchmarks():
     assert res_arc["significance"]["verdict_code"] == "SIGNIFICANT_STRONG"
 
     # 3. Hielo Antártico mensual 1979-2024 (sin tendencia monótona significativa)
-    s_ant = get_series("SEAICE_EXTENT_S", start="1979-01", end="2024-12")
+    try:
+        s_ant = get_series("SEAICE_EXTENT_S", start="1979-01", end="2024-12")
+    except Exception:
+        s_ant = _load_nsidc_fixture(root_dir / 'tests' / 'fixtures' / 'real' / 'nsidc_seaice_S_monthly_all.csv', 'SEAICE_EXTENT_S', 'Southern Hemisphere / Antarctic')
+
     res_ant = analyze_series(s_ant)
     assert res_ant["significance"]["verdict_code"] == "NOT_SIGNIFICANT"
 
@@ -285,3 +349,41 @@ def test_published_nasa_benchmarks():
     cmp = compare(res_arc, res_ant)
     assert cmp["difference_significant"] is True
     assert cmp["z"] < -3.0
+
+
+def test_lima_real_verdict_coherence_and_texts():
+    """
+    Fija la coherencia del veredicto sobre la muestra real de Lima (RONDA 2 §6).
+    Verifica que no sale 'SIGNIFICANT_STRONG' si la prueba t de MCO discrepa (p=0.072),
+    que añade TESTS_DISAGREE, que tests_agree es False, y que los textos no usan 'T2M'
+    ni dicen 'Observado en None.'.
+    """
+    repo = Path(__file__).resolve().parent.parent.parent
+    lima_file = repo / "data" / "cases" / "lima-t2m" / "series.json"
+    if not lima_file.exists():
+        lima_file = repo / "tests" / "fixtures" / "real" / "power_monthly_point_lima.json"
+
+    with open(lima_file, "r", encoding="utf-8") as f:
+        ts = json.load(f)
+
+    res = analyze_series(ts)
+
+    # 1. Veredicto no puede ser STRONG si MCO discrepa y faltan años de detectabilidad
+    assert res["significance"]["verdict_code"] != "SIGNIFICANT_STRONG"
+    assert res["significance"]["verdict_code"] == "SIGNIFICANT"
+    assert res["significance"]["tests_agree"] is False
+    assert "TESTS_DISAGREE" in res["warnings"]
+
+    # 2. Textos limpios y pedagógicos (sin "T2M" aislado ni "Observado en None.")
+    what_es = res["answers"]["what"]["es"]
+    what_en = res["answers"]["what"]["en"]
+    where_es = res["answers"]["where"]["es"]
+    where_en = res["answers"]["where"]["en"]
+
+    assert not what_es.startswith("T2M se encuentra")
+    assert not what_en.startswith("T2M is")
+    assert "Temperatura" in what_es or "temperature" in what_es.lower()
+
+    assert "Observado en None." not in where_es
+    assert "Observed in None." not in where_en
+    assert "-12.05" in where_es or "Lima" in where_es
