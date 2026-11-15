@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — rag-datos — 2026-11-15 15:15 hora de Perú
-Rama@commit: rag/datos@170314d · empujado: sí (tanda 1)
+Rama@commit: ronda7@a0129ed · empujado: sí (tanda 1)
 VERIFICADO: Cálculo de tendencias climáticas y ambientales en proceso mediante `src.api.service.analyze` para las cinco ciudades oficiales de la Ronda 7 (Lima, Huancayo, Andahuaylas, Ica, Ayacucho) a partir de coordenadas exactas del gazetteer.
 VERIFICADO: 165 análisis JSON íntegros congelados en `data/cities/<ciudad>/<VARIABLE>.analysis.json` (33 variables disponibles por ciudad, 100% datos reales de NASA POWER y GISTEMP, nada simulado).
 VERIFICADO: 340 documentos de hechos generados en `data/knowledge/facts/<ciudad>.jsonl` (68 documentos por ciudad: 33 variables × 2 idiomas [ES/EN] + 2 documentos de resumen «Qué está cambiando en <Ciudad>» ordenados por significancia estadística).
