@@ -4,6 +4,8 @@
 **Realizado por:** arquitecto (cfable) en nombre del carril claude-omni-e, con verificación independiente del peer user41-73
 **Base verificada:** `main@5361f79` (código y reportes; suite 289 passed, 0 failed, 9 skipped medida sobre el árbol equivalente `0c86b8c`, estos dos commits solo añaden documentación) y `gh-pages@10c7e16`
 
+**Ampliación (12:50, arquitecto):** tras esta pasada se corrigieron en el backend los dos defectos que el frontend solo tapaba: **D12** (`compare` decía «between None and None» para puntos sin nombre — reproducido contra la producción y arreglado en `f615459`) y **D14** (URL de IPCC con 403 → PDF del SPM, HTTP 200). Suite completa sobre `main` fusionado con esos arreglos: **290 passed, 0 failed, 9 skipped**. El despliegue de Railway necesita un redespliegue para servirlos.
+
 ---
 
 ## 1. Verificación contra la URL pública (GitHub Pages)
@@ -46,9 +48,9 @@ Playwright (Chromium headless, 1440×900 y 390×844):
 | D3–D4, D6, D7, D9–D11 | ✅ Cerrados | `reports/qa/informe-2.md` + re-verificación en esta pasada |
 | D5 unidades en ES | ✅ Cerrado | Galería y veredictos en español sin unidades inglesas |
 | D8 ID crudo Giovanni | ✅ Cerrado | Upload muestra nombre limpio (claude-omni-1 R6) |
-| D12 «between None and None» | ✅ Cerrado | No aparece en Railway; `nameA/nameB` con fallback |
+| D12 «between None and None» | ✅ Cerrado | **Backend corregido en `f615459`**: `compare()` usaba `region.get("name")` en crudo y para cualquier punto sin nombre en el gazetteer el texto decía «between None and None» (reproducido contra la producción el 15-nov 12:05: `GET /api/compare?...&a=-12.04,-77.03&b=78.22,15.65` → «between None and None (z = -4.66)»). Ahora usa `_resolve_region_name` (el mismo de `analyze_series`) → «coordinates (-12.04°, -77.03°)». Prueba `test_compare_never_prints_none_for_arbitrary_points` (falla sin el cambio). El fallback `nameA/nameB` del frontend solo tapaba el caso de la galería, no el texto de la API |
 | D13 inputs Desde/Hasta | ✅ Cerrado | 1981/2025 correctos al abrir caso congelado |
-| D14 URLs muertas (masie_web) | ✅ Cerrado | `grep masie_web` → 0 en docs/data/src; URLs corregidas |
+| D14 URLs muertas (masie_web) | ✅ Cerrado | `grep masie_web` → 0 en docs/data/src; la URL de IPCC AR6 WG1 que daba 403 (bloqueo WAF a bots) se sustituyó en `f615459` por el PDF del SPM (`.../downloads/report/IPCC_AR6_WGI_SPM.pdf`, HTTP 200, 3.3 MB, sección SPM.A.1.2 que es la citada) |
 | D15 editor «Hermes 1» en docs.jsonl | ✅ Cerrado | `grep -c "Hermes 1" data/knowledge/docs.jsonl` → 0 |
 | D16 tildes en casos | ✅ Cerrado | `check_case_accents.py` → 0 problemas en 8 archivos |
 
