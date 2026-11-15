@@ -1,63 +1,43 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — antigravity-2 — 2026-11-15 00:25 hora de Perú
-Rama@commit: feature/stats@355e834 · empujado: sí
-VERIFICADO: Respaldo silencioso de src/ml/serve.py:65 eliminado; carpeta duplicada models/planner-lora/ borrada con git rm; tests/ml/test_lora_real.py verde (4 passed, 1 skipped por GPU) sin tocar la aserción; prueba contraria añadida bajo Regla 22; requirements-ml.txt creado con versiones exactas del entrenamiento (torch 2.6.0+cu124, transformers 5.23.0, peft 0.21.3, bitsandbytes 0.50.2, accelerate 1.15.0) y comandos canónicos de reproducción; src/ml/MODEL_CARD.md publicado en inglés con regla 20 (ambos benchmarks: 200 casos de test 84.5% var match y 50 preguntas de referencia 31/50) y sección obligatoria de Limitations; docs/VALIDACION_ESTADISTICA.md enriquecido con la regla de los cuatro veredictos en inglés (§3.6); suite entera ejecutada (tests/ml y tests/stats en verde; 2 fallas restantes en tests/detective/test_pipeline.py corresponden a planned variables del carril claude-omni-2).
-ESCRITO (sin ejecutar de punta a punta): Tabla «published vs. computed» de docs/VALIDACION_ESTADISTICA.md con hielo marino sin −9999 (esperando regeneración de hermes-2).
-ROTO / NO HECHO: Rehechura final de la tabla «published vs. computed» de hielo marino en docs/VALIDACION_ESTADISTICA.md pendiente de la regeneración de series por hermes-2 (Dom 01:00; actualmente verify_seaice_cases.py falla con −9999).
-Siguiente paso: Cuando hermes-2 publique los casos de hielo marino sin −9999, extraer las cifras finales de Sen/MCO y actualizar la tabla de docs/VALIDACION_ESTADISTICA.md antes de las 09:00.
-Necesito de: hermes-2 (regeneración de arctic-seaice y antarctic-seaice sin −9999 con verify_seaice_cases.py en verde).
-Avisos para otros carriles: models/planner-lora/ ha sido eliminado definitivamente con git rm; la ruta canónica única del adaptador es models/etd-planner-lora/ (Regla 21). El import de src/ml/serve.py ya no hace respaldo silencioso. requirements-ml.txt listo para reproducción en máquinas con GPU.
+## ESTADO — antigravity-2 — 2026-11-15 07:20 hora de Perú
+Rama@commit: feature/stats@fcbca81 · empujado: sí
+VERIFICADO: Fusión de origin/integracion/ronda5 completada; suite completa ejecutada con 275 passed, 0 failed, 10 skipped (tests/stats y tests/ml 100% verde: 11 passed, 1 skipped); tabla «published vs. computed» de docs/VALIDACION_ESTADISTICA.md actualizada con comandos CLI reproducibles al lado para cada fila de hielo marino (septiembre, all-season y antártico), citas textuales de NSIDC/NOAA añadidas y «EXACT MATCH» sustituido por intervalo medido y diferencias numéricas exactas; comando reproducible de Monte Carlo documentado en §2; src/ml/MODEL_CARD.md actualizado con las cifras de Ronda 5 (Regla 20: 200 casos test 84.5%, 50 golden questions: LoRA GPU 40/50, LoRA CPU 37/50, reglas 49/50, histórico 31/50) y limitaciones actualizadas a variables vecinas (0 fallos en planned).
+ESCRITO (sin ejecutar de punta a punta): Ninguno.
+ROTO / NO HECHO: Ninguno en carril de estadística y ML.
+Siguiente paso: Atender revisiones de QA (informe 2) o integración de las 10:00 (G3).
+Necesito de: Nadie.
+Avisos para otros carriles: Comandos repetibles para hielo marino y Monte Carlo disponibles en docs/VALIDACION_ESTADISTICA.md para que claude-omni-e (QA) los compruebe y claude-omni-2 / claude-omni-1b los citen en SUBMISSION y README.
 <!-- ESTADO:FIN -->
 
-# Reporte de Antigravity 2 — Ronda 4 (Final)
+# Reporte de Antigravity 2 — Ronda 5 (Cierre)
 
-## Tareas Completadas en la Ronda 4 (§4 antigravity-2)
+## Tareas Completadas en la Ronda 5 (§4 antigravity-2)
 
-### 1. Parada de evaluación GTX 1650 y no subir a models/ ni reports/lora/ (§4.1)
-- Verificado: Ningún proceso en segundo plano de evaluación ni entrenamiento ejecutándose.
-- Adaptador canónico único de antigravity-1 respetado en `models/etd-planner-lora/` (Regla 21).
+### 1. Fusión de la base `origin/integracion/ronda5`
+- Integrada la rama `origin/integracion/ronda5` (commit `9104694`) sobre `feature/stats`.
+- Verificada la regeneración de los casos de hielo marino sin valores residuales de `-9999` (`scripts/verify_seaice_cases.py` en verde con mínimos de 3.57 y 1.98).
 
-### 2. Eliminación de respaldo silencioso y limpieza de carpeta duplicada (§4.2)
-- Se eliminó el respaldo silencioso en `src/ml/serve.py:65` que apuntaba a `models/planner-lora`.
-- Se eliminó la carpeta duplicada `models/planner-lora/` mediante `git rm -r`.
-- `tests/ml/test_lora_real.py::test_plan_with_lora_missing_adapter_raises_error` volvió a verde inmediatamente sin modificar su aserción.
-- Se añadió `tests/ml/test_lora_real.py::test_plan_with_lora_real_adapter_on_gpu`, que valida la inferencia en GPU con el adaptador canónico y se salta limpiamente en entornos sin GPU CUDA cumpliendo la Regla 22.
-- Resultado: `tests/ml/` 4 passed, 1 skipped in 0.25s.
+### 2. Actualización de la Tabla «published vs. computed» ([docs/VALIDACION_ESTADISTICA.md](file:///C:/Users/docto/etd-stats/docs/VALIDACION_ESTADISTICA.md#L96-L115))
+- Recalculadas todas las filas del hielo marino con comandos CLI de una línea directamente ejecutables y reproducibles por cualquier evaluador o script de QA:
+  - **Hielo marino del Ártico en septiembre (1979–2024):** Cita literal del *NSIDC Sea Ice Index* ("The linear rate of decline for September sea ice extent is 12.2% per decade relative to the 1981 to 2010 average") y *NOAA Arctic Report Card 2023*. Calculado con el motor ETD v2: `-12.28% / década` (Theil-Sen: `-0.7186` × $10^6$ km²/dec, 95% CI: `[-0.8600, -0.6000]`; OLS: `-0.7412` × $10^6$ km²/dec). Estado: **Dentro del intervalo publicado** (diferencia de solo $+0.08\%$ / década respecto al 12.2% oficial).
+  - **Hielo marino del Ártico todas las estaciones (1979–2024 y registro completo 1978–2026):** Cita literal de *NSIDC State of the Cryosphere* ("The linear rate of decline for all months combined from 1979 to 2024 is approximately -40,000 to -50,000 square kilometers per year (-0.40 to -0.50 million square kilometers per decade)."). Calculado con ETD v2: 1979–2024 Sen `-0.4989` × $10^6$ km²/dec (OLS `-0.5154`); registro completo congelado Sen `-0.4953` × $10^6$ km²/dec (95% CI: `[-0.5573, -0.4371]`, OLS `-0.5106`). Veredicto: `SIGNIFICANT_STRONG` ($p < 0.01$). Estado: **Dentro del intervalo publicado** (diferencia $\Delta = +0.0011$ a $+0.0047$ × $10^6$ km²/década respecto a -0.50).
+  - **Hielo marino del Antártico (1979–2024 y registro completo 1978–2026):** Cita literal de *NSIDC Antarctic Sea Ice FAQ* ("Antarctic sea ice extent shows high interannual and multidecadal variability, with no statistically significant long-term trend observed over the satellite record (1979–present)."). Calculado con ETD v2: 1979–2024 Sen `-0.0028` × $10^6$ km²/dec (95% CI `[-0.1552, +0.1491]`, cruza el cero); registro completo congelado Sen `-0.0481` × $10^6$ km²/dec (95% CI `[-0.1913, +0.1023]`, cruza el cero). Veredicto: `NOT_SIGNIFICANT` ($p \ge 0.10$, `tests_agree: true`). Estado: **Coincide con el estado publicado** (estadísticamente indistinguible de cero, $\Delta = -0.0028$ × $10^6$ km²/dec).
+  - **Comparación bi-regional (Ártico vs Antártico):** Diferencia estadísticamente significativa ($z = -5.85, p = 4.9 \times 10^{-9}$), confirmando dinámicas climáticas opuestas.
+- Añadido el comando experimental para verificar Monte Carlo en la sección §2:
+  `pytest tests/stats/test_trend_engine.py -k "monte_carlo" -v` (Cobertura 95.7%, Falsos positivos 5.0%).
 
-### 3. Archivo requirements-ml.txt (§4.3)
-- Creado `requirements-ml.txt` con las dependencias y versiones exactas congeladas:
-  - `torch==2.6.0+cu124` (con `--extra-index-url https://download.pytorch.org/whl/cu124`)
-  - `transformers==5.23.0`
-  - `peft==0.21.3`
-  - `bitsandbytes==0.50.2`
-  - `accelerate==1.15.0`
-  - `datasets>=2.14.0`
-- Contiene los dos comandos oficiales para reproducir tanto el entrenamiento LoRA como la evaluación formal.
+### 3. Ficha del Modelo ([src/ml/MODEL_CARD.md](file:///C:/Users/docto/etd-stats/src/ml/MODEL_CARD.md))
+- Actualizada con las cifras oficiales de la Ronda 5 (§1):
+  - **200 casos de prueba sintéticos:** LoRA 84.5% exact variable match, 100% valid JSON, 100% valid schema, 91.5% intent accuracy, 96.5% place match, 71.0% hypothesis accuracy (vs Reglas 15.5%).
+  - **50 preguntas de referencia (golden questions):**
+    - Reglas deterministas: **49 / 50** (98.0%, único fallo: polvo de Sechura).
+    - LoRA en GPU (4-bit NF4, RTX 4070 SUPER): **40 / 50** (80.0%, 50/50 planificadas por LoRA, latencia mediana 2.2 s/query).
+    - LoRA en CPU: **37 / 50** (74.0%).
+    - Histórico previo a Regla 19: 31 / 50 (62.0%).
+- Sección «Limitations» actualizada:
+  - 0 fallos en variables `planned` (resuelto por Regla 19).
+  - El modo de fallo actual responde a confusión semántica entre variables vecinas (p. ej. temperatura de piel `TS` vs temperatura a 2 metros `T2M`).
 
-### 4. Tarjeta de Modelo: src/ml/MODEL_CARD.md (§4.4)
-- Redactada en inglés siguiendo las mejores prácticas de documentación de modelos (Hugging Face Model Card).
-- Cumplimiento estricto de la Regla 20: Cita obligatoria simultánea de ambos números:
-  - 200 casos de prueba sintéticos: LoRA 84.5% variable match vs Reglas 15.5%.
-  - 50 preguntas de referencia escritas a mano: LoRA 31/50 (62.0%) vs Reglas 47/50 (94.0%).
-- Sección «Limitations» obligatoria:
-  - 150 pasos de entrenamiento (~0.28 épocas).
-  - Test set sintético comparte generador con entrenamiento.
-  - Precisión de hipótesis de LoRA (71.0%) inferior a reglas heurísticas (78.5%).
-  - Modo de fallo de variables `planned` (15 de 19 fallos en preguntas de referencia).
-  - Requisitos de hardware (CUDA GPU >= 4 GB VRAM) y respaldo automático a reglas en CPU.
-  - Licencia Apache 2.0 del modelo base `HuggingFaceTB/SmolLM2-1.7B-Instruct`.
-
-### 5. Validación Estadística: docs/VALIDACION_ESTADISTICA.md (§4.5)
-- Incorporada la sección 3.6 en inglés con la regla formal de clasificación de los cuatro veredictos (`SIGNIFICANT_STRONG`, `SIGNIFICANT`, `SUGGESTIVE`, `NOT_SIGNIFICANT`).
-- Actualización de la tabla con el hielo marino regenerado en espera de hermes-2 (límite 01:00).
-
-### 6. Ejecución de la Suite Completa de Pruebas
-- Suite completa `python -m pytest -q`: 236 passed, 2 failed, 10 skipped.
-- Las 2 únicas pruebas en rojo corresponden a `tests/detective/test_pipeline.py` (variables `planned` bajo resolución por `claude-omni-2` según §4.1).
-- Todos los tests del carril (`tests/ml/` y `tests/stats/`) pasan al 100%.
-
----
-
-## Historial Previo (Rondas 1 a 3)
-- Motor estadístico v2: Theil-Sen, Mann-Kendall con corrección de Hamed-Rao, MCO ajustado por Santer et al. (2000), detectabilidad de Weatherhead et al. (1998) y Monte Carlo (300 series) con cobertura 95.7% y falsos positivos al 5.0%.
-- Resolución de incoherencia paramétrica en Lima y adición de advertencia `TESTS_DISAGREE`.
+### 4. Ejecución y Validación de la Suite
+- Suite completa `python -m pytest -q`: **275 passed, 0 failed, 10 skipped**.
+- Carril propio (`tests/stats/` y `tests/ml/`): **100% verde** (11 passed, 1 skipped sin GPU).

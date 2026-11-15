@@ -69,26 +69,28 @@ Evaluated end-to-end on `NVIDIA GeForce RTX 4070 SUPER` as recorded in `reports/
 
 ### 2. 50 Reference Golden Questions Benchmark (`data/knowledge/golden_questions.jsonl`)
 
-Evaluated on hand-written domain questions covering English and Spanish queries:
+Evaluated on hand-written domain questions covering English and Spanish queries across both deterministic rules and local LoRA:
 
-| Planner System | Exact Variable Accuracy | Accuracy Rate |
-|---|:---:|:---:|
-| **Deterministic Rules (`_rules_plan`)** | 47 / 50 | 94.0% |
-| **LoRA Fine-Tuned (`_local_lora`)** | 31 / 50 | 62.0% |
+| Planner System & Hardware Execution | Exact Variable Accuracy | Accuracy Rate | Notes |
+|---|:---:|:---:|---|
+| **Deterministic Rules (`_rules_plan`)** | **49 / 50** | **98.0%** | Only 1 failure: Sechura Desert dust (`GWETTOP` instead of `AOD_55`) |
+| **LoRA Fine-Tuned (GPU, 4-bit NF4, RTX 4070 SUPER)** | **40 / 50** | **80.0%** | Measured with Rule 19 candidate filtering; median 2.2 s/query, 50/50 planned by LoRA |
+| **LoRA Fine-Tuned (CPU)** | **37 / 50** | **74.0%** | Evaluated locally on CPU |
+| *Historical LoRA Baseline (pre-Rule 19)* | *31 / 50* | *62.0%* | Prior to removing `planned` variables from candidate pool (rules were 47/50) |
 
 ### In-Product Serving Latency (RTX 4070 SUPER, PC1)
 - **First Query (Cold Start / Model Loading):** 9.5 s
-- **Subsequent Queries (Warm Inference):** 2.3 s per query
+- **Subsequent Queries (Warm Inference):** 2.2 s median per query
 
 ---
 
 ## Limitations
 
-As required by project specifications (§4.4 and §2), users and evaluators must account for the following constraints:
+As required by project specifications (§4.2 and §2), users and evaluators must account for the following constraints:
 
 1. **Training Epoch Fraction:** The model was trained for only 150 steps (1,200 examples seen out of 4,323 training samples, equivalent to ~0.28 of a full epoch).
-2. **Synthetic Evaluation Overlap:** The 200-case test set is derived from the same synthetic templated generator as the training dataset, explaining why LoRA excels on this set (84.5% exact variable match vs. 15.5% for rules) but achieves lower accuracy on hand-crafted questions (31/50 vs. 47/50 for rules).
+2. **Synthetic Evaluation Overlap:** The 200-case test set is derived from the same synthetic templated generator as the training dataset, explaining why LoRA excels on this set (84.5% exact variable match vs. 15.5% for rules) but achieves 40/50 on hand-crafted domain questions (vs. 49/50 for rules).
 3. **Hypothesis Accuracy vs Rules:** On the 200-case test split, LoRA hypothesis accuracy (71.0%) is lower than deterministic keyword heuristics (78.5%).
-4. **Planned Variables Failure Mode:** Among the 19 errors on the 50 reference questions, 15 were attributed to candidate selection including `planned` dataset variables (`GPM_IMERG_PRECIP` ×4, `GLDAS_SOILM_0_10` ×3, `MODIS_LST_DAY` ×3, `OMI_O3_TOTAL` ×2, `GLDAS_EVAP` ×2, `AIRS_SURF_AIR_TEMP` ×1) that do not yet have active download pipelines or appear in the training corpus.
+4. **Current Failure Mode (Neighboring Variables):** Following the implementation of Rule 19, zero of the 10 errors on the 50 reference questions are `planned` variables. The remaining failures stem from semantic confusion between closely related physical variables (e.g., surface skin temperature `TS` vs. 2-meter air temperature `T2M`, or precipitation vs. temperature confusion).
 5. **Runtime Requirements:** Inference requires PyTorch with CUDA acceleration and >= 4 GB VRAM (`requirements-ml.txt`). When running without GPU or in the web deployment, the system transparently falls back to deterministic rules.
 6. **Base Model Licensing & Governance:** The underlying base model is `HuggingFaceTB/SmolLM2-1.7B-Instruct`, released under the Apache 2.0 license. The LoRA adapter inherits this open, permissive licensing.
