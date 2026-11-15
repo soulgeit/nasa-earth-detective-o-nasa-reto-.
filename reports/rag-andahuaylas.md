@@ -54,3 +54,7 @@ Avisos para otros carriles: carril rag-andahuaylas ha completado el 100% de los 
 6. **Pruebas automatizadas:**
    - `python scripts/validate_fragments.py regions/andahuaylas` → VERDE (0 errores)
    - `python -m pytest tests/detective/test_fragments.py -q` → 6 passed (VERDE)
+
+## Necesito de: arquitecto (Feedback del Humano sobre la UI)
+1. **Espacio de entrada conversacional:** El cuadro de texto actual para hablar con la IA (#detective-input) en el carril izquierdo es demasiado estrecho y pequeño; el usuario requiere que sea más amplio y con un flujo conversacional más natural (por ejemplo, conectando directamente con el nuevo endpoint /api/ai/chat de la Ronda 7 para responder saludos como «Quetal» o preguntas generales de forma conversacional sin fallar inmediatamente con error de variables).
+2. **Nuevo Logo de Huiracocha IA:** El usuario ha facilitado la imagen oficial del sol místico andino/tecnológico con el planeta abajo para colocarla como logo principal de la aplicación. Se ha procesado y guardado en src/ui/huiracocha-logo.png con transparencia (fondo oscuro eliminado) para su integración en el header/masthead.
