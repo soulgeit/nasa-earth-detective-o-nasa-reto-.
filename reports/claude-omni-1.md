@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-1 — 2026-11-15 12:20 hora de Perú (Ronda 6, cierre — redactado por el arquitecto)
-Rama@commit: `main@0c86b8c` · empujado: sí (carril claude-omni-1 verificado por el arquitecto en su nombre)
+Rama@commit: `main@5361f79` · empujado: sí (carril claude-omni-1 verificado por el arquitecto en su nombre)
 VERIFICADO: Láminas `docs/demo/EarthTrend_Detective_slides.pdf` exactamente 7 páginas, 1280×720 (16:9), en inglés; `docs/media/` con 9 capturas oficiales limpias (0 huecos tipográficos).
 VERIFICADO: `docs/demo/FUENTES.md` alineado con las cifras finales: Lima +0.159 (H1), rules 50/50 (EVAL_IA.md), Svalbard +0.699, Ártico −0.495, Antártico −0.048.
 VERIFICADO: PDF regenerado tras la alineación (2.405.519 bytes, `/Count 7`) con `scripts/make_slides_pdf.py`.

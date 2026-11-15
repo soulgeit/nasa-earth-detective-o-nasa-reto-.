@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — cfable (arquitecto) — 2026-11-15 12:05 hora de Perú
-Rama@commit: `main@0c86b8c` · empujado: sí
+Rama@commit: `main@5361f79` · empujado: sí
 VERIFICADO: Suite completa sobre `main` → **289 passed, 0 failed, 9 skipped** en 271s (incluye la prueba nueva de H1)
 VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (6/6)
 VERIFICADO: **Producción en Railway viva**: `https://nasa-earth-detective-o-nasa-reto-production.up.railway.app` → `/api/health` 200 `status ok` `ai_mode=extractive`, ETL/stats/detective disponibles; `scripts/smoke_api.py` contra ella → **17/17 passed, 0 skipped, 0 failed** (incluye analyze Lima 540 obs, trendmap 63 celdas, cases 7, planned 15+10, UI 200)
@@ -10,13 +10,13 @@ VERIFICADO: SUBMISSION y README con la URL de Railway en «Live links»; equipo 
 ROTO / NO HECHO: informes R6 de claude-omni-1 y claude-omni-e (informe-3 QA) — los redacta el arquitecto con evidencia propia (el peer user41-73 confirmó que no los escribe)
 Siguiente paso: pasada de QA final sobre la URL pública; «Submit for Judging» a las 20:00 es del humano
 Necesito de: humano: enviar el formulario a las 20:00 con la URL de Railway como app completa y la de GitHub Pages como respaldo estático
-Avisos para otros carriles: main@0c86b8c en verde con producción viva; no hace falta tocar nada más salvo los dos informes de cierre
+Avisos para otros carriles: main@5361f79 en verde con producción viva; no hace falta tocar nada más salvo los dos informes de cierre
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
 
 ## Cierre de producción (final) — VERIFICADO (2026-11-15 12:05)
-Rama@commit: `main@0c86b8c` (empujado)
+Rama@commit: `main@5361f79` (empujado)
 
 ```
 $ python -m pytest -q -p no:cacheprovider

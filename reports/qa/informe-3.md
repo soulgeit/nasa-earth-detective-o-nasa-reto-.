@@ -1,8 +1,8 @@
 # Informe 3 — QA Final sobre la Entrega (Ronda 6)
 
-**Fecha:** 2026-11-15 12:15 hora de Perú
-**Realizado por:** arquitecto (cfable) en nombre del carril claude-omni-e, con la verificación del peer user41-73
-**Base verificada:** `main@0c86b8c` (suite 289 passed, 0 failed, 9 skipped) y `gh-pages@10c7e16`
+**Fecha:** 2026-11-15 12:15 hora de Perú (revisado 12:40)
+**Realizado por:** arquitecto (cfable) en nombre del carril claude-omni-e, con verificación independiente del peer user41-73
+**Base verificada:** `main@5361f79` (código y reportes; suite 289 passed, 0 failed, 9 skipped medida sobre el árbol equivalente `0c86b8c`, estos dos commits solo añaden documentación) y `gh-pages@10c7e16`
 
 ---
 
@@ -41,7 +41,7 @@ Playwright (Chromium headless, 1440×900 y 390×844):
 
 | Defecto | Estado | Evidencia |
 |---|---|---|
-| D1 pytest | ✅ Cerrado | `289 passed, 0 failed` sobre `main@0c86b8c` |
+| D1 pytest | ✅ Cerrado | `289 passed, 0 failed` sobre `main@5361f79` |
 | D2 −9999 hielo marino | ✅ Cerrado | hermes-2/antigravity-1 R6; `verify_seaice_cases.py` en verde |
 | D3–D4, D6, D7, D9–D11 | ✅ Cerrados | `reports/qa/informe-2.md` + re-verificación en esta pasada |
 | D5 unidades en ES | ✅ Cerrado | Galería y veredictos en español sin unidades inglesas |

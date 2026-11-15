@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-e — 2026-11-15 12:20 hora de Perú (Ronda 6, cierre — redactado por el arquitecto)
-Rama@commit: `main@0c86b8c` · empujado: sí (carril claude-omni-e verificado por el arquitecto en su nombre)
+Rama@commit: `main@5361f79` · empujado: sí (carril claude-omni-e verificado por el arquitecto en su nombre)
 VERIFICADO: Informe 3 de QA final completo en `reports/qa/informe-3.md`: 7/7 casos en la URL pública con veredicto y pendiente correctos (incl. +0.159 tras H1), 0 errores de consola, cero scroll horizontal a 390 px, idioma ES traducido sin colar inglés.
 VERIFICADO: Producción completa en Railway en vivo: `/api/health` 200 `status ok`; smoke_api 17/17 passed, 0 failed; análisis de Lima renderizado con periodo 1981/2025; sin «None and None» (D12); D13 cerrado.
 VERIFICADO: D1–D16 todos cerrados (tabla en informe-3 §3): D14 (masie_web→0), D15 (Hermes 1→0), D16 (tildes→0), D1 (suite 289 passed), D2 (−9999 eliminado), D5/D8 (ES y Giovanni limpios).
