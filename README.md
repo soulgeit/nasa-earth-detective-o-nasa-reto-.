@@ -7,7 +7,8 @@
 > (challenge: *select Earth-science variables, visualise how they change over time,
 > and determine what is changing, where, how much, and whether the change is significant*).
 
-**Public site:** <https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./>
+**Public site:** <https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./>  
+**Live Interactive App & API (Railway):** <https://nasa-earth-detective-o-nasa-reto-production.up.railway.app>
 
 The public site is a **static, no-server backup**: it opens the seven frozen cases
 and the two precomputed trend maps, in English and Spanish, on desktop and phone.
