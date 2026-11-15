@@ -618,6 +618,13 @@ def _build_answers(
         det_es = f"La longitud del registro ({years:.0f} años) supera el umbral de detectabilidad para la magnitud de este cambio."
         det_en = f"The record length ({years:.0f} years) exceeds the detectability threshold for the magnitude of this change."
 
+    # El texto formatea el MISMO numero que se publica en `trend`
+    # (`round(sen_slope_decade, 4)`). Formatear el valor sin redondear daba
+    # "+0.158" en el texto y "+0.159" al redondear el publicado 0.1585: la cifra
+    # grande y la explicacion discrepaban en el ultimo digito (Ronda 6, H1).
+    sen_published = round(sen_slope_decade, 4)
+    total_published = round(total_change, 4)
+
     return {
         "what": {
             "es": f"{var_name_es} se encuentra {dir_es} a lo largo del periodo analizado.",
@@ -628,8 +635,8 @@ def _build_answers(
             "en": f"Observed in {reg_name_en}."
         },
         "how_much": {
-            "es": f"Tasa estimada de {sen_slope_decade:+.3f} {unit}/década{pct_str_es}, con un cambio acumulado de {total_change:+.3f} {unit}.",
-            "en": f"Estimated rate of {sen_slope_decade:+.3f} {unit}/decade{pct_str_en}, with an accumulated change of {total_change:+.3f} {unit}."
+            "es": f"Tasa estimada de {sen_published:+.3f} {unit}/década{pct_str_es}, con un cambio acumulado de {total_published:+.3f} {unit}.",
+            "en": f"Estimated rate of {sen_published:+.3f} {unit}/decade{pct_str_en}, with an accumulated change of {total_published:+.3f} {unit}."
         },
         "significant": {
             "es": sig_es,
