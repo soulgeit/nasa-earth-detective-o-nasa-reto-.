@@ -1,6 +1,6 @@
 <!-- ESTADO:INICIO -->
 ## ESTADO — claude-omni-3 — 2026-11-15 01:30 (hora de Perú)
-Rama@commit: feature/api@<hash> (Ronda 4, fusionado origin/main 55869e8) · empujado: sí
+Rama@commit: feature/api@55f5c28 (Ronda 4, fusionado origin/main 55869e8) · empujado: sí
 VERIFICADO: regla 19 → `pytest tests/api/test_contract.py -q` → planned publicadas aparte; analyze/series/report/trendmap → 409 VARIABLE_PLANNED en el idioma pedido
 VERIFICADO: `requirements.txt` con `==` (10 paquetes) e instalación en venv limpio (`cleanenv`, pip 25.0.1) → `smoke_api.py` → **15 passed · 0 skipped · 0 failed**
 VERIFICADO: 20 simultáneas → misma clave 366,9 req/s (máx 50 ms) · 20 claves distintas 2,9 req/s (mediana 3703 ms), 20/20 HTTP 200
