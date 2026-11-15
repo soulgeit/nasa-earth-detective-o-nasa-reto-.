@@ -29,6 +29,10 @@ including the honest answer "not yet, and here is how many more years we need".
 
 ## Quick start
 
+Requires **Python 3.12**. On Windows, if `python` opens the Microsoft Store
+instead of running (the `WindowsApps` stub), use `py -3.12` or the interpreter
+you installed, in place of `python` in the commands below.
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
