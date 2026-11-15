@@ -1,18 +1,56 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-15 08:50 hora de Perú
-Rama@commit: `integracion/ronda6` · empujado: sí, como rama; **lista para fusionar a `main`** cuando el humano diga «integra»
-VERIFICADO: Fusión completa de las 10 ramas sin conflictos → `python -m pytest -q` → 288 passed, 0 failed, 9 skipped en 275s
-VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (smoke 17/17 passed, datasets 7/7, knowledge 168 docs, no_secrets 289 archivos)
-VERIFICADO: Documentación de entrega completa: `docs/SUBMISSION.md` (todos los campos en inglés con comandos reproducibles), `LICENSE` (MIT), `README.md` final
-VERIFICADO: Materiales de demo completos: 7 láminas en `docs/demo/EarthTrend_Detective_slides.pdf` (≤ 7 páginas, 16:9, fuentes en `docs/demo/FUENTES.md`) + vídeo de 29.0s en `docs/demo/EarthTrend_Detective_30s.mp4` (`docs/demo/GUION.md`)
-VERIFICADO: UI pulida: unidades en español aplicadas, QA D8 resuelto (upload de Giovanni muestra nombre limpio), cero huecos tipográficos en números, favicon SVG propio
-ROTO / NO HECHO: `gh-pages` público en GitHub Pages necesita el empuje final de la versión nueva del respaldo estático (tarea de claude-omni-3a o arquitecto en «despliega»); Railway opcional si el humano hace login
-Siguiente paso: pasar `integracion/ronda6` a `main` («integra»); «despliega» para actualizar `gh-pages`; humano completa campos `<<HUMANO>>` en `docs/SUBMISSION.md` antes de las 20:00
-Necesito de: humano: confirmar «integra» para llevar a `main`, «despliega» para publicar en GitHub Pages, y sus decisiones de PLAN §7
-Avisos para otros carriles: La base es `integracion/ronda6`; todas las 10 ramas están integradas; suite en 288 passed sin rojas
+## ESTADO — cfable (arquitecto) — 2026-11-15 11:30 hora de Perú
+Rama@commit: `main@9e386db` · empujado: sí (por el humano/equipo tras el cierre de R6)
+VERIFICADO: Suite completa sobre `main` ampliado → `python -m pytest -q` → **288 passed, 0 failed, 9 skipped** en 272s (incluye reportes R6, fix `pytest.ini` testpaths, scripts de deploy, corrección de texto es)
+VERIFICADO: `python scripts/gate.py --offline --skip-suite` → PUERTA ABIERTA (smoke 17/17, datasets 7/7, knowledge 168 docs, no_secrets 289 archivos, rangos físicos 3882 valores)
+VERIFICADO: `gh-pages` regenerado desde `main@9e386db` y publicado → `gh-pages@cb84560`; URL pública `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` HTTP 200, `Last-Modified: Sun, 15 Nov 2026 16:30:03 GMT`, 7/7 casos 200 y la corrección de español ya en vivo
+VERIFICADO: SUBMISSION completa — humano rellenó equipo («Angel Fernando Reyes Moreno») y eligió las láminas como demo; sin `<<HUMANO>>` pendientes
+VERIFICADO: Demo: PDF exactamente 7 páginas (2.407.097 bytes, `/Count 7`) y vídeo 29.0s (795.958 bytes, ffprobe 29.000000)
+ROTO / NO HECHO: informes R6 pendientes de 4 carriles (claude-omni-1, claude-omni-2, claude-omni-3, claude-omni-e/informe-3); Railway opcional si el humano hace login
+Siguiente paso: esperar el informe-3 de QA (o redactarlo) y la decisión del humano de «Submit for Judging» a las 20:00
+Necesito de: humano: «Submit for Judging» a las 20:00; si Railway no se despliega, la URL de entrega es la de GitHub Pages
+Avisos para otros carriles: todo lo que toca a `main` está empujado y en verde; no hay nada que integrar ya salvo reportes de cierre docs-only
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
+
+## Cierre Ronda 6 (final) — VERIFICADO (2026-11-15 11:30)
+Rama@commit: `main@9e386db` (todo lo de la entrega en `main`, en verde, empujado)
+
+Verificación de cierre ejecutada por el arquitecto tras la integración de los reportes R6:
+
+```
+$ python -m pytest -q -p no:cacheprovider          (sobre main ampliado, 10:5x)
+288 passed, 9 skipped, 74 warnings in 272.47s (0:04:32)
+
+$ python scripts/gate.py --offline --skip-suite
+OK smoke_api · OK validate_datasets · OK validate_knowledge
+OK planned_not_analyzable · OK case_physical_ranges · OK no_secrets (289 archivos)
+PUERTA ABIERTA: todo en verde
+
+$ ffprobe docs/demo/EarthTrend_Detective_30s.mp4 → duration 29.000000 s (≤ 30.0)
+$ pypdf docs/demo/EarthTrend_Detective_slides.pdf → /Count 7 (≤ 7 páginas, 2.407.097 bytes)
+$ curl 7 casos en GitHub Pages → 7/7 HTTP 200, texto es corregido ya en vivo
+```
+
+Despliegue final: `gh-pages@cb84560` generado con `scripts/build_static.py --from-cases`
+(7 casos, 7 análisis, 2 atlas, 0 errores) y empujado. URL pública
+`https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` HTTP 200 con
+`Last-Modified: Sun, 15 Nov 2026 16:30:03 GMT`; la corrección «todavía no se detecta
+tendencia» ya se sirve desde la URL.
+
+Lo que entró en `main` tras la integración de las 10 ramas (todo docs/scripts seguro,
+sin tocar `src/` ni esquemas):
+- `fix/pytest-testpaths@3a61b8e`: pytest solo recoge `tests/` (un clon limpio fallaba porque `scripts/test_ui_r5.py` importa playwright).
+- `feature/scrapes` (hermes-2 R6): idioma mezclado en un hallazgo es y cifra de `DATASET_CARD`.
+- `feature/catalog` (claude-omni-1b R6): reporte final + fuente Lenssen 2019.
+- `feature/static` (claude-omni-3a R6): reporte con verificación byte a byte de la URL pública.
+- `integracion/ronda6` (scripts de despliegue `deploy_update.ps1/.sh`).
+- `docs(reports)`: reportes R6 de antigravity-1, antigravity-2, claude-omni-c (portado desde `feature/demo@b3eb737`, que también quedó empujada).
+- `9e386db` (humano): láminas y SUBMISSION con el miembro del equipo y la visión; demo = láminas.
+
+Quedan: informes R6 de 4 carriles (claude-omni-1, claude-omni-2, claude-omni-3,
+claude-omni-e/informe-3) y el «Submit for Judging» humano a las 20:00.
 
 ## Integración Ronda 6 (Final pre-entrega) — VERIFICADO (2026-11-15 08:50)
 Rama@commit: `integracion/ronda6` (fusión de las 10 ramas sin conflictos)
