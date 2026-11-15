@@ -62,9 +62,13 @@ def _fetch_csv(url: str) -> tuple[str, dict]:
 def parse_csv(text: str) -> list[dict]:
     """Parsea un fichero mensual de NSIDC o serie consolidada -> [{'date','value','area','source'}]."""
     rows = []
-    reader = csv.DictReader(io.StringIO(text))
+    reader = csv.DictReader(io.StringIO(text), skipinitialspace=True)
     for row in reader:
-        clean = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
+        clean = {
+            (k or "").strip().lower(): (", ".join(v) if isinstance(v, list) else (v or "")).strip()
+            for k, v in row.items()
+            if k is not None
+        }
         year = None
         month = None
         date = None
@@ -156,7 +160,15 @@ def series(variable_id: str, *, lat=None, lon=None, bbox=None, start=None, end=N
     if len(dates) < 12:
         raise DataUnavailable("OUT_OF_COVERAGE", f"solo {len(dates)} meses entre {start} y {end}")
 
-    sources = sorted({merged[d]["source"] for d in dates if merged[d]["source"] and merged[d]["source"] not in ("-9999", "-999")})
+    sources_set = set()
+    for d in dates:
+        src_raw = merged[d].get("source")
+        if src_raw and src_raw not in ("-9999", "-999"):
+            for part in str(src_raw).split(","):
+                part_clean = part.strip().strip('"').strip("'")
+                if part_clean and part_clean not in ("-9999", "-999"):
+                    sources_set.add(part_clean)
+    sources = sorted(sources_set)
     data = [{"date": d, "value": merged[d]["value"]} for d in dates]
     n_missing = sum(1 for pt in data if pt["value"] is None)
 
