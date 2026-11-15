@@ -259,6 +259,29 @@ def test_grid_fdr_and_compare():
     assert "opposing" in comp["statement"]["en"]
 
 
+def test_compare_never_prints_none_for_arbitrary_points():
+    """QA D12: compare con puntos arbitrarios (region.name None) no puede decir 'None'.
+
+    Un clic en un punto sin nombre del gazetteer dejaba region.name en None y el
+    texto decía "between None and None". Debe caer en el resolutor de nombres
+    (coordenadas formateadas), igual que analyze_series.
+    """
+    ts_up = _generate_ar1_series(n_years=25, true_slope=0.5, seed=3)
+    ts_down = _generate_ar1_series(n_years=25, true_slope=-0.5, seed=4)
+    for ts in (ts_up, ts_down):
+        ts["region"] = {"kind": "point", "name": None, "lat": -12.04, "lon": -77.03}
+    a1 = analyze_series(ts_up)
+    a2 = analyze_series(ts_down)
+    comp = compare(a1, a2)
+
+    assert comp["statement"]["es"] != "None"
+    assert comp["statement"]["en"] != "None"
+    for lang in ("es", "en"):
+        assert "None" not in comp["statement"][lang], comp["statement"][lang]
+    assert "-12.04" in comp["statement"]["es"]
+    assert "-12.04" in comp["statement"]["en"]
+
+
 def test_published_nasa_benchmarks():
     """Valida la reproducción de valores oficiales publicados por NASA GISS y NOAA/NSIDC."""
     import csv

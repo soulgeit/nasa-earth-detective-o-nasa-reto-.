@@ -816,18 +816,20 @@ def compare(a: dict, b: dict) -> dict:
     diff_significant = abs(z) >= 1.96
     opposite = bool((slope_a * slope_b < 0) and sig_a and sig_b)
 
-    reg_a = a.get("region", {}).get("name", "Región A")
-    reg_b = b.get("region", {}).get("name", "Región B")
+    # Usar el mismo resolutor que analyze_series: region.name puede ser None
+    # (punto arbitrario) y eso producía "between None and None" (QA D12).
+    reg_a_es, reg_a_en = _resolve_region_name(a.get("region", {}))
+    reg_b_es, reg_b_en = _resolve_region_name(b.get("region", {}))
 
     if opposite:
-        stmt_es = f"{reg_a} y {reg_b} exhiben tendencias opuestas estadísticamente significativas."
-        stmt_en = f"{reg_a} and {reg_b} exhibit statistically significant opposing trends."
+        stmt_es = f"{reg_a_es} y {reg_b_es} exhiben tendencias opuestas estadísticamente significativas."
+        stmt_en = f"{reg_a_en} and {reg_b_en} exhibit statistically significant opposing trends."
     elif diff_significant:
-        stmt_es = f"Existe una diferencia estadísticamente significativa en las tasas de cambio de {reg_a} y {reg_b} (z = {z:.2f})."
-        stmt_en = f"There is a statistically significant difference in the rates of change between {reg_a} and {reg_b} (z = {z:.2f})."
+        stmt_es = f"Existe una diferencia estadísticamente significativa en las tasas de cambio de {reg_a_es} y {reg_b_es} (z = {z:.2f})."
+        stmt_en = f"There is a statistically significant difference in the rates of change between {reg_a_en} and {reg_b_en} (z = {z:.2f})."
     else:
-        stmt_es = f"No se encontró diferencia significativa entre las pendientes de {reg_a} y {reg_b} (z = {z:.2f})."
-        stmt_en = f"No significant difference was detected between the slopes of {reg_a} and {reg_b} (z = {z:.2f})."
+        stmt_es = f"No se encontró diferencia significativa entre las pendientes de {reg_a_es} y {reg_b_es} (z = {z:.2f})."
+        stmt_en = f"No significant difference was detected between the slopes of {reg_a_en} and {reg_b_en} (z = {z:.2f})."
 
     return {
         "opposite": opposite,
