@@ -11,7 +11,7 @@ Lee docs/RONDA_4.md entero: reglas 19-25 (§3) y tu apartado del §4. Empieza po
 
 Agentes nuevos (`claude-omni-c`, `claude-omni-e`, `claude-omni-3a`): carpeta propia, para no cambiarle la rama a otro agente del mismo equipo: `git fetch origin && git worktree add ../etd-<tu-rama> -b feature/<tu-rama> origin/main` (por ejemplo `../etd-demo`, `../etd-qa`, `../etd-static`) y trabaja solo dentro de esa carpeta. Nadie hace `git checkout` de otra rama en una carpeta que use otro agente.
 
-**Aviso de integración.** Las dos ramas que traen el LoRA (`feature/data-pipeline@c53d937` y `feature/stats@22b2cb5`) todavía **no están en `main`**: chocan entre sí (§2.1). La fusión está resuelta y probada en el PC1 y entra en `main` cuando el humano diga «integra». Sabrás que ya entró cuando `git cat-file -e origin/main:reports/lora/train_meta.json` no dé error. **Hasta entonces nadie toca `models/`, `reports/lora/` ni `tests/ml/`.** Las tareas marcadas con ⏳ esperan a ese commit (repite `git fetch` cada 10 minutos); las demás empiezan ya.
+**Aviso de integración: HECHA el sábado a las 23:40.** Las dos ramas que traen el LoRA (`feature/data-pipeline@c53d937` y `feature/stats@22b2cb5`) **ya están en `main`**, con el choque resuelto como dice el §5.1. Lo compruebas con `git cat-file -e origin/main:reports/lora/train_meta.json` (no da error). Las tareas marcadas con ⏳ ya pueden empezar: haz antes `git fetch origin && git merge origin/main`. El estado del §1 es exactamente el de este `main`, con sus 4 pruebas rojas.
 
 ## 1. Estado verificado por el arquitecto (sáb 23:30)
 
@@ -143,7 +143,7 @@ No arreglas código: encuentras, pruebas y se lo pasas al dueño del carril (reg
 
 ## 6. Pendiente del humano
 
-1. **«integra»**: mete en `main` la fusión de las dos ramas del LoRA. Sin eso, las tareas ⏳ no arrancan.
+1. **«integra»**: hecho el sábado a las 23:40. La fusión de las dos ramas del LoRA ya está en `main`.
 2. **Hosting:** `railway login` en el PC1 y después «despliega». Sin URL pública no hay entrega; el plan B es el respaldo estático.
 3. **Decisiones (PLAN §7):** nombre del equipo y miembros (máximo 6, todos inscritos en el mismo evento local), caso protagonista, qué demo se entrega y si vale la licencia MIT.
 4. **Opcional y valioso:** CSV de Giovanni de otros instrumentos (GPM IMERG, MODIS NDVI, OMI) en `data/raw/giovanni/`. Cada uno convierte una `planned` en disponible.
