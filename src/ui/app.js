@@ -441,6 +441,11 @@ function onVariableChange() {
     ? (v.simple_definition[state.lang] || v.simple_definition.es || v.simple_definition.en)
     : '';
   $('#variable-definition').textContent = def;
+  // A series that starts later (aerosols 2001, clouds 1984) must not be requested from 1981:
+  // it would come back 55 % empty and the engine would answer "insufficient data".
+  const first = parseInt(String((v && v.source && v.source.start) || '1981').slice(0, 4), 10) || 1981;
+  const startEl = $('#period-start');
+  if (startEl) startEl.value = Math.max(1981, first);
 }
 
 /* ---------------------------------------------------------------- cases */
@@ -1326,43 +1331,10 @@ function renderChatReply(data) {
   }
 }
 
+// RONDA_7: the conversation lives in chat.js (thread, "thinking" steps, actions).
 async function askDetective(question) {
-  if (!question || question.trim().length < 2) return;
-  const btn = $('#detective-ask-btn');
-  btn.disabled = true;
-  btn.textContent = '…';
-
-  try {
-    let chatData = null;
-    try {
-      const res = await fetch(`${API_BASE}/api/ai/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ message: question.trim(), lang: state.lang, context: currentChatContext })
-      });
-      if (res.ok) {
-        chatData = await res.json();
-      }
-    } catch (_) {}
-
-    if (chatData && chatData.reply) {
-      if (chatData.context) currentChatContext = Object.assign(currentChatContext, chatData.context);
-      renderChatReply(chatData);
-    } else {
-      const qUrl = `${API_BASE}/api/ai/plan?question=${encodeURIComponent(question)}&lang=${state.lang}`;
-      const res = await fetch(qUrl, { method: 'POST', headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error('Planner error');
-      const planData = await res.json();
-      renderPlan(planData);
-    }
-  } catch (err) {
-    showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
-      ? 'Huiracocha IA no está disponible en este momento. Selecciona lugar y variable manualmente.'
-      : 'Huiracocha AI is not available right now. Please select location and variable manually.'));
-  } finally {
-    btn.disabled = false;
-    btn.textContent = state.lang === 'es' ? 'Preguntar' : 'Ask';
-  }
+  if (window.HuiracochaChat) return window.HuiracochaChat.send(question);
+  return undefined;
 }
 
 function renderPlan(plan) {
@@ -1717,6 +1689,7 @@ function setLang(lang) {
   applyTranslations(document);
   renderCatalog();
   loadCases();
+  window.dispatchEvent(new CustomEvent('etd:lang', { detail: lang }));
   if (state.analysis && state.mode === 'single') renderAnalysis(state.analysis);
   else if (state.trendmap && state.mode === 'trendmap') renderTrendMap(state.trendmap);
   else if (state.compare && state.mode === 'compare') renderCompare(state.compare);
@@ -1834,6 +1807,14 @@ function boot() {
     if (state.analysis) renderAnalysis(state.analysis);
     else boot();
   });
+
+  if (window.HuiracochaChat) {
+    window.HuiracochaChat.init({
+      state, apiGet, apiPost, setMode, setPoint, setPointB, investigate, runCompare,
+      onVariableChange, fmt, fmtP, signed,
+      panMap: (lat, lon) => { if (map) map.setView([lat, lon], 6); },
+    });
+  }
 
   apiGet('/api/health')
     .then((h) => { state.health = h; })

@@ -513,6 +513,15 @@ async def ai_chat(request: Request) -> JSONResponse:
     return JSONResponse(result, headers=_data_headers())
 
 
+@app.get("/api/ai/about", tags=["ai"])
+def ai_about(request: Request, lang: str = Query("es")) -> JSONResponse:
+    """Cifras vivas para la nota «cómo funciona»: corpus, ciudades, LoRA y modo del servidor."""
+    _limit(request)
+    lang = validation.check_lang(lang)
+    result = _detective_call("about", lambda fn: fn(lang=lang))
+    return JSONResponse(result, headers={"Cache-Control": "public, max-age=300"})
+
+
 @app.get("/api/scan", tags=["data"])
 def scan_endpoint(
     request: Request,

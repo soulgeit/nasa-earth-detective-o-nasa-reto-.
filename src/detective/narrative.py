@@ -141,6 +141,8 @@ def _passages_for(analysis: dict[str, Any], *, lang: str, k: int = MAX_PASSAGES)
         pattern = re.compile(r"(?<!\w)" + re.escape(region_key) + r"(?!\w)") if region_key else None
         regional = retrieve(region_name, lang=lang, k=24, types=["nasa_article", "region_note", "paper_abstract"])
         regional.sort(key=lambda d: 0 if d.get("lang") == lang else 1)
+        # Same language as the explanation when the place has notes in it; only then fall back.
+        regional = [d for d in regional if d.get("lang") == lang] or regional
         taken = 0
         for doc in regional:
             if pattern is None or taken >= MAX_REGIONAL:

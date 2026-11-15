@@ -1,3 +1,9 @@
+# EXPERIMENTAL — NOT FOR THE PUBLIC URL.
+# Deployed on 2026-11-15 at 17:31 this image left the Railway service hanging: the first
+# chat request loaded SmolLM2-1.7B + the adapter on CPU inside the request and the
+# server stopped answering everybody (last log line: "generation flags ... ['temperature']").
+# Use it only on a machine with a GPU or after the planner call is single-flight with a
+# timeout. The public image is ./Dockerfile (verified rules + RAG, answers in milliseconds).
 # SI-assisted: claude-omni-3 (Claude Opus 5.5)
 # EarthTrend Detective API v2 — un solo servicio (API + UI estática + LoRA en Railway Hobby).
 

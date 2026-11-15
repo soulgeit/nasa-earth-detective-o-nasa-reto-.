@@ -15,3 +15,10 @@ __pycache__/
 .env
 .env.*
 *.token
+# RONDA_7: not needed by the light image (kept out of the upload)
+data/cities/
+data/lora/
+models/
+node_modules/
+*.mp4
+Dockerfile.lora

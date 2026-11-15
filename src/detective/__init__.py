@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from .rag import retrieve as _retrieve
 
-__all__ = ["retrieve", "plan", "chat", "scout", "explain", "geocode", "__version__"]
+__all__ = ["retrieve", "plan", "chat", "about", "scout", "explain", "geocode", "__version__"]
 
 __version__ = "2.0.0"
 
@@ -40,6 +40,15 @@ def chat(message: str, *, lang: str | None = None, context: dict | None = None):
     from .conversation import chat as _chat
 
     return _chat(message, lang=lang, context=context)
+
+
+def about(*, lang: str = "es"):
+    """Live facts for the "how Huiracocha IA works" panel (corpus, cities, LoRA, deployment)."""
+    # NOT called about.py: a submodule named like this function would replace the
+    # function on the package the first time it is imported (the 2nd request would 503).
+    from .about_facts import about as _about
+
+    return _about(lang=lang)
 
 
 def scout(lat: float, lon: float, *, lang: str = "es"):

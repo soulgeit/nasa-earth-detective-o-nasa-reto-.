@@ -109,6 +109,20 @@ loses on the hand-written questions, so it is offered as an optional local mode,
 as the default. Both numbers are always published together
 (`docs/EVAL_IA.md`, rule 20) — a model result quoted alone would be misleading.
 
+**Huiracocha AI, the conversational layer (round 7).** The assistant that talks in the
+app is named after Wiracocha, the Andean creator deity. It is a retrieval-and-rules
+system, not a free-text generator: it recognises the intent of the message, retrieves
+from the cited corpus (BM25 plus a lexicon of everyday words), plans with verified rules
+(the LoRA planner is used only on a machine where its model is loaded) and then calls the
+same statistics engine that serves the rest of the app. Everything it says is a fixed
+sentence, a field of the catalogue, a cited passage, or text written by the statistics
+engine, and every reply names the engine that produced it. The catalogue grew from 15 to
+35 real NASA POWER variables, each requested live before it was added. `GET /api/scan`
+tests every point variable for one place and applies the Benjamini–Hochberg correction
+across all of them, so a "confirmed" change has survived the multiple-testing problem.
+The "how it works" panel at the top of the app reads its numbers from the running
+server (`GET /api/ai/about`) and says which mode that server is in.
+
 ### 3. Why you can trust it
 
 - **Every number is traceable.** The statistical engine computes it; the language
@@ -259,6 +273,11 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
    license and a sha256 of the source page. A document whose text is our own summary
    is marked `is_quotation: false` and is never displayed between quotation marks.
    Documents that are literal text from the page are marked as quotations.
+   In round 7 the corpus grew from 168 to 999 documents so that five Peruvian cities
+   (Lima, Huancayo, Andahuaylas, Ica, Ayacucho) are documented in depth: 124 to 195
+   documents each, 340 of them trends computed by our own statistics engine (never
+   presented as quotations). Each lane wrote only its own files and every file passes
+   `scripts/validate_fragments.py` before it can be pushed.
 
 **No images, video or audio were generated with SI.** All screenshots are captures of
 the running application with real data. The demo is delivered through the official 7-slide presentation (`docs/demo/EarthTrend_Detective_slides.pdf`), with a companion 29-second screen recording of the real app (`docs/demo/EarthTrend_Detective_30s.mp4`).
@@ -272,7 +291,7 @@ were made by the team.
 ## Live links
 
 - **Official Public Demo & Static Backup (GitHub Pages):** https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./ (provides instant zero-install access to all 7 frozen NASA reference cases and precomputed global trend maps).
-- **Interactive Containerized App & API (Live Production):** https://nasa-earth-detective-o-nasa-reto-production.up.railway.app (full interactive API, dynamic trend maps, and live detective engine on Railway).
+- **Interactive Containerized App & API (Live Production):** https://huiracochaia.soulgeit.com (full interactive API, dynamic trend maps, and live detective engine on Railway).
 
 ---
 
