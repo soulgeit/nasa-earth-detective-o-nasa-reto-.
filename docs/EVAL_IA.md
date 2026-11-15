@@ -88,8 +88,10 @@ de punta a punta: si algo intenta salir a la red, el test falla).
   (`QUESTION: ...` + `CANDIDATES:` con `- ID: nombre`), y el `system` se lee de
   `data/lora/system_prompt.txt`. Si ese archivo no existe (Hermes 2 aún no lo ha publicado),
   el planificador **no llama a ningún modelo**: responde por reglas y lo anota en `note`.
-- **LoRA**: no se evaluó en esta rama; corresponde a Antigravity 2 / juicio del arquitecto.
-  Esta sección no afirma ninguna cifra sobre LoRA.
+- **LoRA**: evaluado de verdad, en GPU y en CPU. Las cifras, la máquina de cada
+  medición, los fallos y los 200 casos de prueba están en la sección
+  «Planner over the 50 golden questions» más abajo. El producto planifica con
+  reglas; el LoRA es el modo local opcional.
 
 ## 5. Ejecución reproducible
 
@@ -105,53 +107,69 @@ python -m src.detective.rag.eval             # tabla de recuperación
 Comando: `python -m src.detective.rag.eval_plan` (añade `--json` para uso automático).
 
 <!-- TABLA_PLAN_INICIO -->
-### Planner over the 50 golden questions (RONDA 3 & 4)
+### Planner over the 50 golden questions (RONDA 3, 4 and 5)
 
 Commands:
 `python -m src.detective.rag.eval_plan` (rules) and
 `AI_MODE=full PLANNER_MODEL=local-lora python -m src.detective.rag.eval_plan --planner local-lora`.
-Measured 2026-11-15, `main` merged, rule 19 applied (a `planned` variable is never a candidate).
+Rule 19 applied: a `planned` variable is never a candidate, for the rules or the model.
 
-| Planner | Variable accuracy | Questions |
-|---|---|---|
-| rules | 49/50 = 0.980 | 50 |
-| LoRA (local, CPU) | 37/50 = 0.740 | 50 |
+| Planner | Variable accuracy | Questions | Machine | Median time |
+|---|---|---|---|---|
+| rules | 49/50 = 0.980 | 50 | any (no model) | 3.6 s |
+| LoRA | 40/50 = 0.800 | 50 | RTX 4070 SUPER, 4-bit | 2.2 s |
+| LoRA | 37/50 = 0.740 | 50 | GTX 1650 SUPER, CPU float32 | 13.7 s |
 
-Both numbers are always reported together (rule 20). Timing on this machine
-(GTX 1650 SUPER, CPU inference): ~3.6 s/question for rules; ~13.7 s/question for
-LoRA after one ~60 s model load.
+The LoRA result depends on the machine (2.2 s on the RTX 4070 SUPER vs 13.7 s on CPU),
+so **both the GPU and the CPU measurement are reported**: 40/50 on GPU, 37/50 on CPU.
+The rules, which run anywhere, score 49/50 and are the product default.
 
-Rules failures (1):
+Before rule 19 the LoRA scored 31/50; filtering `planned` products out of the
+candidates recovered 9 questions on GPU and 6 on CPU. **None of its remaining
+misses is a `planned` variable**: it confuses neighbouring variables
+(`TS`/`T2M`, rain/temperature).
+
+Both LoRA numbers are always reported together with its 200-case evaluation
+(rule 20): on the 200 test cases drawn from the training generator, the adapter
+reaches 84.5 % exact-variable accuracy against 15.5 % for the rules; on the 50
+hand-written reference questions the order reverses (40/50 vs 49/50). The test set
+comes from the same generator as the training data, which is why it is always shown
+next to the hand-written set and never on its own.
+
+Rules failure (1):
 
 | Question | Lang | Intent | Got | Expected |
 |---|---|---|---|---|
 | Is dust from the Sechura Desert travelling farther now? | en | `investigate` | `GWETTOP` | `AOD_55` |
 
-LoRA failures (13) — none is a `planned` variable, so rule 19 removed 15 of the
-previous 19 misses:
+LoRA failures on GPU (10), from `reports/_arquitecto.md`:
 
-| Question | Lang | Intent | Got | Expected |
-|---|---|---|---|---|
-| ¿Está lloviendo menos en Piura en los últimos años? | es | compare | T2M | PRECTOTCORR |
-| ¿El aire de Lima está más sucio que hace años? | es | compare | RH2M | AOD_55 |
-| ¿Qué ha pasado con la lluvia en la selva de Madre de Dios? | es | investigate | T2M | PRECTOTCORR |
-| Temperatura de la superficie del suelo en la costa | es | investigate | GISTEMP_TANOM | TS |
-| ¿El lago Titicaca está perdiendo agua por evaporación? | es | investigate | TQV | EVLAND, GWETTOP |
-| ¿La garúa de Lima se está volviendo más frecuente? | es | compare | ALLSKY_SFC_SW_DWN | CLOUD_AMT, RH2M |
-| ¿El vapor de agua sobre la costa peruana cambió? | es | investigate | RH2M | TQV |
-| ¿Qué variable debo mirar para saber si Piura se desertifica? | es | investigate | T2M | GWETTOP, PRECTOTCORR |
-| ¿Las lluvias de El Niño son más intensas en Tumbes? | es | compare | T2M | PRECTOTCORR |
-| Ground surface temperature in Puno, trend? | en | investigate | GISTEMP_TANOM | TS |
-| Is Lima's drizzle becoming more frequent? | en | investigate | PRECTOTCORR | CLOUD_AMT, RH2M |
-| Which variable tells me if Piura is turning into desert? | en | investigate | T2M | GWETTOP, PRECTOTCORR |
-| Are El Nino rains stronger in Tumbes? | en | compare | T2M | PRECTOTCORR |
+| Question | Got | Expected |
+|---|---|---|
+| ¿Hace más calor ahora en Lima que cuando era niño? | `TS` | `T2M` |
+| ¿Por qué hay más humo en el cielo de la Amazonía en septiembre? | `CLOUD_AMT` | `AOD_55`, `PRECTOTCORR` |
+| ¿Qué ha pasado con la lluvia en la selva de Madre de Dios? | `T2M` | `PRECTOTCORR` |
+| Temperatura de la superficie del suelo en Puno, tendencia | `GISTEMP_TANOM` | `TS` |
+| ¿La garúa de Lima se está volviendo más frecuente? | `ALLSKY_SFC_SW_DWN` | `CLOUD_AMT`, `RH2M` |
+| ¿El vapor de agua sobre la costa peruana está cambiando? | `RH2M` | `TQV` |
+| ¿Las lluvias de El Niño son más intensas en Tumbes? | `T2M` | `PRECTOTCORR` |
+| Ground surface temperature in Puno, trend | `GISTEMP_TANOM` | `TS` |
+| Is Lima's drizzle becoming more frequent? | `PRECTOTCORR` | `CLOUD_AMT`, `RH2M` |
+| Which variable tells me if Piura is turning into desert? | `T2M` | `GWETTOP`, `PRECTOTCORR` |
 
-### Who plans by default (RONDA 4 §5.2)
+LoRA failures on CPU (13) — the same families plus three more that the 4-bit GPU
+run gets right; the fuller list is reproducible with the command above.
 
-The LoRA **is not the silent default**. The public server runs `AI_MODE=extractive`
-(rules plan, no model loaded). Locally, `PLANNER_MODEL=local-lora` opts in to the
-adapter explicitly, and every plan the model produces is re-verified by the rules
-(variable available, place resolvable). On the 50 reference questions the rules
-(49/50) beat the LoRA (37/50), so rules are the default and the LoRA is an explicit
-option with its real numbers.
+### Who plans by default
+
+**The product plans with rules.** The public server runs `AI_MODE=extractive`:
+the rules answer, no model is loaded, no GPU is needed. The LoRA is the optional
+local mode (`PLANNER_MODEL=local-lora`); it needs ~7 GB of RAM in float32 or a CUDA
+GPU in 4-bit, so it is not deployed to the public server. Every plan the model
+produces is re-verified by the rules (variable available, place resolvable), so a
+model mistake in the place or the variable id cannot reach the user.
+
+The numbers above are the reason: 49/50 rules vs 40/50 LoRA on the hand-written
+questions. The LoRA is shown as what it is — a working fine-tune with published
+results — not as the default planner.
 <!-- TABLA_PLAN_FIN -->
