@@ -701,8 +701,14 @@ details.method[open] summary::before { content: "–"; }
   border: 1.5px solid rgba(18, 94, 90, 0.25);
   border-radius: var(--radius);
   box-shadow: 0 4px 14px rgba(18, 94, 90, 0.08);
-  display: grid;
-  gap: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.detective-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .detective-box label {
   font-size: var(--step-0);
@@ -711,44 +717,125 @@ details.method[open] summary::before { content: "–"; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin: 0;
 }
-.detective-box .search-row {
+.detective-live-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0f766e;
+  background: #ccfbf1;
+  border: 1px solid #99f6e4;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.detective-input-wrap {
   display: flex;
-  gap: 0.6rem;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
 }
-.detective-box .search-row input {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 0.75rem 1rem;
+.detective-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 82px;
+  padding: 0.85rem 1rem;
   font-size: 0.95rem;
-  line-height: 1.35;
+  line-height: 1.45;
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
   background: #ffffff;
+  color: var(--ink);
+  font-family: inherit;
+  resize: vertical;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.detective-box .search-row input:focus {
+.detective-box textarea:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(18, 94, 90, 0.15);
+  box-shadow: 0 0 0 3px rgba(18, 94, 90, 0.18);
   outline: none;
 }
-.detective-box .search-row .btn {
-  padding: 0.75rem 1.35rem;
-  font-size: 0.95rem;
+.detective-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.detective-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  background: var(--plate);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.chip-btn:hover {
+  background: var(--teal-wash);
+  color: var(--teal-ink);
+  border-color: var(--teal);
+}
+.detective-action-row .btn {
+  padding: 0.55rem 1.25rem;
+  font-size: 0.92rem;
   font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 .detective-plan-card {
   margin-top: 0.5rem;
-  padding: 0.65rem 0.85rem;
+  padding: 0.85rem 1rem;
   background: var(--plate);
   border: 1px solid var(--teal);
   border-left: 3px solid var(--teal);
   border-radius: var(--radius);
   display: grid;
   gap: 0.4rem;
+}
+.plan-sources {
+  margin-top: 0.65rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--rule);
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+.plan-sources a {
+  color: var(--teal);
+  text-decoration: underline;
+  word-break: break-word;
+}
+.plan-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+.plan-suggestion-chip {
+  text-align: left;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--teal-ink);
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.plan-suggestion-chip:hover {
+  background: var(--teal-wash);
+  border-color: var(--teal);
 }
 .plan-header-row {
   display: flex;

@@ -1791,7 +1791,12 @@ function boot() {
   });
 
   $('#detective-ask-btn')?.addEventListener('click', () => askDetective($('#detective-input').value));
-  $('#detective-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askDetective($('#detective-input').value); } });
+  $('#detective-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askDetective($('#detective-input').value);
+    }
+  });
   $('#plan-confirm-btn')?.addEventListener('click', confirmPlan);
   $('#btn-scout')?.addEventListener('click', scoutLocation);
   $('#btn-scout-close')?.addEventListener('click', () => { $('#scout-drawer').hidden = true; });

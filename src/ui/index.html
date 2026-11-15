@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=3.3">
+  <link rel="stylesheet" href="styles.css?v=3.5">
 </head>
 <body>
   <a class="skip-link" href="#results" data-i18n="nav.skip">Skip to results</a>
@@ -70,20 +70,35 @@
     <form class="rail" id="investigate-form" novalidate>
             <!-- ============ ASK THE DETECTIVE (U4) ============ -->
       <section class="detective-box plate" id="detective-box">
-        <label for="detective-input" data-i18n="detective.title">Ask Huiracocha AI</label>
-        <div class="search-row">
-          <input type="text" id="detective-input" autocomplete="off"
-                 data-i18n-placeholder="detective.placeholder" placeholder="Ask a question or explore a place…">
-          <button type="button" class="btn btn-primary btn-small" id="detective-ask-btn" data-i18n="detective.ask">Ask</button>
+        <div class="detective-header">
+          <label for="detective-input" data-i18n="detective.title">Conversa con Huiracocha IA</label>
+          <span class="detective-live-badge">IA Activa</span>
+        </div>
+        <div class="detective-input-wrap">
+          <textarea id="detective-input" rows="3" autocomplete="off"
+                 data-i18n-placeholder="detective.placeholder"
+                 placeholder="Pregúntale a Huiracocha IA con total libertad sobre clima, lluvia, temperatura o ciudades (ej: ¿Cómo ha cambiado la lluvia en Huancayo en los últimos 20 años?)..."></textarea>
+          <div class="detective-action-row">
+            <div id="detective-chips" class="detective-chips">
+              <button type="button" class="chip-btn" data-q="¿Hace más calor en Lima?">Lima</button>
+              <button type="button" class="chip-btn" data-q="¿Llueve menos en Ica?">Ica</button>
+              <button type="button" class="chip-btn" data-q="¿Hay menos heladas en Huancayo?">Huancayo</button>
+              <button type="button" class="chip-btn" data-q="¿Cambió la lluvia en Ayacucho?">Ayacucho</button>
+              <button type="button" class="chip-btn" data-q="¿Cómo varía la precipitación en Andahuaylas?">Andahuaylas</button>
+            </div>
+            <button type="button" class="btn btn-primary" id="detective-ask-btn" data-i18n="detective.ask">Preguntar</button>
+          </div>
         </div>
         <div class="detective-plan-card" id="detective-plan-card" hidden>
           <div class="plan-header-row">
-            <p class="plan-heading" data-i18n="detective.plan.heading">Investigation Plan · Huiracocha AI</p>
-            <span class="plan-badge" id="plan-meta-badge"></span>
+            <p class="plan-heading" data-i18n="detective.plan.heading">Huiracocha IA</p>
+            <span class="plan-badge plan-badge-lora" id="plan-meta-badge">IA Activa</span>
           </div>
-          <p class="plan-intent" id="plan-intent-text"></p>
+          <div class="plan-intent" id="plan-intent-text"></div>
+          <div id="plan-sources-list" class="plan-sources" hidden></div>
+          <div id="plan-suggestions" class="plan-suggestions" hidden></div>
           <p class="plan-note" id="plan-note-text" hidden></p>
-          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run">Confirm & Investigate</button>
+          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run" hidden>Investigar en el mapa</button>
         </div>
       </section>
 
@@ -365,9 +380,9 @@
 
   <div id="glossary-pop" role="tooltip" hidden></div>
 
-  <script src="i18n.js?v=3.2"></script>
+  <script src="i18n.js?v=3.5"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=3.2"></script>
+  <script src="app.js?v=3.5"></script>
 </body>
 </html>
