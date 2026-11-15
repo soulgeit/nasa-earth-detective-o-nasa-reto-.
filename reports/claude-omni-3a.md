@@ -1,16 +1,16 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — claude-omni-3a — 2026-11-15 (cierre, Ronda 6)
-Base: `main@e67873e` · Rama de trabajo: `feature/static` (worktree `../etd-static`) · empujado: sí
-URL pública: `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` · **gh-pages@94091de**
-VERIFICADO (R6-1): `git ls-remote` → `gh-pages = 94091de97fe33e4c19eb038f7211284a3621b260`; la URL responde HTTP 200 con `Last-Modified: Sun, 15 Nov 2026 13:56:31 GMT`
-VERIFICADO (R6-1): prueba byte a byte — `index.html`, `static-api.js`, `app.js`, `i18n.js`, `styles.css`, `api/cases.json` y los 2 `analyze__amazonia-*.json` descargados de la URL dan el **mismo git blob** que `origin/gh-pages:…` en `94091de` (8/8 coinciden)
-VERIFICADO (R6-2): Playwright a 1440 y 390 px → **7 de 7 casos abren** con su veredicto, pendiente y unidad (12/14 comprobaciones exactas; ver hallazgo H1 para las 2 restantes); 0 errores de consola
+## ESTADO — claude-omni-3a — 2026-11-15 (cierre, Ronda 6 + H1 cerrado)
+Base: `main@c64c9bd` · Rama de trabajo: `feature/static` (worktree `../etd-static`) · empujado: sí
+URL pública: `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` · **gh-pages@10c7e16**
+VERIFICADO (R6-1): `gh-pages@94091de` comprobado byte a byte contra la URL (8/8 archivos con el mismo git blob) y HTTP 200; luego republicado como `bbf6e10 → 4ee6946 → 10c7e16`
+VERIFICADO (R6-2): Playwright a 1440 y 390 px → **7 de 7 casos abren** con su veredicto, pendiente y unidad, 0 errores de consola
 VERIFICADO (R6-3): 8 endpoints que necesitan servidor × 2 idiomas = **16/16** devuelven 503 `DATA_UNAVAILABLE` con aviso traducido; el panel de «Investigate» se muestra, nunca pantalla vacía
-HALLAZGO H1 (no es del respaldo, afecta también a la app viva): la cifra grande sale de `answers.how_much` («+0.158») y no de `trend.sen_slope_per_decade` (0.1585 → +0.159); es el §2.16 de la Ronda 5, sigue abierto
-ROTO / NO HECHO: nada en mi carril. El respaldo no toca `src/` por congelación (regla 31)
-Siguiente paso: ninguno — respaldo y URL pública entregados y verificados
+VERIFICADO (H1, cerrado): cifra grande y texto coinciden en **7/7**; Lima pasa de +0.158 a **+0.159** en la URL pública (`Last-Modified: 16:50:07 GMT`)
+FIX H1: `src/stats/trend_engine.py` formateaba la pendiente **sin redondear** (0.15849 → «+0.158») mientras `trend` publica `round(...,4)` = 0.1585 (→ «+0.159»); el texto ahora usa el mismo número. Prueba de regresión `test_how_much_text_matches_published_slope` (verificada: falla sin el cambio, pasa con él)
+ROTO / NO HECHO: nada en mi carril. El único archivo de `src/` tocado es `trend_engine.py`; quedó con problemas por `main` (fusión `6597f48`), no por mi rama
+Siguiente paso: ninguno — respaldo, URL pública y H1 entregados y verificados
 Necesito de: nadie
-Avisos para otros carriles: `src/ui/app.js` (línea ~650) prefiere el número de `answers.how_much.en` sobre `trend.sen_slope_per_decade`; para cerrar H1 hay que redondear en el backend o leer de `trend`. `Invoke-WebRequest` da 404 falso en esta URL (IPv6): usar `curl -I`.
+Avisos para otros carriles: al regenerar `gh-pages`, hacerlo **desde el `main` que ya tiene el arreglo**; un build desde una base anterior vuelve a servir «+0.158» (pasó con `cb84560`, que salió de `main@9e386db`). `Invoke-WebRequest` da 404 falso en esta URL (IPv6): usar `curl -I`.
 <!-- ESTADO:FIN -->
 
 # REPORTE FINAL — claude-omni-3a · respaldo estático y URL pública
