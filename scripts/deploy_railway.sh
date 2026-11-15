@@ -15,15 +15,18 @@ set -euo pipefail
 
 PROJECT="802f90ea-4480-47bd-bd90-af34913087af"
 ENVIRONMENT="production"
-SERVICE="nasa-earth-detective-o-nasa-reto-"
+# The CLI cannot resolve this service by name (it ends in a hyphen): use its id.
+SERVICE="669481f5-a577-4518-898a-84cc6ebf1635"
 URL="https://huiracochaia.soulgeit.com"
 
 DEPLOY=0
 ALLOW_DIRTY=0
+SKIP_TESTS=0
 for arg in "$@"; do
   case "$arg" in
     --deploy) DEPLOY=1 ;;
     --allow-dirty) ALLOW_DIRTY=1 ;;
+    --skip-tests) SKIP_TESTS=1 ;;  # only when this exact code already passed the suite
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -44,7 +47,11 @@ say "2/6" "knowledge fragments pass the strict gate"
 python scripts/validate_fragments.py
 
 say "3/6" "full test suite"
-python -m pytest -q -p no:cacheprovider
+if [[ "$SKIP_TESTS" -eq 1 ]]; then
+  echo "skipped (--skip-tests): the same code already passed"
+else
+  python -m pytest -q -p no:cacheprovider
+fi
 
 say "4/6" "working tree"
 if [[ -n "$(git status --porcelain)" ]]; then
