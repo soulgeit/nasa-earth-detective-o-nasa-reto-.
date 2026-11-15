@@ -10,6 +10,7 @@ Principios:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -520,18 +521,25 @@ async def ai_chat(request: Request) -> JSONResponse:
         if hasattr(serving, "chat_with_instruct"):
             system_msg = (
                 "Eres Huiracocha IA, asistente científico inteligente de EarthTrend Detective para datos satelitales de la NASA. "
-                "Responde en español de forma amable, pedagógica y precisa. Si el usuario te saluda o pregunta quién eres o qué haces, "
+                "Responde en español de forma amable, pedagógica y concisa. Si el usuario te saluda o pregunta quién eres o qué haces, "
                 "salúdalo cordialmente y explícale que puedes ayudarle a investigar tendencias climáticas históricas (temperatura, lluvia, "
                 "radiación solar, humedad) en cualquier región de la Tierra utilizando datos de satélites de la NASA."
                 if lang == "es" else
                 "You are Huiracocha AI, an intelligent Earth science assistant for NASA satellite observation data. "
-                "Reply politely and helpfully. Explain how you help investigate historical climate trends."
+                "Reply concisely, politely, and helpfully."
             )
             chat_messages = [
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": message},
             ]
-            reply = serving.chat_with_instruct(chat_messages, max_new_tokens=220, temperature=0.7)
+            # Ejecutar en thread separado con timeout de 20s para no bloquear Uvicorn
+            try:
+                reply = await asyncio.wait_for(
+                    asyncio.to_thread(serving.chat_with_instruct, chat_messages, max_new_tokens=90, temperature=0.7),
+                    timeout=22.0
+                )
+            except (asyncio.TimeoutError, Exception):
+                pass
     except Exception:
         pass
 
