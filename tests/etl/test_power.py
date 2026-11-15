@@ -13,6 +13,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REAL = os.path.join(os.path.dirname(HERE), "fixtures", "real")
 POINT = os.path.join(REAL, "power_monthly_point_lima.json")
 REGIONAL = os.path.join(REAL, "power_monthly_regional_piura_T2M.json")
+POINT_WS2M = os.path.join(REAL, "power_monthly_point_lima_ws2m.json")
+POINT_T2M_MAX = os.path.join(REAL, "power_monthly_point_lima_t2m_max.json")
+POINT_T2M_MIN = os.path.join(REAL, "power_monthly_point_lima_t2m_min.json")
 
 
 def load(path):
@@ -34,6 +37,35 @@ def test_parse_point_real_fixture():
     assert parsed["dates"][-1] == "2025-12"
     assert parsed["values"][0] == 18.41
     assert not any(d.endswith("-13") for d in parsed["dates"])
+
+
+def test_parse_point_ws2m_real_fixture():
+    doc = load(POINT_WS2M)
+    parsed = power.parse_point_response(doc, "WS2M")
+    assert parsed["unit"] == "m/s"
+    assert parsed["fill"] == -999.0
+    assert len(parsed["dates"]) == 540
+    assert parsed["dates"][0] == "1981-01"
+    assert parsed["dates"][-1] == "2025-12"
+    assert parsed["values"][0] == 2.61
+    assert parsed["values"][-1] == 2.46
+    # Rango físico: viento entre 0 y 150 m/s
+    assert all(0.0 <= v <= 150.0 for v in parsed["values"] if v is not None)
+    assert not any(d.endswith("-13") for d in parsed["dates"])
+
+
+def test_parse_point_t2m_max_min_real_fixtures():
+    doc_max = load(POINT_T2M_MAX)
+    parsed_max = power.parse_point_response(doc_max, "T2M_MAX")
+    assert parsed_max["unit"] == "C"
+    assert len(parsed_max["dates"]) == 540
+    assert all(-90.0 <= v <= 75.0 for v in parsed_max["values"] if v is not None)
+
+    doc_min = load(POINT_T2M_MIN)
+    parsed_min = power.parse_point_response(doc_min, "T2M_MIN")
+    assert parsed_min["unit"] == "C"
+    assert len(parsed_min["dates"]) == 540
+    assert all(-95.0 <= v <= 65.0 for v in parsed_min["values"] if v is not None)
 
 
 def test_parse_point_real_fixture_has_nulls_not_minus_999():

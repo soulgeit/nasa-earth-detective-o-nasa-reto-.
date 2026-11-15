@@ -76,6 +76,19 @@ def test_sentinel_fill_and_physical_range_rejected():
     errs_temp = validate_document(doc_temp)
     assert any("fuera del rango físico" in e for e in errs_temp)
 
+    # 4. Viento WS2M fuera de rango físico (0 a 150 m/s)
+    doc_wind_neg = good_doc(variable_id="WS2M")
+    doc_wind_neg["data"][0]["value"] = -5.0
+    assert any("fuera del rango físico" in e for e in validate_document(doc_wind_neg))
+
+    doc_wind_high = good_doc(variable_id="WS2M")
+    doc_wind_high["data"][0]["value"] = 250.0
+    assert any("fuera del rango físico" in e for e in validate_document(doc_wind_high))
+
+    doc_wind_ok = good_doc(variable_id="WS2M")
+    doc_wind_ok["data"][0]["value"] = 12.5
+    assert validate_document(doc_wind_ok) == []
+
 
 def test_duplicate_and_unordered_dates():
     doc = good_doc()

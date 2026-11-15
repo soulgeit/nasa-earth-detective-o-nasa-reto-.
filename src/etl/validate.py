@@ -49,6 +49,11 @@ PHYSICAL_RANGES: dict[str, tuple[float, float]] = {
     "MODIS_NDVI": (-1.0, 1.0),
     # Radiación solar descendente en MJ/m²/día
     "ALLSKY_SFC_SW_DWN": (0.0, 50.0),
+    # Viento a 2 m en m/s (NASA POWER MERRA-2)
+    "WS2M": (0.0, 150.0),
+    # Temperaturas extremas en °C
+    "T2M_MAX": (-90.0, 75.0),
+    "T2M_MIN": (-95.0, 65.0),
 }
 
 SENTINEL_FILLS = {-9999.0, -9999, -999.0, -999, -99999.0, -99999, 1e14, 1e15, 1e20}
