@@ -170,15 +170,13 @@ Versions are pinned in `requirements.txt` and `requirements-ml.txt`.
 
 We would rather state these than let a judge find them:
 
-- **The full application is not deployed.** The public link is the static backup
-  (the 7 frozen cases and 2 trend maps). Live analysis, the detective, the trend map
-  outside those 2 maps, and CSV upload need the API running.
+- **The static backup is limited.** The GitHub Pages link is a frozen copy (the 7 cases
+  and 2 trend maps). Live analysis, the assistant, the trend map outside those 2 maps and
+  CSV upload need the API, which runs at https://huiracochaia.soulgeit.com.
 - **`planned` mission products are declared, not available.** MODIS, OMI, AIRS, GPM
   and GLDAS variables appear in the catalogue as `planned` and cannot be analysed
   until their Giovanni CSV is uploaded. The assistant answers `no_match` and explains
   how to load them.
-- **Wind is not in the catalogue.** `WS2M` is validated in the connector but has no
-  card yet; "is the wind getting stronger?" answers `no_match`.
 - **The LoRA is not served publicly.** It needs about 7 GB in float32 or a CUDA GPU.
 - **The fine-tune is small**: 150 steps (about 0.28 of an epoch). Its test set comes
   from the same generator as the training data, which flatters it; that is why the
