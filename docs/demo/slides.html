@@ -298,6 +298,7 @@
       </span>
       <h1>EarthTrend Detective</h1>
       <p class="subtitle">Investigate a place on Earth with real NASA Earth science data.</p>
+      <p class="subtitle" style="margin-top: 0.45rem; font-size: 1.05rem; opacity: 0.92;">Meet <strong>Huiracocha AI</strong>: a conversational assistant built on <strong>RAG</strong> and a <strong>LoRA</strong> planner that cites every source.</p>
 
       <dl class="cover-meta">
         <div>
@@ -310,11 +311,11 @@
         </div>
         <div>
           <dt>Prototype Focus</dt>
-          <dd>Arctic Sea Ice Extent vs. Antarctic Contrast</dd>
+          <dd>35 real NASA variables · Arctic vs. Antarctic contrast · five Peruvian cities in depth</dd>
         </div>
         <div>
           <dt>Deployment</dt>
-          <dd>Live Interactive App (100% Free & Open Access)</dd>
+          <dd>huiracochaia.soulgeit.com (free &amp; open access)</dd>
         </div>
       </dl>
     </div>
@@ -380,8 +381,8 @@
     </div>
 
     <div class="slide-content grid-2" style="align-items: stretch;">
-      <div class="img-frame" style="height: 100%;">
-        <img src="../media/verdict_view.png" alt="EarthTrend Detective Main Verdict Screen">
+      <div class="img-frame" style="height: 452px;">
+        <img src="../media/huiracocha_verdict.png" style="width: 100%; height: 100%; object-fit: cover; object-position: top left;" alt="Huiracocha AI answering: is Lima getting hotter? Verdict and chart">
       </div>
 
       <div style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -517,14 +518,14 @@
     <div class="slide-header">
       <div>
         <div class="slide-eyebrow">Spatial & AI Intelligence</div>
-        <div class="slide-title">Spatial Atlas & Grounded AI Detective</div>
+        <div class="slide-title">Huiracocha AI: RAG + LoRA, Grounded in NASA Data</div>
       </div>
       <div class="slide-num">06 / 07</div>
     </div>
 
     <div class="slide-content grid-2-even">
       <div style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="img-frame" style="height: 250px;">
+        <div class="img-frame" style="height: 196px;">
           <img src="../media/trendmap_spatial.png" alt="Spatial TrendMap Atlas">
         </div>
         <div class="card">
@@ -536,24 +537,26 @@
       </div>
 
       <div style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="img-frame" style="height: 250px;">
-          <img src="../media/plan_attribution.png" alt="AI Detective Investigation Plan">
+        <div class="img-frame" style="height: 196px;">
+          <img src="../media/huiracocha_chat.png" alt="Huiracocha AI console: a question and its answer from real NASA data">
         </div>
         <div class="card" style="border-left: 4px solid var(--teal);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <h3 style="font-size: 1.15rem; margin: 0;">Grounded AI Assistant</h3>
-            <span class="badge-pill">50/50 (100%) Rules · 40/50 LoRA</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <h3 style="font-size: 1.15rem; margin: 0;">How Huiracocha AI answers</h3>
+            <span class="badge-pill">50/50 Rules · 40/50 LoRA</span>
           </div>
-          <p style="font-size: 0.88rem; color: var(--ink-2); line-height: 1.45;">
-            Translates questions into structured plans. Grounded in 168 verified NASA documents. Strictly extractive citations with publisher links; <strong>never invents numbers</strong>.
-          </p>
+          <ul class="bullet-list" style="font-size: 0.8rem; line-height: 1.38; margin: 0;">
+            <li><strong>RAG:</strong> retrieval over <strong>999 cited documents</strong> (NASA, NOAA, SENAMHI, papers), five Peruvian cities in depth. Every claim names its source; it never invents numbers.</li>
+            <li><strong>LoRA:</strong> a SmolLM2-1.7B adapter trained on one RTX 4070 SUPER turns a question into a plan; <strong>verified rules check every plan</strong> and decide when it errs.</li>
+            <li><strong>Scan:</strong> tests 32 variables for a place with Benjamini–Hochberg correction.</li>
+          </ul>
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <div>AI Evaluation: <strong>50/50 (100%) golden benchmark accuracy, strictly grounded in NASA literature</strong></div>
-      <div>Source: docs/EVAL_IA.md & data/atlas/T2M.json</div>
+      <div>AI Evaluation: <strong>rules 50/50 · LoRA 40/50 on 50 reference questions (RTX 4070 SUPER)</strong></div>
+      <div>Source: docs/EVAL_IA.md, src/ml/MODEL_CARD.md & data/atlas/T2M.json</div>
     </div>
   </section>
 
@@ -571,7 +574,7 @@
       <div style="display: flex; flex-direction: column; justify-content: space-between;">
         <div class="card" style="border-left: 4px solid var(--teal);">
           <h3>Real-World Impact for Education & Research</h3>
-          <ul class="bullet-list" style="font-size: 0.95rem; margin-top: 0.5rem;">
+          <ul class="bullet-list" style="font-size: 0.88rem; margin-top: 0.4rem;">
             <li><strong>Zero Install, Zero Accounts:</strong> Runs directly in any modern browser on desktop or phone.</li>
             <li><strong>Fully Bilingual:</strong> English and Spanish with native localized numbers and scientific terms.</li>
             <li><strong>Mobile-Ready:</strong> Tested at 390 px viewport with zero horizontal scroll, responsive charts and Leaflet map.</li>
@@ -582,8 +585,12 @@
         <div class="card" style="background: var(--plate); padding: 1.25rem;">
           <h3 style="font-size: 1.15rem; color: var(--ink); margin-bottom: 0.5rem;">Live Deployment & Links</h3>
           <p style="font-size: 0.95rem; margin-bottom: 0.35rem;">
-            <strong>Live Public Web App:</strong><br>
-            <a href="https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./" target="_blank" style="color: var(--teal); font-weight: 600; word-break: break-all;">https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./</a>
+            <strong>Live app (Huiracocha AI):</strong><br>
+            <a href="https://huiracochaia.soulgeit.com" target="_blank" style="color: var(--teal); font-weight: 600; word-break: break-all;">https://huiracochaia.soulgeit.com</a>
+          </p>
+          <p style="font-size: 0.85rem; margin-bottom: 0.2rem;">
+            <strong>Static backup:</strong>
+            <a href="https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./" target="_blank" style="color: var(--teal); word-break: break-all;">soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./</a>
           </p>
           <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem;">
             Open source under MIT License. All data attribution to NASA POWER, GISS, NSIDC, and GES DISC.
@@ -593,7 +600,7 @@
 
       <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
         <div class="phone-mock" style="height: 520px;">
-          <img src="../media/mobile_390_overview.png" alt="Mobile 390px Viewport Demonstration">
+          <img src="../media/huiracocha_mobile_390.png" alt="Huiracocha AI on a 390 px phone screen">
         </div>
       </div>
     </div>

@@ -61,3 +61,21 @@ Cumple con `docs/RONDA_5.md` §4 (claude-omni-1, tarea 4): *«Cada cifra de una 
 - **Despliegue público en vivo**: `https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./` (100 % funcional sin servidores ni instalaciones). Fuente: `docs/RONDA_5.md` §1.
 - **Responsive en móvil**: Medido en viewport 390×844 px, `0 px` de desplazamiento horizontal, mapa y gráfica interactivos. Fuente: `docs/media/mobile_390_overview.png` y `reports/claude-omni-1.md`.
 - **Licencia y código abierto**: Código bajo licencia MIT; datos y metadatos con atribución a NASA POWER, GISS, NSIDC y GES DISC. Fuente: `LICENSE`.
+
+---
+
+## Ronda 7 — cifras añadidas a las láminas (15-nov)
+
+- **Lámina 1, 6 y 7 — «999 documentos», «35 variables», «cinco ciudades peruanas»:** se leen de la aplicación en vivo,
+  `GET https://huiracochaia.soulgeit.com/api/ai/about` (corpus 999, 172 instituciones, 433 páginas fuente; catálogo 35;
+  Lima 140, Huancayo 129, Andahuaylas 124, Ica 143, Ayacucho 195). Código: `src/detective/about_facts.py`.
+- **Lámina 6 — «escaneo de 32 variables»:** `GET /api/scan` (`src/api/service.py`), corrección de Benjamini–Hochberg (1995).
+- **Lámina 6 — RAG:** recuperación BM25 + léxico de palabras cotidianas (`src/detective/rag/`, `src/detective/lexicon.py`);
+  sin generación de texto: cada frase es fija, un campo del catálogo, un pasaje citado o texto del motor estadístico.
+- **Lámina 6 — LoRA:** SmolLM2-1.7B-Instruct + adaptador LoRA entrenado en una NVIDIA RTX 4070 SUPER (6 291 456 parámetros
+  entrenables, 4 323 ejemplos, 150 pasos, 353,7 s). **Reglas 50/50 · LoRA 40/50** en las 50 preguntas de referencia.
+  Fuente: `src/ml/MODEL_CARD.md` y `docs/EVAL_IA.md` (sección «Comprobación en vivo»).
+- **Lámina 3 (nueva captura):** Lima, temperatura del aire, pedida a la aplicación en vivo; las cifras +0,159 °C/década,
+  +0,713 °C y 13,3 años coinciden con el caso congelado `data/cases/lima-t2m/analysis.json`.
+- **Capturas** `docs/media/huiracocha_*.png`: tomadas del despliegue en vivo con `scripts/capture_live_demo.py`.
+- **Vídeo:** `docs/demo/Huiracocha_AI_pitch_30s.mp4` (ver `GUION.md`, «Versión 2»).

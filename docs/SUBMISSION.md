@@ -279,8 +279,10 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
    presented as quotations). Each lane wrote only its own files and every file passes
    `scripts/validate_fragments.py` before it can be pushed.
 
-**No images, video or audio were generated with SI.** All screenshots are captures of
-the running application with real data. The demo is delivered through the official 7-slide presentation (`docs/demo/EarthTrend_Detective_slides.pdf`), with a companion 29-second screen recording of the real app (`docs/demo/EarthTrend_Detective_30s.mp4`).
+**No images or video were generated with SI; one audio track was.** All screenshots are
+captures of the running application with real data. The narration of the pitch video is an
+AI-generated voice (ElevenLabs): the video says so on screen and `docs/AI_USE_LOG.md`
+records it; the presenter footage is the team's own. The demo is delivered through the official 7-slide presentation (`docs/demo/EarthTrend_Detective_slides.pdf`), with a 30-second pitch video (`docs/demo/Huiracocha_AI_pitch_30s.mp4`: the presenter, the slides inside an app window and English subtitles) and a companion 29-second screen recording of the real app (`docs/demo/EarthTrend_Detective_30s.mp4`).
 
 The scientific decisions — which tests, which corrections, which threshold, which
 cases — are documented with their references in `docs/VALIDACION_ESTADISTICA.md` and

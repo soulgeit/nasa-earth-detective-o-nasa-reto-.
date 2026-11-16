@@ -73,19 +73,10 @@ say "5/6" "railway up (service $SERVICE, environment $ENVIRONMENT)"
 railway whoami
 railway up --detach --project "$PROJECT" --environment "$ENVIRONMENT" --service "$SERVICE"
 
-say "6/6" "waiting for $URL to answer, then verifying"
-for i in $(seq 1 60); do
-  if curl -fsS -m 8 "$URL/api/health/live" >/dev/null 2>&1; then break; fi
-  printf '.'
-  sleep 10
-done
-echo
-curl -fsS -m 15 "$URL/api/health" | python -c "import json,sys; h=json.load(sys.stdin); print('health:', h['status'], '| ai_mode:', h['ai_mode'])"
-for n in 1 2; do
-  curl -fsS -m 20 "$URL/api/ai/about?lang=en" -o /dev/null -w "about call $n: %{http_code}\n"
-done
-curl -fsS -m 30 -X POST "$URL/api/ai/chat" -H 'content-type: application/json' \
-  -d '{"message":"hola","lang":"es"}' | python -c "import json,sys; r=json.load(sys.stdin); assert r['kind']=='greeting', r; print('chat: greeting OK')"
+say "6/6" "waiting for the NEW version at $URL, then verifying (including a parallel chat burst)"
+# The old container keeps answering while the new one builds, so health alone proves nothing:
+# /api/ai/about exists only in the new version.
+python scripts/verify_live.py "$URL" --wait 600
 python scripts/smoke_api.py "$URL"
 
 cat <<EOF

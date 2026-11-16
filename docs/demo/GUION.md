@@ -19,3 +19,33 @@
 | **00:26 - 00:29** | 3.0s | **Closing Outro & Live Public App Link**<br>Full link to open GitHub Pages live deployment.<br>Available in English & Spanish. No installation required. | **EarthTrend Detective**<br>*Explore live: soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./*<br>Open source & free for all students. | `docs/KIT_ENTREGA.md` §1 |
 
 Total Planned Duration: **29.0 seconds** (Strictly within the 30.0s cap).
+
+---
+
+## Versión 2 — vídeo de presentador con las láminas al costado (15-nov, 19:05)
+
+**Archivo:** `docs/demo/Huiracocha_AI_pitch_30s.mp4` — 1920×1080, 30 fps, **29,97 s** (≤ 30,0 s), H.264 + AAC.
+Se construye con `python scripts/build_pitch_video.py <presentador.mp4> <narración.mp3>`.
+
+- **Izquierda:** el presentador (vídeo propio del equipo, vertical, un adulto). Su vídeo original dura 36 s y dice el
+  mismo guion que la narración, empezando en el segundo 3,12; se recortó desde su primera palabra y se **re-temporizó
+  tramo a tramo** (8 tramos; siete necesitan ±6 % o menos, solo la primera frase pide 22 %) para que sus labios sigan la
+  narración. Los tiempos por palabra se midieron con faster-whisper (large-v3).
+- **Derecha:** las 7 láminas de `slides.html` dentro de una ventana de aplicación (barra con la dirección en vivo y el
+  distintivo LIVE), que cambian con la frase que se dice.
+- **Subtítulos en inglés** grabados en pantalla, indicador de lámina y la etiqueta
+  «Narration: AI-generated voice (ElevenLabs)».
+- **Voz:** la narración es una voz generada con IA (ElevenLabs). El guion de la primera versión decía «sin voz sintética»;
+  la regla real del proyecto (`docs/KIT_ENTREGA.md` §1) es **declarar y marcar** lo generado, y eso es lo que se hace:
+  etiqueta visible, `docs/AI_USE_LOG.md` y `docs/SUBMISSION.md`.
+
+| Tiempo | Frase (narración) | Lámina |
+|---|---|---|
+| 0:00–0:02,7 | Our planet is changing faster than ever. | 1 · título, Huiracocha AI, RAG y LoRA |
+| 0:02,7–0:07,2 | Yet the communities facing the storm are left blind to what is coming. | 2 · el problema |
+| 0:07,2–0:10,9 | We created Huiracocha to change that forever. | 3 · la aplicación (veredicto real de Lima) |
+| 0:10,9–0:16,5 | We bring the boundless vision of space straight into the hands of those who walk the earth. | 4 · datos reales de la NASA |
+| 0:16,5–0:19,9 | Now, any community can see threats rising, | 5 · estadística honesta |
+| 0:19,9–0:24,4 | protect their water and land, and act before disaster strikes. | 6 · RAG + LoRA y el escaneo |
+| 0:24,4–0:26,0 | The truth is here. | 7 · impacto y enlaces |
+| 0:26,0–0:30,0 | The power to defend your home is finally yours. | 7 |

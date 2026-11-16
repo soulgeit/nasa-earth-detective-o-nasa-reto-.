@@ -22,7 +22,10 @@ def main():
     print(f"Loading {file_url}...")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        try:
+            browser = p.chromium.launch(headless=True)
+        except Exception:  # bundled Chromium not installed: use the system Chrome
+            browser = p.chromium.launch(channel="chrome", headless=True)
         # Create page with exact 1280x720 viewport
         page = browser.new_page(viewport={"width": 1280, "height": 720})
         page.goto(file_url, wait_until="networkidle")
