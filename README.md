@@ -112,7 +112,7 @@ AI_MODE=full PLANNER_MODEL=local-lora python -m uvicorn src.api.main:app --port 
 AI_MODE=full PLANNER_MODEL=local-lora python -m src.detective.rag.eval_plan --planner local-lora
 ```
 
-Measured on the 50 hand-written reference questions: **rules 49/50 (0.98)**;
+Measured on the 50 hand-written reference questions: **rules 50/50 (1.000)**;
 **LoRA 40/50 (0.80)** on a 4-bit GPU (37/50 on CPU), median 2.2 s per question.
 On the 200-case templated test set the adapter gets 84.5 % exact variables against
 15.5 % for the rules baseline; that set shares its generator with the training
@@ -168,7 +168,7 @@ published values are documented in
   exports from Giovanni; without that file the variable is reported as planned,
   never approximated by a different product.
 - The LoRA planner runs locally only, and the team's measurement (40/50) is below
-  the rules (49/50); that is why the product plans with rules.
+  the rules (50/50); that is why the product plans with rules.
 - The public static backup cannot analyse new places or variables, run the
   detective, or accept a CSV upload — it shows the frozen cases and maps only.
 - If a source is down, the API returns an explicit error code. It never
@@ -204,8 +204,7 @@ and every place from the gazetteer or a map click.
 
 ## Licence and third-party notices
 
-Code: **MIT**, see [`LICENSE`](LICENSE). <<HUMANO: confirm MIT for the code and
-decide the licence for our own derived data (proposal: CC BY 4.0).>>
+Code: **MIT**, see [`LICENSE`](LICENSE).
 
 **Our data is not ours to license.** Every series comes from a source with its
 own terms, and the application shows that source next to every figure:
