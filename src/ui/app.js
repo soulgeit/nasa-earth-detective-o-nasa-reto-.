@@ -1545,6 +1545,17 @@ async function loadExplanation(analysis, level = 'school') {
 let demoIndex = 0;
 let demoTimer = null;
 let demoPaused = false;
+// The guided demo opens far below the chat and the "how it works" panel, so the visitor saw nothing happen.
+// A floating button takes them there whenever the demo is running and its banner is out of view.
+function updateDemoScrollButton() {
+  const btn = $('#btn-demo-scroll');
+  const banner = $('#demo-banner');
+  if (!btn || !banner) return;
+  const r = banner.getBoundingClientRect();
+  const inView = !banner.hidden && r.top < window.innerHeight * 0.75 && r.bottom > 40;
+  btn.hidden = banner.hidden || inView;
+}
+
 const DEMO_DURATION = 12000;
 
 function startDemo() {
@@ -1554,6 +1565,7 @@ function startDemo() {
   banner.hidden = false;
   $('#btn-demo-pause').textContent = t('demo.btn.pause');
   banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  updateDemoScrollButton();
   loadDemoCase(demoIndex);
 }
 
@@ -1561,6 +1573,7 @@ function stopDemo() {
   if (demoTimer) clearTimeout(demoTimer);
   demoTimer = null;
   $('#demo-banner').hidden = true;
+  updateDemoScrollButton();
   const fill = $('#demo-progress-fill');
   if (fill) fill.style.width = '0%';
 }
@@ -1783,6 +1796,11 @@ function boot() {
   $('#btn-demo-pause')?.addEventListener('click', pauseResumeDemo);
   $('#btn-demo-next')?.addEventListener('click', nextDemoCase);
   $('#btn-demo-stop')?.addEventListener('click', stopDemo);
+  $('#btn-demo-scroll')?.addEventListener('click', () => {
+    $('#demo-banner').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  window.addEventListener('scroll', updateDemoScrollButton, { passive: true });
+  window.addEventListener('resize', updateDemoScrollButton);
   $('#btn-print-report')?.addEventListener('click', printReport);
 
   const csvInput = $('#csv-file-input');
