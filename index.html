@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EarthTrend Detective</title>
+  <title>Huiracocha IA</title>
   <meta name="description" content="Investigate a place on Earth with real NASA Earth science data: what changes, where, how much, and whether it is significant.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23125e5a'/%3E%3Cpath d='M8 22 L14 16 L18 19 L24 10' stroke='%23f4e5ce' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='10' r='2.5' fill='%23a2610f'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="assets/huiracocha_ia_navbar_128.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=7.4">
 </head>
 <body>
   <a class="skip-link" href="#results" data-i18n="nav.skip">Skip to results</a>
@@ -18,8 +18,15 @@
   <header class="masthead">
     <div class="masthead-inner">
       <div class="product">
-        <h1 data-i18n="app.title">EarthTrend Detective</h1>
-        <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
+        <div class="brand-header">
+          <div class="brand-logo-badge">
+            <img src="assets/huiracocha_ia_navbar_128.png?v=3.2" alt="Huiracocha IA" class="brand-logo" width="68" height="68">
+          </div>
+          <div class="brand-titles">
+            <h1 data-i18n="app.title">Huiracocha IA</h1>
+            <p class="tagline" data-i18n="app.tagline">Investigate a place on Earth with real NASA Earth science data.</p>
+          </div>
+        </div>
       </div>
             <nav class="mode-switch" role="tablist" aria-label="Investigation mode">
         <button type="button" role="tab" id="mode-single" class="mode-tab is-active" aria-selected="true" data-i18n="nav.mode.single">Single point</button>
@@ -36,6 +43,50 @@
       </div>
     </div>
   </header>
+  <!-- ============ RONDA_7: note on how the AI works (numbers come from /api/ai/about) ============ -->
+  <section class="intro" id="intro" aria-label="Huiracocha IA">
+    <div class="intro-inner">
+      <p class="intro-note serif" id="intro-note"></p>
+      <details class="intro-how" id="intro-how" open>
+        <summary>
+          <span data-i18n="intro.how.title">Before you start: how Huiracocha AI works</span>
+          <span class="intro-toggle" data-i18n="intro.how.toggle">open / close</span>
+        </summary>
+        <div class="intro-grid" id="intro-grid"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ RONDA_7: conversation console ============ -->
+  <section class="chat-console" aria-labelledby="chat-title">
+    <div class="chat plate" id="detective-box">
+      <div class="chat-head">
+        <div class="chat-head-main">
+          <h2 class="chat-title" id="chat-title" data-i18n="chat.title">Huiracocha AI</h2>
+          <span class="engine-badge" id="engine-badge" data-engine="unknown">…</span>
+        </div>
+        <p class="chat-sub" data-i18n="chat.subtitle"></p>
+        <button type="button" class="btn btn-ghost btn-small" id="btn-about" data-i18n="about.open">How it works</button>
+      </div>
+      <div class="chat-thread" id="chat-thread" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <div class="chat-compose">
+        <label class="sr-only" for="detective-input" data-i18n="chat.label">Your question</label>
+        <textarea id="detective-input" rows="3" maxlength="500" autocomplete="off" spellcheck="true"
+                  data-i18n-placeholder="chat.placeholder" placeholder="Ask about a place and what worries you…"></textarea>
+        <div class="compose-row">
+          <div class="chip-groups" id="detective-chips"></div>
+          <div class="compose-actions">
+            <span class="chat-hint" data-i18n="chat.hint"></span>
+            <span class="chat-count" id="chat-count" aria-hidden="true">0/500</span>
+            <button type="button" class="btn btn-primary" id="detective-ask-btn">
+              <span class="btn-spinner" aria-hidden="true"></span><span id="ask-label" data-i18n="chat.ask">Ask</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ DEMO NARRATIVE BANNER (U5) ============ -->
   <aside class="demo-banner plate" id="demo-banner" hidden aria-live="polite">
     <div class="demo-banner-inner">
@@ -61,25 +112,6 @@
   <main class="workbench">
     <!-- ============ RAIL: place + variable + period ============ -->
     <form class="rail" id="investigate-form" novalidate>
-            <!-- ============ ASK THE DETECTIVE (U4) ============ -->
-      <section class="detective-box plate" id="detective-box">
-        <label for="detective-input" data-i18n="detective.title">Ask the Detective</label>
-        <div class="search-row">
-          <input type="text" id="detective-input" autocomplete="off"
-                 data-i18n-placeholder="detective.placeholder" placeholder="e.g. Is it raining less in Piura?">
-          <button type="button" class="btn btn-primary btn-small" id="detective-ask-btn" data-i18n="detective.ask">Ask</button>
-        </div>
-        <div class="detective-plan-card" id="detective-plan-card" hidden>
-          <div class="plan-header-row">
-            <p class="plan-heading" data-i18n="detective.plan.heading">Investigation Plan</p>
-            <span class="plan-badge" id="plan-meta-badge"></span>
-          </div>
-          <p class="plan-intent" id="plan-intent-text"></p>
-          <p class="plan-note" id="plan-note-text" hidden></p>
-          <button type="button" class="btn btn-primary btn-small" id="plan-confirm-btn" data-i18n="detective.plan.run">Confirm & Investigate</button>
-        </div>
-      </section>
-
       <section class="field">
         <label for="place-search" data-i18n="panel.search.label">Search a place</label>
         <div class="search-row">
@@ -160,6 +192,8 @@
         <p><button type="button" class="btn btn-ghost btn-small" id="error-retry" data-i18n="error.retry">Try again</button></p>
       </div>
 
+      <section class="plate scan-plate" id="scan-root" hidden aria-live="polite"></section>
+
       <div class="empty" id="empty-state">
         <h2 data-i18n="results.empty.title">Pick a place to begin</h2>
         <p data-i18n="results.empty.body">Click anywhere on the map or search for a place, choose a variable, and press Investigate.</p>
@@ -197,13 +231,13 @@
 
         <article class="plate detective-explain-plate" id="explain-plate">
           <div class="explain-head">
-            <h3 data-i18n="detective.explain.title">Explicación del Detective</h3>
+            <h3 data-i18n="detective.explain.title">Explicación de Huiracocha IA</h3>
             <div class="seg seg-level" role="group">
               <button type="button" id="lvl-school" class="is-active" aria-pressed="true" data-i18n="detective.explain.level.school">Nivel escolar</button>
               <button type="button" id="lvl-uni" aria-pressed="false" data-i18n="detective.explain.level.uni">Nivel universitario</button>
             </div>
           </div>
-          <span class="ai-badge" data-i18n="detective.explain.badge.extractive">Excerpts from cited sources (no generative AI)</span>
+          <span class="ai-badge" data-i18n="detective.explain.badge.extractive">Huiracocha IA: Fuentes y citas oficiales de NASA</span>
           <p class="serif explain-text" id="explain-text"></p>
           <div class="explain-sources" id="explain-sources-box" hidden>
             <h4 data-i18n="detective.explain.sources">Evidencias citadas</h4>
@@ -354,14 +388,16 @@
   <footer class="app-footer">
     <p data-i18n="footer.data">Data: NASA POWER, GISTEMP, NSIDC.</p>
     <p data-i18n="footer.disclaimer">Not affiliated with or endorsed by NASA.</p>
+    <p data-i18n="footer.ai">Built with AI assistance; the AI-use log is in the repository (docs/AI_USE_LOG.md).</p>
   </footer>
 
   <div id="glossary-pop" role="tooltip" hidden></div>
 
-  <script src="i18n.js"></script>
+  <script src="i18n.js?v=7.4"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="chat.js?v=7.4"></script>
   <script src="static-api.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=7.4"></script>
 </body>
 </html>

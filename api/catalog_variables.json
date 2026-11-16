@@ -1,6 +1,6 @@
 {
  "schema": "catalog/2",
- "generated_at": "2026-11-14",
+ "generated_at": "2026-11-15",
  "variables": [
   {
    "id": "T2M",
@@ -1368,6 +1368,1766 @@
     "by": "hermes-1",
     "at": "2026-11-14",
     "evidence_url": "https://nsidc.org/data/g02135/versions/4"
+   }
+  },
+  {
+   "id": "T2M_MAX",
+   "connector": "power",
+   "connector_param": "T2M_MAX",
+   "names": {
+    "es": "Temperatura máxima del aire a 2 m",
+    "en": "Maximum air temperature at 2 m"
+   },
+   "simple_definition": {
+    "es": "La temperatura del aire más alta registrada en cada mes, a la altura de nuestra cara.",
+    "en": "The highest air temperature recorded in each month, at the height of our face."
+   },
+   "unit": "°C",
+   "ratio_scale": false,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar tardes más calurosas y olas de calor más intensas.",
+    "en": "May point to hotter afternoons and more intense heat waves."
+   },
+   "what_down_means": {
+    "es": "Puede indicar días menos calurosos, más nubes o más humedad durante el día.",
+    "en": "May indicate milder days, more cloud or more daytime moisture."
+   },
+   "typical_drivers": {
+    "es": [
+     "Radiación solar y nubosidad",
+     "Humedad del suelo",
+     "El Niño y La Niña",
+     "Crecimiento de las ciudades"
+    ],
+    "en": [
+     "Sunlight and cloud cover",
+     "Soil moisture",
+     "El Nino and La Nina",
+     "Urban growth"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es el valor más alto del mes en una celda de ~50 km, no el récord de una estación.",
+     "Un solo día extremo puede mover el dato de todo un mes."
+    ],
+    "en": [
+     "It is the monthly highest value of a ~50 km grid cell, not a station record.",
+     "A single extreme day can move a whole month's value."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "temperatura máxima",
+     "máximas",
+     "calor extremo",
+     "ola de calor",
+     "día más caluroso",
+     "tarde calurosa",
+     "récord de calor",
+     "temperatura diurna",
+     "pico de calor"
+    ],
+    "en": [
+     "maximum temperature",
+     "daytime high",
+     "highs",
+     "heat wave",
+     "hottest day",
+     "afternoon heat",
+     "record heat",
+     "daily maximum",
+     "heat extreme"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M_MAX&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "T2M_MIN",
+   "connector": "power",
+   "connector_param": "T2M_MIN",
+   "names": {
+    "es": "Temperatura mínima del aire a 2 m",
+    "en": "Minimum air temperature at 2 m"
+   },
+   "simple_definition": {
+    "es": "La temperatura del aire más baja registrada en cada mes, que suele darse de madrugada.",
+    "en": "The lowest air temperature recorded in each month, usually just before dawn."
+   },
+   "unit": "°C",
+   "ratio_scale": false,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar noches menos frías y menos heladas.",
+    "en": "May point to milder nights and fewer frosts."
+   },
+   "what_down_means": {
+    "es": "Puede indicar madrugadas más frías y más riesgo de heladas para los cultivos.",
+    "en": "May indicate colder dawns and higher frost risk for crops."
+   },
+   "typical_drivers": {
+    "es": [
+     "Nubosidad nocturna",
+     "Humedad del aire",
+     "Altitud y relieve",
+     "Crecimiento de las ciudades"
+    ],
+    "en": [
+     "Night-time cloud cover",
+     "Air humidity",
+     "Altitude and terrain",
+     "Urban growth"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es el valor más bajo del mes en una celda de ~50 km: el fondo de un valle puede ser varios grados más frío.",
+     "Un solo amanecer extremo puede mover el dato de todo un mes."
+    ],
+    "en": [
+     "It is the monthly lowest value of a ~50 km grid cell: a valley floor can be several degrees colder.",
+     "A single extreme dawn can move a whole month's value."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "temperatura mínima",
+     "mínimas",
+     "frío de madrugada",
+     "noche fría",
+     "amanecer frío",
+     "friaje",
+     "frío extremo",
+     "temperatura nocturna",
+     "madrugada"
+    ],
+    "en": [
+     "minimum temperature",
+     "night-time low",
+     "lows",
+     "cold night",
+     "cold dawn",
+     "cold snap",
+     "extreme cold",
+     "nocturnal temperature",
+     "overnight low"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M_MIN&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "T2M_RANGE",
+   "connector": "power",
+   "connector_param": "T2M_RANGE",
+   "names": {
+    "es": "Amplitud térmica a 2 m",
+    "en": "Air temperature range at 2 m"
+   },
+   "simple_definition": {
+    "es": "La diferencia entre la temperatura más alta y la más baja del periodo.",
+    "en": "The difference between the highest and the lowest air temperature in the period."
+   },
+   "unit": "°C",
+   "ratio_scale": false,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar aire más seco y cielos más despejados: días más calurosos y noches más frías.",
+    "en": "May point to drier air and clearer skies: hotter days and colder nights."
+   },
+   "what_down_means": {
+    "es": "Puede indicar más nubes o humedad, o noches que se calientan más rápido que los días.",
+    "en": "May indicate more cloud or moisture, or nights warming faster than days."
+   },
+   "typical_drivers": {
+    "es": [
+     "Nubosidad",
+     "Humedad del aire y del suelo",
+     "Altitud",
+     "Distancia al mar"
+    ],
+    "en": [
+     "Cloud cover",
+     "Air and soil moisture",
+     "Altitude",
+     "Distance from the sea"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Se calcula con los extremos del mes, así que es sensible a un solo día raro.",
+     "No dice si cambió la máxima, la mínima o las dos: conviene mirarlas por separado."
+    ],
+    "en": [
+     "It is computed from the month's extremes, so it is sensitive to a single odd day.",
+     "It does not say whether the maximum, the minimum or both changed: check them separately."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "amplitud térmica",
+     "oscilación térmica",
+     "rango de temperatura",
+     "diferencia entre el día y la noche",
+     "contraste térmico",
+     "variación diaria",
+     "salto térmico",
+     "amplitud diaria",
+     "rango térmico"
+    ],
+    "en": [
+     "temperature range",
+     "diurnal range",
+     "thermal amplitude",
+     "day-night difference",
+     "thermal contrast",
+     "daily variation",
+     "temperature swing",
+     "daily range",
+     "diurnal cycle"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M_RANGE&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "T2MDEW",
+   "connector": "power",
+   "connector_param": "T2MDEW",
+   "names": {
+    "es": "Punto de rocío a 2 m",
+    "en": "Dew point at 2 m"
+   },
+   "simple_definition": {
+    "es": "La temperatura a la que el aire tendría que enfriarse para que su vapor se convierta en rocío o escarcha.",
+    "en": "The temperature the air must cool to for its vapour to turn into dew or frost."
+   },
+   "unit": "°C",
+   "ratio_scale": false,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más vapor de agua en el aire y noches más bochornosas.",
+    "en": "May point to more water vapour in the air and muggier nights."
+   },
+   "what_down_means": {
+    "es": "Puede indicar aire más seco, con más riesgo de helada en noches despejadas.",
+    "en": "May indicate drier air, with higher frost risk on clear nights."
+   },
+   "typical_drivers": {
+    "es": [
+     "Evaporación del mar y del suelo",
+     "Lluvia reciente",
+     "Vientos que traen aire húmedo o seco",
+     "Temperatura"
+    ],
+    "en": [
+     "Evaporation from sea and soil",
+     "Recent rainfall",
+     "Winds bringing moist or dry air",
+     "Temperature"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "No es la temperatura del aire: mide cuánta humedad hay, expresada en grados.",
+     "Es una estimación del modelo para una celda de ~50 km."
+    ],
+    "en": [
+     "It is not the air temperature: it measures moisture, expressed in degrees.",
+     "It is a model estimate for a ~50 km grid cell."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "punto de rocío",
+     "rocío",
+     "punto de escarcha",
+     "condensación",
+     "temperatura de rocío",
+     "neblina matinal",
+     "aire saturado",
+     "sereno",
+     "gotas de rocío"
+    ],
+    "en": [
+     "dew point",
+     "dew",
+     "frost point",
+     "condensation",
+     "dewpoint temperature",
+     "morning mist",
+     "saturated air",
+     "dewfall",
+     "dew drops"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2MDEW&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "QV2M",
+   "connector": "power",
+   "connector_param": "QV2M",
+   "names": {
+    "es": "Humedad específica a 2 m",
+    "en": "Specific humidity at 2 m"
+   },
+   "simple_definition": {
+    "es": "Cuántos gramos de vapor de agua hay en cada kilogramo de aire.",
+    "en": "How many grams of water vapour there are in each kilogram of air."
+   },
+   "unit": "g/kg",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar que el aire contiene más vapor, algo esperable cuando el aire se calienta.",
+    "en": "May point to air holding more vapour, as expected when air warms."
+   },
+   "what_down_means": {
+    "es": "Puede indicar aire más seco y menos agua disponible para formar nubes y lluvia.",
+    "en": "May indicate drier air and less water available to form cloud and rain."
+   },
+   "typical_drivers": {
+    "es": [
+     "Temperatura del aire",
+     "Evaporación del mar y del suelo",
+     "Transporte de aire húmedo",
+     "Lluvia"
+    ],
+    "en": [
+     "Air temperature",
+     "Evaporation from sea and soil",
+     "Transport of moist air",
+     "Rainfall"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "A diferencia de la humedad relativa, no cambia solo porque suba o baje la temperatura.",
+     "Es una estimación del modelo para una celda de ~50 km."
+    ],
+    "en": [
+     "Unlike relative humidity, it does not change just because temperature rises or falls.",
+     "It is a model estimate for a ~50 km grid cell."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "humedad específica",
+     "contenido de vapor",
+     "gramos de vapor",
+     "humedad absoluta",
+     "aire cargado de vapor",
+     "masa de vapor",
+     "vapor por kilogramo",
+     "contenido de humedad",
+     "gramos por kilogramo"
+    ],
+    "en": [
+     "specific humidity",
+     "vapour content",
+     "grams of vapour",
+     "absolute humidity",
+     "moisture content",
+     "vapour mass",
+     "vapour per kilogram",
+     "grams per kilogram",
+     "moisture mixing"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=QV2M&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "PS",
+   "connector": "power",
+   "connector_param": "PS",
+   "names": {
+    "es": "Presión atmosférica en superficie",
+    "en": "Surface pressure"
+   },
+   "simple_definition": {
+    "es": "El peso del aire sobre cada punto del suelo; es menor cuanto más alto está el lugar.",
+    "en": "The weight of the air above each point of the ground; it is lower the higher the place."
+   },
+   "unit": "kPa",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más tiempo estable y despejado, dominado por altas presiones.",
+    "en": "May point to more settled, clear weather dominated by high pressure."
+   },
+   "what_down_means": {
+    "es": "Puede indicar más paso de borrascas y tiempo inestable.",
+    "en": "May indicate more passing lows and unsettled weather."
+   },
+   "typical_drivers": {
+    "es": [
+     "Altitud del lugar",
+     "Paso de anticiclones y borrascas",
+     "Temperatura de la columna de aire",
+     "El Niño y La Niña"
+    ],
+    "en": [
+     "Altitude of the site",
+     "Passing highs and lows",
+     "Temperature of the air column",
+     "El Nino and La Nina"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Cambia muy poco de un año a otro: las tendencias suelen ser diminutas.",
+     "Depende sobre todo de la altitud media de la celda de ~50 km, no de la del punto exacto."
+    ],
+    "en": [
+     "It changes very little from year to year: trends are usually tiny.",
+     "It depends mostly on the mean altitude of the ~50 km grid cell, not of the exact point."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "presión atmosférica",
+     "presión",
+     "barómetro",
+     "presión del aire",
+     "anticiclón",
+     "borrasca",
+     "alta presión",
+     "baja presión",
+     "kilopascales"
+    ],
+    "en": [
+     "surface pressure",
+     "atmospheric pressure",
+     "barometer",
+     "air pressure",
+     "anticyclone",
+     "low pressure",
+     "high pressure",
+     "barometric",
+     "kilopascals"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PS&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "WS2M",
+   "connector": "power",
+   "connector_param": "WS2M",
+   "names": {
+    "es": "Velocidad del viento a 2 m",
+    "en": "Wind speed at 2 m"
+   },
+   "simple_definition": {
+    "es": "Qué tan rápido se mueve el aire cerca del suelo, en promedio.",
+    "en": "How fast the air moves near the ground, on average."
+   },
+   "unit": "m/s",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más ventilación, más evaporación y más polvo levantado.",
+    "en": "May point to more ventilation, more evaporation and more lifted dust."
+   },
+   "what_down_means": {
+    "es": "Puede indicar aire más quieto, que dispersa peor la contaminación.",
+    "en": "May indicate stiller air, which disperses pollution less well."
+   },
+   "typical_drivers": {
+    "es": [
+     "Diferencias de presión",
+     "Relieve y rugosidad del terreno",
+     "Brisas de mar y de valle",
+     "Estación del año"
+    ],
+    "en": [
+     "Pressure differences",
+     "Terrain and surface roughness",
+     "Sea and valley breezes",
+     "Season"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es el promedio de una celda de ~50 km: no capta ráfagas ni el efecto de un cerro o un edificio.",
+     "Cambios en edificios o vegetación alteran el viento cerca del suelo."
+    ],
+    "en": [
+     "It averages a ~50 km grid cell: it misses gusts and the effect of a hill or a building.",
+     "Changes in buildings or vegetation alter the wind near the ground."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "viento",
+     "vientos",
+     "ventoso",
+     "brisa",
+     "ráfagas",
+     "velocidad del viento",
+     "ventarrón",
+     "vendaval",
+     "aire en movimiento"
+    ],
+    "en": [
+     "wind",
+     "winds",
+     "windy",
+     "breeze",
+     "gusts",
+     "wind speed",
+     "gale",
+     "blowing",
+     "moving air"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=WS2M&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "WS10M",
+   "connector": "power",
+   "connector_param": "WS10M",
+   "names": {
+    "es": "Velocidad del viento a 10 m",
+    "en": "Wind speed at 10 m"
+   },
+   "simple_definition": {
+    "es": "Qué tan rápido se mueve el aire a 10 metros del suelo, la altura estándar de los anemómetros.",
+    "en": "How fast the air moves 10 metres above the ground, the standard anemometer height."
+   },
+   "unit": "m/s",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar una circulación más intensa, con más oleaje en la costa y más transporte de polvo.",
+    "en": "May point to stronger circulation, with more coastal swell and more dust transport."
+   },
+   "what_down_means": {
+    "es": "Puede indicar un debilitamiento del viento, a veces llamado aquietamiento del aire.",
+    "en": "May indicate weakening wind, sometimes called atmospheric stilling."
+   },
+   "typical_drivers": {
+    "es": [
+     "Diferencias de presión entre regiones",
+     "Anticiclones y borrascas",
+     "Rugosidad del terreno",
+     "El Niño y La Niña"
+    ],
+    "en": [
+     "Pressure differences between regions",
+     "Highs and lows",
+     "Surface roughness",
+     "El Nino and La Nina"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es el promedio de una celda de ~50 km: no capta ráfagas ni vientos locales.",
+     "Los cambios en las observaciones que alimentan el modelo pueden afectar la tendencia."
+    ],
+    "en": [
+     "It averages a ~50 km grid cell: it misses gusts and local winds.",
+     "Changes in the observations feeding the model can affect the trend."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "viento a 10 metros",
+     "anemómetro",
+     "viento estándar",
+     "intensidad del viento",
+     "viento medio",
+     "circulación del aire",
+     "fuerza del viento",
+     "nudos",
+     "aquietamiento"
+    ],
+    "en": [
+     "wind at 10 metres",
+     "anemometer",
+     "standard wind",
+     "wind intensity",
+     "mean wind",
+     "air circulation",
+     "wind strength",
+     "knots",
+     "stilling"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=WS10M&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "WS50M",
+   "connector": "power",
+   "connector_param": "WS50M",
+   "names": {
+    "es": "Velocidad del viento a 50 m",
+    "en": "Wind speed at 50 m"
+   },
+   "simple_definition": {
+    "es": "Qué tan rápido se mueve el aire a 50 metros del suelo, cerca de la altura de un aerogenerador.",
+    "en": "How fast the air moves 50 metres above the ground, close to wind-turbine height."
+   },
+   "unit": "m/s",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más recurso para generar energía eólica.",
+    "en": "May point to a larger resource for wind power."
+   },
+   "what_down_means": {
+    "es": "Puede indicar menos recurso eólico y aire más estancado.",
+    "en": "May indicate a smaller wind resource and more stagnant air."
+   },
+   "typical_drivers": {
+    "es": [
+     "Diferencias de presión entre regiones",
+     "Relieve",
+     "Brisas de mar y tierra",
+     "Estación del año"
+    ],
+    "en": [
+     "Pressure differences between regions",
+     "Terrain",
+     "Sea and land breezes",
+     "Season"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es una estimación del modelo para una celda de ~50 km, no la medición de una torre.",
+     "Un parque eólico necesita mediciones locales: esto solo da una primera idea."
+    ],
+    "en": [
+     "It is a model estimate for a ~50 km grid cell, not a tower measurement.",
+     "A wind farm needs local measurements: this is only a first look."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "energía eólica",
+     "aerogenerador",
+     "parque eólico",
+     "viento a 50 metros",
+     "recurso eólico",
+     "turbina eólica",
+     "molino de viento",
+     "potencial eólico",
+     "eólica"
+    ],
+    "en": [
+     "wind energy",
+     "wind turbine",
+     "wind farm",
+     "wind at 50 metres",
+     "wind resource",
+     "wind power",
+     "windmill",
+     "wind potential",
+     "hub height"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=WS50M&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "GWETROOT",
+   "connector": "power",
+   "connector_param": "GWETROOT",
+   "names": {
+    "es": "Humedad del suelo en la zona de raíces",
+    "en": "Root zone soil wetness"
+   },
+   "simple_definition": {
+    "es": "Cuánta agua hay al alcance de las raíces, en el primer metro de suelo: 0 es seco y 1 es saturado.",
+    "en": "How much water is within reach of roots, in the top metre of soil: 0 is dry and 1 is saturated."
+   },
+   "unit": "fraction (0-1)",
+   "ratio_scale": true,
+   "sphere": "land",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más agua disponible para cultivos y pastos.",
+    "en": "May point to more water available for crops and pasture."
+   },
+   "what_down_means": {
+    "es": "Puede indicar sequía agrícola: las plantas encuentran menos agua aunque llueva algo.",
+    "en": "May indicate agricultural drought: plants find less water even if some rain falls."
+   },
+   "typical_drivers": {
+    "es": [
+     "Lluvia acumulada",
+     "Evaporación y transpiración",
+     "Riego",
+     "Tipo de suelo"
+    ],
+    "en": [
+     "Accumulated rainfall",
+     "Evaporation and transpiration",
+     "Irrigation",
+     "Soil type"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es una estimación del modelo, no una medición con sensores en el campo.",
+     "No ve el riego: en un valle irrigado el suelo real puede estar más húmedo."
+    ],
+    "en": [
+     "It is a model estimate, not a field sensor measurement.",
+     "It does not see irrigation: an irrigated valley can really be wetter."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "zona de raíces",
+     "raíces",
+     "sequía agrícola",
+     "agua para cultivos",
+     "agua para las plantas",
+     "estrés hídrico",
+     "agua disponible",
+     "marchitez",
+     "siembra"
+    ],
+    "en": [
+     "root zone",
+     "roots",
+     "agricultural drought",
+     "water for crops",
+     "plant available water",
+     "water stress",
+     "available water",
+     "wilting",
+     "sowing"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=GWETROOT&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "GWETPROF",
+   "connector": "power",
+   "connector_param": "GWETPROF",
+   "names": {
+    "es": "Humedad de todo el perfil del suelo",
+    "en": "Profile soil moisture"
+   },
+   "simple_definition": {
+    "es": "Cuánta agua guarda todo el suelo, desde la superficie hasta la roca: 0 es seco y 1 es saturado.",
+    "en": "How much water the whole soil holds, from the surface down to bedrock: 0 is dry and 1 is saturated."
+   },
+   "unit": "fraction (0-1)",
+   "ratio_scale": true,
+   "sphere": "land",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar suelos que almacenan más agua tras varios meses húmedos.",
+    "en": "May point to soils storing more water after several wet months."
+   },
+   "what_down_means": {
+    "es": "Puede indicar una sequía prolongada, que ya alcanzó las capas profundas.",
+    "en": "May indicate a long drought that has reached the deep layers."
+   },
+   "typical_drivers": {
+    "es": [
+     "Lluvia de varios meses",
+     "Evaporación y transpiración",
+     "Escorrentía e infiltración",
+     "Profundidad y tipo de suelo"
+    ],
+    "en": [
+     "Rainfall over several months",
+     "Evaporation and transpiration",
+     "Runoff and infiltration",
+     "Soil depth and type"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Responde despacio: refleja meses de lluvia, no un aguacero.",
+     "Es una estimación del modelo: no mide el agua subterránea ni el bombeo de pozos."
+    ],
+    "en": [
+     "It responds slowly: it reflects months of rain, not one downpour.",
+     "It is a model estimate: it does not measure groundwater or well pumping."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "perfil del suelo",
+     "suelo profundo",
+     "humedad profunda",
+     "capas profundas",
+     "suelo saturado",
+     "infiltración",
+     "agua almacenada en el suelo",
+     "reserva de humedad",
+     "sequía prolongada"
+    ],
+    "en": [
+     "soil profile",
+     "deep soil",
+     "deep moisture",
+     "deep layers",
+     "saturated soil",
+     "infiltration",
+     "water stored in soil",
+     "moisture reserve",
+     "long drought"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=GWETPROF&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "PRECSNOLAND",
+   "connector": "power",
+   "connector_param": "PRECSNOLAND",
+   "names": {
+    "es": "Nevada sobre tierra",
+    "en": "Snowfall over land"
+   },
+   "simple_definition": {
+    "es": "Cuánta precipitación cae en forma de nieve sobre tierra firme, por día, en promedio.",
+    "en": "How much precipitation falls as snow over land, per day, on average."
+   },
+   "unit": "mm/day",
+   "ratio_scale": true,
+   "sphere": "cryosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más nevadas, que alimentan glaciares y reservas de agua.",
+    "en": "May point to more snowfall, feeding glaciers and water reserves."
+   },
+   "what_down_means": {
+    "es": "Puede indicar que nieva menos o que la precipitación cae cada vez más como lluvia.",
+    "en": "May indicate less snowfall, or precipitation falling increasingly as rain."
+   },
+   "typical_drivers": {
+    "es": [
+     "Temperatura",
+     "Altitud",
+     "Humedad disponible",
+     "El Niño y La Niña"
+    ],
+    "en": [
+     "Temperature",
+     "Altitude",
+     "Available moisture",
+     "El Nino and La Nina"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "En una celda de ~50 km las cumbres nevadas quedan promediadas con valles sin nieve.",
+     "Se expresa como agua equivalente (milímetros de agua), no como centímetros de nieve."
+    ],
+    "en": [
+     "In a ~50 km grid cell snowy peaks are averaged with snow-free valleys.",
+     "It is expressed as water equivalent (millimetres of water), not centimetres of snow."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "precipitación de nieve",
+     "nevadas",
+     "cae nieve",
+     "precipitación sólida",
+     "tormenta de nieve",
+     "nevazón",
+     "copos",
+     "nieve que cae",
+     "cuánto nieva"
+    ],
+    "en": [
+     "snow precipitation",
+     "snowing",
+     "falling snow",
+     "solid precipitation",
+     "snowstorm",
+     "snow flurries",
+     "snowflakes",
+     "snowfall rate",
+     "how much it snows"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECSNOLAND&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "FROST_DAYS",
+   "connector": "power",
+   "connector_param": "FROST_DAYS",
+   "names": {
+    "es": "Días con helada",
+    "en": "Frost days"
+   },
+   "simple_definition": {
+    "es": "Cuántos días del mes el aire junto al suelo baja de 0 °C y alcanza el punto de escarcha.",
+    "en": "How many days in the month the near-surface air drops below 0 °C and reaches the frost point."
+   },
+   "unit": "days/month",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más noches de helada, con más daño a cultivos y pastos.",
+    "en": "May point to more frost nights, with more damage to crops and pasture."
+   },
+   "what_down_means": {
+    "es": "Puede indicar menos heladas: noches más templadas o más húmedas.",
+    "en": "May indicate fewer frosts: milder or moister nights."
+   },
+   "typical_drivers": {
+    "es": [
+     "Cielos despejados de noche",
+     "Aire seco",
+     "Altitud",
+     "Estación seca"
+    ],
+    "en": [
+     "Clear night skies",
+     "Dry air",
+     "Altitude",
+     "Dry season"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Se cuenta sobre una celda de ~50 km: el fondo de un valle puede helarse más veces.",
+     "En lugares cálidos vale cero todos los meses y no hay tendencia que medir."
+    ],
+    "en": [
+     "It is counted over a ~50 km grid cell: a valley floor can freeze more often.",
+     "In warm places it is zero every month and there is no trend to measure."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "helada",
+     "heladas",
+     "días de helada",
+     "escarcha",
+     "hiela",
+     "noches bajo cero",
+     "helada agrícola",
+     "congelación",
+     "bajo cero"
+    ],
+    "en": [
+     "frost",
+     "frosts",
+     "frost days",
+     "freezing nights",
+     "freeze",
+     "below zero",
+     "frost damage",
+     "hoarfrost",
+     "freezing days"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=FROST_DAYS&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "TSOIL1",
+   "connector": "power",
+   "connector_param": "TSOIL1",
+   "names": {
+    "es": "Temperatura dentro del suelo (2 a 10 cm)",
+    "en": "Soil temperature (2 to 10 cm deep)"
+   },
+   "simple_definition": {
+    "es": "Cuánto calor hay dentro del suelo, entre 2 y 10 centímetros de profundidad.",
+    "en": "How warm the soil is inside, between 2 and 10 centimetres deep."
+   },
+   "unit": "°C",
+   "ratio_scale": false,
+   "sphere": "land",
+   "source": {
+    "model_or_mission": "MERRA-2",
+    "instrument": null,
+    "via": "NASA POWER",
+    "challenge_named_source": "MERRA-2",
+    "native_resolution": "0.5 x 0.625 degrees",
+    "start": "1981-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar suelos más cálidos, que adelantan la germinación y secan antes la capa superior.",
+    "en": "May point to warmer soils, which bring germination forward and dry the top layer sooner."
+   },
+   "what_down_means": {
+    "es": "Puede indicar suelos más fríos, con germinación más lenta.",
+    "en": "May indicate cooler soils, with slower germination."
+   },
+   "typical_drivers": {
+    "es": [
+     "Radiación solar",
+     "Cobertura vegetal o de nieve",
+     "Humedad del suelo",
+     "Temperatura del aire"
+    ],
+    "en": [
+     "Solar radiation",
+     "Vegetation or snow cover",
+     "Soil moisture",
+     "Air temperature"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es una estimación del modelo para una capa de 2 a 10 cm, no un termómetro enterrado.",
+     "La celda de ~50 km mezcla suelos y coberturas distintas."
+    ],
+    "en": [
+     "It is a model estimate for a 2 to 10 cm layer, not a buried thermometer.",
+     "The ~50 km grid cell mixes different soils and land covers."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "temperatura dentro del suelo",
+     "suelo a 10 centímetros",
+     "germinación",
+     "calor del subsuelo",
+     "suelo frío",
+     "suelo cálido",
+     "lecho de siembra",
+     "tierra de cultivo",
+     "capa de suelo"
+    ],
+    "en": [
+     "soil temperature at depth",
+     "soil at 10 centimetres",
+     "germination",
+     "subsurface heat",
+     "cold soil",
+     "warm soil",
+     "seedbed",
+     "topsoil temperature",
+     "soil layer"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=TSOIL1&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "ALLSKY_SFC_LW_DWN",
+   "connector": "power",
+   "connector_param": "ALLSKY_SFC_LW_DWN",
+   "names": {
+    "es": "Radiación infrarroja que llega del cielo",
+    "en": "Downward infrared (longwave) radiation at the surface"
+   },
+   "simple_definition": {
+    "es": "Cuánto calor, en forma de radiación infrarroja, envían hacia el suelo el aire y las nubes.",
+    "en": "How much heat the air and clouds send down to the ground as infrared radiation."
+   },
+   "unit": "MJ/m²/day",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "CERES SYN1deg (with GEWEX SRB for 1984-2000)",
+    "instrument": "CERES",
+    "via": "NASA POWER",
+    "challenge_named_source": "other",
+    "native_resolution": "1 x 1 degree",
+    "start": "1984-01",
+    "homogeneous_since": "2001-01",
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más efecto invernadero, más vapor de agua o más nubes: noches que se enfrían menos.",
+    "en": "May point to a stronger greenhouse effect, more water vapour or more cloud: nights that cool less."
+   },
+   "what_down_means": {
+    "es": "Puede indicar aire más seco o cielos más despejados: noches que se enfrían más.",
+    "en": "May indicate drier air or clearer skies: nights that cool more."
+   },
+   "typical_drivers": {
+    "es": [
+     "Gases de efecto invernadero",
+     "Vapor de agua",
+     "Nubosidad",
+     "Temperatura del aire"
+    ],
+    "en": [
+     "Greenhouse gases",
+     "Water vapour",
+     "Cloud cover",
+     "Air temperature"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Antes de 2001 procede de otro producto (GEWEX SRB): el empalme puede crear un salto artificial.",
+     "Rejilla de ~100 km: no distingue una ciudad de su entorno."
+    ],
+    "en": [
+     "Before 2001 it comes from another product (GEWEX SRB): the splice can create an artificial jump.",
+     "~100 km grid: it cannot tell a city from its surroundings."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "radiación infrarroja",
+     "onda larga",
+     "efecto invernadero",
+     "radiación térmica",
+     "infrarrojo",
+     "contrarradiación",
+     "radiación de la atmósfera",
+     "calor atrapado",
+     "calor que devuelve el cielo"
+    ],
+    "en": [
+     "longwave radiation",
+     "infrared radiation",
+     "greenhouse effect",
+     "thermal radiation",
+     "downwelling longwave",
+     "back radiation",
+     "sky radiation",
+     "trapped heat",
+     "infrared"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SFC_LW_DWN&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "CLRSKY_SFC_SW_DWN",
+   "connector": "power",
+   "connector_param": "CLRSKY_SFC_SW_DWN",
+   "names": {
+    "es": "Radiación solar con cielo despejado",
+    "en": "Clear-sky solar radiation at the surface"
+   },
+   "simple_definition": {
+    "es": "Cuánta energía del Sol llegaría al suelo si no hubiera ninguna nube.",
+    "en": "How much of the Sun's energy would reach the ground if there were no clouds at all."
+   },
+   "unit": "MJ/m²/day",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "CERES SYN1deg (with GEWEX SRB for 1984-2000)",
+    "instrument": "CERES",
+    "via": "NASA POWER",
+    "challenge_named_source": "other",
+    "native_resolution": "1 x 1 degree",
+    "start": "1984-01",
+    "homogeneous_since": "2001-01",
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar aire más limpio: menos polvo, humo o contaminación que apaguen el sol.",
+    "en": "May point to cleaner air: less dust, smoke or pollution dimming the sun."
+   },
+   "what_down_means": {
+    "es": "Puede indicar más aerosoles (polvo, humo, contaminación) o más vapor de agua.",
+    "en": "May indicate more aerosols (dust, smoke, pollution) or more water vapour."
+   },
+   "typical_drivers": {
+    "es": [
+     "Aerosoles: polvo, humo, contaminación",
+     "Vapor de agua",
+     "Ozono",
+     "Erupciones volcánicas"
+    ],
+    "en": [
+     "Aerosols: dust, smoke, pollution",
+     "Water vapour",
+     "Ozone",
+     "Volcanic eruptions"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es un cálculo para un cielo sin nubes: no es lo que realmente llega en un día nublado.",
+     "Antes de 2001 procede de otro producto (GEWEX SRB): el empalme puede crear un salto artificial."
+    ],
+    "en": [
+     "It is a calculation for a cloud-free sky: not what actually arrives on a cloudy day.",
+     "Before 2001 it comes from another product (GEWEX SRB): the splice can create an artificial jump."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "cielo despejado",
+     "sol sin nubes",
+     "oscurecimiento global",
+     "transparencia del aire",
+     "aire limpio",
+     "radiación potencial",
+     "día despejado",
+     "atenuación",
+     "cielo limpio"
+    ],
+    "en": [
+     "clear sky",
+     "cloudless sun",
+     "global dimming",
+     "air transparency",
+     "clean air",
+     "potential radiation",
+     "cloud-free",
+     "attenuation",
+     "brightening"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=CLRSKY_SFC_SW_DWN&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "ALLSKY_KT",
+   "connector": "power",
+   "connector_param": "ALLSKY_KT",
+   "names": {
+    "es": "Índice de claridad del cielo",
+    "en": "Sky clearness index"
+   },
+   "simple_definition": {
+    "es": "Qué fracción de la energía solar que llega al borde de la atmósfera alcanza finalmente el suelo.",
+    "en": "What fraction of the solar energy arriving at the top of the atmosphere finally reaches the ground."
+   },
+   "unit": "dimensionless",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "CERES SYN1deg",
+    "instrument": "CERES",
+    "via": "NASA POWER",
+    "challenge_named_source": "other",
+    "native_resolution": "1 x 1 degree",
+    "start": "2001-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar cielos más despejados o aire más limpio.",
+    "en": "May point to clearer skies or cleaner air."
+   },
+   "what_down_means": {
+    "es": "Puede indicar más nubes, más niebla o más aerosoles.",
+    "en": "May indicate more cloud, more fog or more aerosols."
+   },
+   "typical_drivers": {
+    "es": [
+     "Nubosidad",
+     "Aerosoles",
+     "Vapor de agua",
+     "Estación del año"
+    ],
+    "en": [
+     "Cloud cover",
+     "Aerosols",
+     "Water vapour",
+     "Season"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "La serie empieza en 2001: es corta para afirmar tendencias con seguridad.",
+     "Rejilla de ~100 km: no distingue la costa nublada del valle soleado vecino."
+    ],
+    "en": [
+     "The series starts in 2001: it is short for confident trend statements.",
+     "~100 km grid: it cannot tell a cloudy coast from the sunny valley next to it."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "índice de claridad",
+     "claridad del cielo",
+     "fracción de sol",
+     "días soleados",
+     "transparencia atmosférica",
+     "soleado",
+     "insolación relativa",
+     "cuánto sol atraviesa",
+     "cielo claro"
+    ],
+    "en": [
+     "clearness index",
+     "sky clearness",
+     "sunny days",
+     "fraction of sunlight",
+     "atmospheric transmittance",
+     "sunshine fraction",
+     "sunny",
+     "relative insolation",
+     "clear sky fraction"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_KT&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "ALLSKY_SFC_UV_INDEX",
+   "connector": "power",
+   "connector_param": "ALLSKY_SFC_UV_INDEX",
+   "names": {
+    "es": "Índice ultravioleta (UV)",
+    "en": "Ultraviolet (UV) index"
+   },
+   "simple_definition": {
+    "es": "Qué tan fuerte es la radiación ultravioleta del Sol que quema la piel; más alto, más riesgo.",
+    "en": "How strong the Sun's skin-burning ultraviolet radiation is; the higher, the greater the risk."
+   },
+   "unit": "UV index",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "CERES SYN1deg",
+    "instrument": "CERES",
+    "via": "NASA POWER",
+    "challenge_named_source": "other",
+    "native_resolution": "1 x 1 degree",
+    "start": "2001-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar menos ozono o menos nubes: más riesgo de quemaduras y de daño en piel y ojos.",
+    "en": "May point to less ozone or less cloud: more risk of sunburn and of skin and eye damage."
+   },
+   "what_down_means": {
+    "es": "Puede indicar más ozono, más nubes o más aerosoles que filtran el ultravioleta.",
+    "en": "May indicate more ozone, more cloud or more aerosols filtering the ultraviolet."
+   },
+   "typical_drivers": {
+    "es": [
+     "Capa de ozono",
+     "Nubosidad",
+     "Altitud",
+     "Aerosoles"
+    ],
+    "en": [
+     "Ozone layer",
+     "Cloud cover",
+     "Altitude",
+     "Aerosols"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Es un promedio mensual: el valor del mediodía de un día despejado es mucho más alto.",
+     "La serie empieza en 2001 y la rejilla es de ~100 km: no capta el efecto de la altitud de un punto."
+    ],
+    "en": [
+     "It is a monthly average: the midday value on a clear day is much higher.",
+     "The series starts in 2001 and the grid is ~100 km: it misses the altitude effect of a single point."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "ultravioleta",
+     "índice uv",
+     "rayos uv",
+     "radiación uv",
+     "quemadura solar",
+     "protector solar",
+     "cáncer de piel",
+     "rayos ultravioleta",
+     "uv"
+    ],
+    "en": [
+     "ultraviolet",
+     "uv index",
+     "uv rays",
+     "uv radiation",
+     "sunburn",
+     "sunscreen",
+     "skin cancer",
+     "ultraviolet rays",
+     "uv"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SFC_UV_INDEX&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "ALLSKY_SFC_PAR_TOT",
+   "connector": "power",
+   "connector_param": "ALLSKY_SFC_PAR_TOT",
+   "names": {
+    "es": "Luz útil para la fotosíntesis (PAR)",
+    "en": "Photosynthetically active radiation (PAR)"
+   },
+   "simple_definition": {
+    "es": "Cuánta luz del Sol, de la que las plantas usan para crecer, llega al suelo cada día.",
+    "en": "How much sunlight of the kind plants use to grow reaches the ground each day."
+   },
+   "unit": "MJ/m²/day",
+   "ratio_scale": true,
+   "sphere": "atmosphere",
+   "source": {
+    "model_or_mission": "CERES SYN1deg (with GEWEX SRB for 1984-2000)",
+    "instrument": "CERES",
+    "via": "NASA POWER",
+    "challenge_named_source": "other",
+    "native_resolution": "1 x 1 degree",
+    "start": "1984-01",
+    "homogeneous_since": "2001-01",
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más luz para los cultivos, por cielos más despejados o aire más limpio.",
+    "en": "May point to more light for crops, from clearer skies or cleaner air."
+   },
+   "what_down_means": {
+    "es": "Puede indicar menos luz para las plantas, por más nubes o más aerosoles.",
+    "en": "May indicate less light for plants, from more cloud or more aerosols."
+   },
+   "typical_drivers": {
+    "es": [
+     "Nubosidad",
+     "Aerosoles",
+     "Estación del año",
+     "Latitud"
+    ],
+    "en": [
+     "Cloud cover",
+     "Aerosols",
+     "Season",
+     "Latitude"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "Más luz no garantiza más cosecha: también hacen falta agua y temperatura adecuadas.",
+     "Antes de 2001 procede de otro producto (GEWEX SRB): el empalme puede crear un salto artificial."
+    ],
+    "en": [
+     "More light does not guarantee a bigger harvest: water and suitable temperature are needed too.",
+     "Before 2001 it comes from another product (GEWEX SRB): the splice can create an artificial jump."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "fotosíntesis",
+     "radiación par",
+     "luz para las plantas",
+     "radiación fotosintética",
+     "luz para cultivos",
+     "crecimiento de las plantas",
+     "luz útil",
+     "luz visible",
+     "productividad vegetal"
+    ],
+    "en": [
+     "photosynthesis",
+     "par radiation",
+     "light for plants",
+     "photosynthetic radiation",
+     "light for crops",
+     "plant growth",
+     "usable light",
+     "visible light",
+     "plant productivity"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SFC_PAR_TOT&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
+   }
+  },
+  {
+   "id": "ALLSKY_SRF_ALB",
+   "connector": "power",
+   "connector_param": "ALLSKY_SRF_ALB",
+   "names": {
+    "es": "Albedo de la superficie",
+    "en": "Surface albedo"
+   },
+   "simple_definition": {
+    "es": "Qué fracción de la luz del Sol refleja el suelo: la nieve refleja mucho y el bosque muy poco.",
+    "en": "What fraction of sunlight the ground reflects: snow reflects a lot and forest very little."
+   },
+   "unit": "dimensionless",
+   "ratio_scale": true,
+   "sphere": "land",
+   "source": {
+    "model_or_mission": "CERES SYN1deg",
+    "instrument": "CERES",
+    "via": "NASA POWER",
+    "challenge_named_source": "other",
+    "native_resolution": "1 x 1 degree",
+    "start": "2001-01",
+    "homogeneous_since": null,
+    "doi": null,
+    "url": "https://power.larc.nasa.gov/docs/methodology/data/sources_fluxes/"
+   },
+   "what_up_means": {
+    "es": "Puede indicar más nieve, suelo más desnudo o seco, o menos vegetación.",
+    "en": "May point to more snow, barer or drier soil, or less vegetation."
+   },
+   "what_down_means": {
+    "es": "Puede indicar pérdida de nieve o hielo, más vegetación o suelo más húmedo y oscuro.",
+    "en": "May indicate loss of snow or ice, more vegetation, or wetter and darker soil."
+   },
+   "typical_drivers": {
+    "es": [
+     "Cobertura de nieve y hielo",
+     "Vegetación",
+     "Humedad del suelo",
+     "Uso del suelo"
+    ],
+    "en": [
+     "Snow and ice cover",
+     "Vegetation",
+     "Soil moisture",
+     "Land use"
+    ]
+   },
+   "caveats": {
+    "es": [
+     "La serie empieza en 2001: es corta para afirmar tendencias con seguridad.",
+     "Rejilla de ~100 km: un glaciar pequeño apenas cambia el promedio de la celda."
+    ],
+    "en": [
+     "The series starts in 2001: it is short for confident trend statements.",
+     "~100 km grid: a small glacier barely changes the grid-cell average."
+    ]
+   },
+   "keywords": {
+    "es": [
+     "albedo",
+     "reflectividad",
+     "superficie que refleja",
+     "brillo de la superficie",
+     "luz reflejada",
+     "suelo claro u oscuro",
+     "reflejo de la nieve",
+     "oscurecimiento del suelo",
+     "reflectancia"
+    ],
+    "en": [
+     "albedo",
+     "reflectivity",
+     "reflective surface",
+     "surface brightness",
+     "reflected light",
+     "bright or dark ground",
+     "snow reflection",
+     "surface darkening",
+     "reflectance"
+    ]
+   },
+   "verified": {
+    "by": "cfable",
+    "at": "2026-11-15",
+    "evidence_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SRF_ALB&community=AG&longitude=-75.21&latitude=-12.07&start=1981&end=2025&format=JSON"
    }
   }
  ],

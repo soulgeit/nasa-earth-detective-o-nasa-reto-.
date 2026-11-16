@@ -441,6 +441,11 @@ function onVariableChange() {
     ? (v.simple_definition[state.lang] || v.simple_definition.es || v.simple_definition.en)
     : '';
   $('#variable-definition').textContent = def;
+  // A series that starts later (aerosols 2001, clouds 1984) must not be requested from 1981:
+  // it would come back 55 % empty and the engine would answer "insufficient data".
+  const first = parseInt(String((v && v.source && v.source.start) || '1981').slice(0, 4), 10) || 1981;
+  const startEl = $('#period-start');
+  if (startEl) startEl.value = Math.max(1981, first);
 }
 
 /* ---------------------------------------------------------------- cases */
@@ -1248,33 +1253,122 @@ function renderCompareCharts(a, b) {
 
 let currentPlan = null;
 let currentExplainLevel = 'school';
+let currentChatContext = {};
 
-async function askDetective(question) {
-  if (!question || question.trim().length < 3) return;
-  const btn = $('#detective-ask-btn');
-  btn.disabled = true;
-  btn.textContent = '…';
+function formatMarkdownMini(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n• /g, '<br>• ')
+    .replace(/\n/g, '<br>');
+}
 
-  try {
-    const qUrl = `${API_BASE}/api/ai/plan?question=${encodeURIComponent(question)}&lang=${state.lang}`;
-    const res = await fetch(qUrl, { method: 'POST', headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error('Planner error');
-    const planData = await res.json();
-    renderPlan(planData);
-  } catch (err) {
-    showError(new ApiError('AI_UNAVAILABLE', state.lang === 'es'
-      ? 'El planificador con IA no está disponible en este momento. Selecciona lugar y variable manualmente.'
-      : 'AI planner is not available right now. Please select location and variable manually.'));
-  } finally {
-    btn.disabled = false;
-    btn.textContent = t('detective.ask');
+function renderChatReply(data) {
+  const card = $('#detective-plan-card');
+  card.hidden = false;
+
+  const badge = $('#plan-meta-badge');
+  if (badge) {
+    badge.textContent = 'Huiracocha IA (LoRA & Chat)';
+    badge.className = 'plan-badge plan-badge-lora';
   }
+
+  const intentText = $('#plan-intent-text');
+  if (intentText) {
+    intentText.innerHTML = formatMarkdownMini(data.reply);
+  }
+
+  // Sources
+  const sourcesEl = $('#plan-sources-list');
+  if (sourcesEl) {
+    if (data.sources && data.sources.length > 0) {
+      sourcesEl.hidden = false;
+      const title = state.lang === 'es' ? 'Fuentes oficiales consultadas:' : 'Official sources consulted:';
+      const items = data.sources.map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.title} (${s.publisher || 'Fuente'})</a></li>`).join('');
+      sourcesEl.innerHTML = `<strong>${title}</strong><ul style="margin:0.25rem 0 0 1.1rem;padding:0;">${items}</ul>`;
+    } else {
+      sourcesEl.hidden = true;
+      sourcesEl.innerHTML = '';
+    }
+  }
+
+  // Suggestions
+  const suggsEl = $('#plan-suggestions');
+  if (suggsEl) {
+    if (data.suggestions && data.suggestions.length > 0) {
+      suggsEl.hidden = false;
+      const title = state.lang === 'es' ? 'Sugerencias para continuar:' : 'Suggestions to continue:';
+      const btns = data.suggestions.map(sg => `<button type="button" class="plan-suggestion-chip">${sg}</button>`).join('');
+      suggsEl.innerHTML = `<span style="font-size:0.75rem;font-weight:600;color:var(--ink-2);">${title}</span><div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.25rem;">${btns}</div>`;
+      suggsEl.querySelectorAll('.plan-suggestion-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          $('#detective-input').value = btn.textContent;
+          askDetective(btn.textContent);
+        });
+      });
+    } else {
+      suggsEl.hidden = true;
+      suggsEl.innerHTML = '';
+    }
+  }
+
+  // Confirm plan button
+  const confirmBtn = $('#plan-confirm-btn');
+  if (confirmBtn) {
+    if (data.plan && (data.action === 'analyze' || (data.plan.variable_ids && data.plan.variable_ids.length > 0))) {
+      currentPlan = data.plan;
+      confirmBtn.hidden = false;
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = state.lang === 'es' ? 'Investigar en el mapa con NASA' : 'Investigate on map with NASA';
+    } else {
+      confirmBtn.hidden = true;
+    }
+  }
+}
+
+// RONDA_7: the conversation lives in chat.js (thread, "thinking" steps, actions).
+async function askDetective(question) {
+  if (window.HuiracochaChat) return window.HuiracochaChat.send(question);
+  return undefined;
 }
 
 function renderPlan(plan) {
   currentPlan = plan;
   const card = $('#detective-plan-card');
   card.hidden = false;
+
+  const confirmBtn = $('#plan-confirm-btn');
+
+  // Handle greetings or no-match queries friendly
+  if (plan.intent === 'no_match' || (!plan.place && (!plan.variable_ids || plan.variable_ids.length === 0))) {
+    const rawQ = ($('#detective-input')?.value || '').toLowerCase().trim();
+    const isGreeting = /^(hola|ola|buenos|buenas|hello|hi|hey|saludos|que tal|quÃ© tal|qué tal)/i.test(rawQ);
+    if (isGreeting) {
+      $('#plan-intent-text').textContent = state.lang === 'es'
+        ? '¡Hola! Soy Huiracocha IA. Puedo analizar tendencias climáticas con datos de la NASA. Prueba preguntando: "¿Llueve menos en Piura?" o "¿Sube la temperatura en Lima?".'
+        : 'Hello! I am Huiracocha AI. I can investigate climate trends with NASA Earth science data. Try asking: "Is it raining less in Piura?" or "Is temperature rising in Lima?".';
+    } else {
+      $('#plan-intent-text').textContent = state.lang === 'es'
+        ? 'No identifiqué una variable climática o lugar específico. Pregúntame sobre temperatura, lluvia o vegetación de una ciudad (ej. "¿Llueve menos en Piura?").'
+        : 'Could not match a climate variable or location. Ask me about temperature, rainfall or vegetation in a place (e.g. "Is it raining less in Piura?").';
+    }
+    const badge = $('#plan-meta-badge');
+    if (badge) {
+      badge.textContent = state.lang === 'es' ? 'Huiracocha IA' : 'Huiracocha AI';
+      badge.className = 'plan-badge plan-badge-rules';
+    }
+    const noteEl = $('#plan-note-text');
+    if (noteEl) noteEl.hidden = true;
+    if (confirmBtn) confirmBtn.hidden = true;
+    return;
+  }
+
+  if (confirmBtn) confirmBtn.hidden = false;
 
   const varId = plan.variable_ids && plan.variable_ids[0] ? plan.variable_ids[0] : 'T2M';
   const cleanVar = getCleanVariableName(varId);
@@ -1303,7 +1397,6 @@ function renderPlan(plan) {
   }
 
   // Rule 19: If plan picked a planned variable, it cannot be run directly
-  const confirmBtn = $('#plan-confirm-btn');
   if (confirmBtn) {
     if (isPlannedVariable(varId)) {
       confirmBtn.disabled = true;
@@ -1391,10 +1484,12 @@ function renderScout(data) {
 
 async function loadExplanation(analysis, level = 'school') {
   currentExplainLevel = level;
-  $('#lvl-school').classList.toggle('is-active', level === 'school');
-  $('#lvl-uni').classList.toggle('is-active', level === 'uni');
-  $('#lvl-school').setAttribute('aria-pressed', String(level === 'school'));
-  $('#lvl-uni').setAttribute('aria-pressed', String(level === 'uni'));
+  const isSchool = (level === 'school');
+  const isUni = (level === 'uni' || level === 'university');
+  $('#lvl-school').classList.toggle('is-active', isSchool);
+  $('#lvl-uni').classList.toggle('is-active', isUni);
+  $('#lvl-school').setAttribute('aria-pressed', String(isSchool));
+  $('#lvl-uni').setAttribute('aria-pressed', String(isUni));
 
   const textEl = $('#explain-text');
   const sourcesBox = $('#explain-sources-box');
@@ -1594,6 +1689,7 @@ function setLang(lang) {
   applyTranslations(document);
   renderCatalog();
   loadCases();
+  window.dispatchEvent(new CustomEvent('etd:lang', { detail: lang }));
   if (state.analysis && state.mode === 'single') renderAnalysis(state.analysis);
   else if (state.trendmap && state.mode === 'trendmap') renderTrendMap(state.trendmap);
   else if (state.compare && state.mode === 'compare') renderCompare(state.compare);
@@ -1658,13 +1754,29 @@ function boot() {
   $('#place-search-btn-b').addEventListener('click', () => searchPlace($('#place-search-b').value, true));
   $('#btn-calc-trendmap').addEventListener('click', runTrendMap);
   $('#btn-load-atlas')?.addEventListener('click', loadGlobalAtlas);
+  
+  // Quick question chips for Huiracocha IA
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.dataset.q || btn.textContent;
+      const inp = $('#detective-input');
+      if (inp) inp.value = q;
+      askDetective(q);
+    });
+  });
+
   $('#detective-ask-btn')?.addEventListener('click', () => askDetective($('#detective-input').value));
-  $('#detective-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askDetective($('#detective-input').value); } });
+  $('#detective-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askDetective($('#detective-input').value);
+    }
+  });
   $('#plan-confirm-btn')?.addEventListener('click', confirmPlan);
   $('#btn-scout')?.addEventListener('click', scoutLocation);
   $('#btn-scout-close')?.addEventListener('click', () => { $('#scout-drawer').hidden = true; });
   $('#lvl-school')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'school'); });
-  $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'uni'); });
+  $('#lvl-uni')?.addEventListener('click', () => { if (state.analysis) loadExplanation(state.analysis, 'university'); });
   $('#btn-start-demo')?.addEventListener('click', startDemo);
   $('#btn-demo-pause')?.addEventListener('click', pauseResumeDemo);
   $('#btn-demo-next')?.addEventListener('click', nextDemoCase);
@@ -1695,6 +1807,14 @@ function boot() {
     if (state.analysis) renderAnalysis(state.analysis);
     else boot();
   });
+
+  if (window.HuiracochaChat) {
+    window.HuiracochaChat.init({
+      state, apiGet, apiPost, setMode, setPoint, setPointB, investigate, runCompare,
+      onVariableChange, fmt, fmtP, signed,
+      panMap: (lat, lon) => { if (map) map.setView([lat, lon], 6); },
+    });
+  }
 
   apiGet('/api/health')
     .then((h) => { state.health = h; })
