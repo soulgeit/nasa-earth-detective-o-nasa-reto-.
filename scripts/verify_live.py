@@ -80,6 +80,10 @@ def main() -> int:
         check(corpus["documents"] >= 990 and corpus["skipped_rows"] == 0, "corpus loaded without skipped rows",
               f"{corpus['documents']} documents")
 
+    if args.hosted:
+        # The first call after a deploy pays the TLS and import warm-up (seen: 10.9 s): it is not part of the timing checks.
+        call(f"{base}/api/ai/chat", data={"message": "\u00bfLlueve menos en Ica?", "lang": "es"}, timeout=60)
+
     for message, lang, kind in (("hola", "es", "greeting"), ("hi", "en", "greeting"),
                                 ("¿Llueve menos en Ica?", "es", "plan"), ("¿y en Huancayo?", "es", "plan")):
         ctx = {"place": "Ica", "variable_id": "PRECTOTCORR"} if message.startswith("¿y") else {}

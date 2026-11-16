@@ -76,7 +76,19 @@ railway up --detach --project "$PROJECT" --environment "$ENVIRONMENT" --service 
 say "6/6" "waiting for the NEW version at $URL, then verifying (including a parallel chat burst)"
 # The old container keeps answering while the new one builds, so health alone proves nothing:
 # /api/ai/about exists only in the new version.
-python scripts/verify_live.py "$URL" --wait 600
+# When the hosted model is switched on in production (docs/RONDA_7.md section 12) verify that mode instead.
+mode=""
+for _ in $(seq 1 12); do
+  mode=$(curl -fsS "$URL/api/health" 2>/dev/null | grep -Eo '"ai_mode" *: *"[a-z]+"' | grep -Eo '[a-z]+"$' | tr -d '"' || true)
+  [[ -n "$mode" ]] && break
+  sleep 5
+done
+VERIFY_ARGS=()
+[[ "$mode" == "full" ]] && VERIFY_ARGS+=(--hosted)
+python scripts/verify_live.py "$URL" --wait 600 ${VERIFY_ARGS[@]+"${VERIFY_ARGS[@]}"}
+# The burst check spends the per-minute request allowance (120): let it refill before the smoke test.
+echo "waiting 65 s for the rate limiter to refill..."
+sleep 65
 python scripts/smoke_api.py "$URL"
 
 cat <<EOF

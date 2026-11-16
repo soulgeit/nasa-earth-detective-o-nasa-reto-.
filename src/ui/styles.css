@@ -1501,3 +1501,13 @@ html, body {
 .res-list .res-host { color: var(--muted); font-size: 0.7rem; margin-left: 0.3rem; }
 .engine-badge[data-engine="llm"] { background: #e8eef9; color: #1d3a73; border-color: #b9c9ea; }
 .intro-card--wide { grid-column: 1 / -1; }
+
+/* RONDA_7: the logo was generated with SI (the Antigravity agent). The Space Apps rules ask for a visible
+   mark on AI-generated images, so every place the app draws it carries this label. */
+.brand-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+.ai-mark {
+  font-family: inherit; font-weight: 700; font-size: 8px; line-height: 1; letter-spacing: 0.02em;
+  color: #fff; background: rgba(8, 12, 24, 0.9); border: 1px solid rgba(245, 158, 11, 0.6);
+  border-radius: 999px; padding: 2px 6px; white-space: nowrap; user-select: none;
+}
+@media (max-width: 700px) { .ai-mark { font-size: 7px; padding: 2px 5px; } }

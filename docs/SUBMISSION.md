@@ -258,7 +258,7 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
 
 ## Use of Super Intelligence (SI)
 
-**Yes.** Three uses, all disclosed:
+**Yes.** Several uses, all disclosed:
 
 1. **SI coding agents wrote most of the code under the team's direction.**
    Tools and models: Claude Code (Claude Opus 5.5, Sonnet 5.5, Fable 5.2) and
@@ -307,8 +307,11 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
    `tests/detective/test_hosted_llm.py` and `scripts/check_hosted_mode.py` (against a fake
    provider: they prove the safeguards, not the accuracy of any model).
 
-**No images or video were generated with SI; one audio track was.** All screenshots are
-captures of the running application with real data. The narration of the pitch video is an
+**No images or video were generated with SI except the project logo; one audio track was.**
+The logo (the Huiracocha AI emblem in the app header, the social-preview image and the favicon)
+was generated with SI by the Antigravity agent. The app shows it with a visible "AI-generated"
+mark, the preview image carries the same mark, and it is not a NASA logo or mission identifier.
+All screenshots are captures of the running application with real data. The narration of the pitch video is an
 AI-generated voice (ElevenLabs): the video says so on screen and `docs/AI_USE_LOG.md`
 records it; the presenter footage is the team's own. The demo is delivered through the official 7-slide presentation (`docs/demo/EarthTrend_Detective_slides.pdf`), with a 30-second pitch video (`docs/demo/Huiracocha_AI_pitch_30s.mp4`: the presenter, the slides inside an app window and English subtitles) and a companion 29-second screen recording of the real app (`docs/demo/EarthTrend_Detective_30s.mp4`).
 
