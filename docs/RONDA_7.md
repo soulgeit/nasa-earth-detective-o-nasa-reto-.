@@ -329,8 +329,12 @@ Hecho el 2026-11-15 por orden del humano («implementar la IA por API»). **No c
   **Apagarlo:** borrar `LLM_API_KEY` (o poner `AI_MODE=extractive`) y redesplegar.
 - **Verificado:** `python scripts/check_hosted_mode.py` (proveedor falso + app real, 11 comprobaciones: clave enviada,
   plan etiquetado `llm`, clave ausente de respuestas y logs, ráfaga de 40 chats contra un proveedor lento sin frenar
-  la sonda, caída del proveedor → reglas) y `tests/detective/test_hosted_llm.py` (17 pruebas). **No probado:** una
-  llamada contra el proveedor real (nombre exacto del modelo; si rechaza `temperature` el cliente reintenta sin ella).
+  la sonda, caída del proveedor → reglas) y `tests/detective/test_hosted_llm.py` (17 pruebas). **Probado en vivo
+  (2026-11-15 20:10):** el servidor desplegado contra OpenAI `gpt-4.1-mini`: `verify_live.py --hosted` pasa (96/96 chats
+  en paralelo, la clave no aparece en ninguna respuesta pública). Un 401 inicial se debió a que la clave se guardó con
+  `<` y `>` (el marcador del ejemplo): quitarlos lo arregló. Planificar tarda 2-5 s y la explicación ~7 s; el guardián
+  a veces rechaza el primer intento y acepta el segundo. El modelo puede citar otro estimador que el titular
+  (Lima T2M: mínimos cuadrados 0,13 frente a Theil-Sen 0,159 °C/década; ambos están en los datos).
 - **Antes de encenderlo para los jueces, declarar** (`docs/SUBMISSION.md`, sección de uso de IA, y
   `docs/AI_USE_LOG.md`). Texto listo:
   > The live demo can optionally use a hosted third-party language model (PROVIDER) to propose the investigation plan

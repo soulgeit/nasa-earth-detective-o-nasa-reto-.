@@ -188,6 +188,15 @@ We would rather state these than let a judge find them:
 - **The checklist of reference questions is small**: 50 hand-written questions is
   enough to compare two planners, not enough to claim a general accuracy figure.
   The rules now answer 50/50 on it; a harder set would find more failures.
+- **The hosted language model is slower, and its guard checks that a number exists in the
+  data, not which one it picks.** With the OpenAI model switched on, planning a question
+  took 2 to 5 s and wording an explanation about 7 s (the rules answer in milliseconds);
+  the guard sometimes rejects the first attempt and accepts the second. Every number the
+  model writes must be in the data, but it may choose a different estimator than the
+  headline one: for Lima's 2 m air temperature it quoted the least-squares slope
+  (0.13 °C per decade) while the engine's headline is the Theil–Sen slope (0.159 °C per
+  decade); both are in the data. If the provider is down, busy or over its daily cap, the
+  app answers with the verified rules instead and the panel says so.
 
 ---
 
@@ -285,7 +294,9 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
 4. **An optional hosted language model (any OpenAI-compatible API) can propose the plan
    and word the explanation.** It is off unless the operator sets an API key on the
    server; the "how it works" card and the engine badge of the app report live whether it
-   is active on the server you are using, and name its host. The model never supplies
+   is active on the server you are using, and name its host. In the deployed demo it is
+   switched on (checked on 2026-11-15): the provider is OpenAI and the model is
+   `gpt-4.1-mini`. The model never supplies
    numbers or sources: verified rules check every plan it proposes and overrule it when
    they disagree, and a guard rejects any figure or citation that is not in the NASA
    data (after two rejected attempts the app falls back to the extractive text). The
