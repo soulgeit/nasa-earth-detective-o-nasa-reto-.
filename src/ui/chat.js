@@ -937,10 +937,19 @@ function openIntro() {
 
 function restoreIntroState() {
   if (!els.how) return;
-  try {
-    if (localStorage.getItem('etd.intro') === 'closed') els.how.open = false;
-  } catch (_) { /* private mode */ }
+  let saved = null;
+  try { saved = localStorage.getItem('etd.intro'); } catch (_) { /* private mode */ }
+  // A choice the visitor made wins. Without one, a first visit on a phone starts with the panel
+  // folded so the conversation is on the first screen; on a desktop it starts open.
+  let automatic = false;
+  if (saved === 'closed') {
+    els.how.open = false;
+  } else if (saved === null && window.matchMedia('(max-width: 960px)').matches) {
+    automatic = true;
+    els.how.open = false;
+  }
   els.how.addEventListener('toggle', () => {
+    if (automatic) { automatic = false; return; }  // our own fold is not a choice: do not remember it
     try { localStorage.setItem('etd.intro', els.how.open ? 'open' : 'closed'); } catch (_) { /* private mode */ }
   });
 }
