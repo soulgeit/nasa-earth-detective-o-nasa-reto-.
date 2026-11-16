@@ -8,7 +8,8 @@
 > and determine what is changing, where, how much, and whether the change is significant*).
 
 **Public site:** <https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./>  
-**Live Interactive App & API (Railway):** <https://huiracochaia.soulgeit.com>
+**Live Interactive App & API (Railway):** <https://huiracochaia.soulgeit.com>  
+**Pitch video (30 s, YouTube):** <https://www.youtube.com/watch?v=mAYvFvHIc1A>
 
 The public site is a **static, no-server backup**: it opens the seven frozen cases
 and the two precomputed trend maps, in English and Spanish, on desktop and phone.

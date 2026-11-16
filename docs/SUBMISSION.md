@@ -324,6 +324,7 @@ were made by the team.
 
 - **Official Public Demo & Static Backup (GitHub Pages):** https://soulgeit.github.io/nasa-earth-detective-o-nasa-reto-./ (provides instant zero-install access to all 7 frozen NASA reference cases and precomputed global trend maps).
 - **Interactive Containerized App & API (Live Production):** https://huiracochaia.soulgeit.com (full interactive API, dynamic trend maps, and live detective engine on Railway).
+- **Pitch video (YouTube, public, 30 s):** https://www.youtube.com/watch?v=mAYvFvHIc1A
 
 ---
 
