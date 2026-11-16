@@ -1511,3 +1511,15 @@ html, body {
   border-radius: 999px; padding: 2px 6px; white-space: nowrap; user-select: none;
 }
 @media (max-width: 700px) { .ai-mark { font-size: 7px; padding: 2px 5px; } }
+
+/* The guided demo opens far below the chat: this floating button takes the visitor to it. */
+.demo-scroll-btn {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60;
+  padding: 0.65rem 1.2rem; border-radius: 999px; border: 1px solid rgba(245, 158, 11, 0.75);
+  background: rgba(8, 12, 24, 0.94); color: #fff; font-family: inherit; font-weight: 700; font-size: 0.92rem; line-height: 1;
+  cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); animation: demo-nudge 1.6s ease-in-out 3;
+}
+.demo-scroll-btn:hover, .demo-scroll-btn:focus-visible { background: #0c2338; }
+.demo-scroll-btn[hidden] { display: none; }
+@keyframes demo-nudge { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 4px); } }
+@media (prefers-reduced-motion: reduce) { .demo-scroll-btn { animation: none; } }
