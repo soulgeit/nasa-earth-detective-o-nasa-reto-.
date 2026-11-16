@@ -319,7 +319,7 @@ Hecho el 2026-11-15 por orden del humano («implementar la IA por API»). **No c
   las 17:50).
 - **Privacidad:** la clave solo vive en las variables de Railway. No aparece en logs ni en respuestas, y los errores
   muestran solo `host: HTTP código` (nada del texto del proveedor sobre cuota o facturación). La pregunta del visitante
-  sí viaja al proveedor: hay que decirlo.
+  sí viaja al proveedor y, para redactar la explicación, también las estadísticas calculadas y los pasajes citados: hay que decirlo.
 - **La nota de la app dice la verdad sola:** solo pasa a «modelo de lenguaje alojado (host)» tras una llamada real
   exitosa; si el proveedor cae vuelve a «reglas + RAG».
 - **Activarlo (Railway → Variables):** `AI_MODE=full`, `LLM_BASE_URL=https://api.openai.com/v1` (o el del proveedor),
@@ -335,7 +335,7 @@ Hecho el 2026-11-15 por orden del humano («implementar la IA por API»). **No c
   `docs/AI_USE_LOG.md`). Texto listo:
   > The live demo can optionally use a hosted third-party language model (PROVIDER) to propose the investigation plan
   > and to word the explanation. It never produces numbers or sources: every plan is checked by deterministic rules and
-  > a guard rejects any figure or citation that is not in the NASA data. The model receives only the user's question
-  > and the public variable catalogue.
+  > a guard rejects any figure or citation that is not in the NASA data. The model receives the user's question and the public variable
+  > catalogue (to plan) and, to word an explanation, the computed statistics and the public cited passages.
 
   Revisar además que ninguna lámina, el vídeo ni la página digan que el servidor público «no usa IA de terceros».

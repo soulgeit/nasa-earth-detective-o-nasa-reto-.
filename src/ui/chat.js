@@ -88,7 +88,7 @@ const EN = {
   'intro.pipeline': 'From question to answer',
   'intro.step.1': 'Question',
   'intro.step.2': 'Retrieve sources (RAG)',
-  'intro.step.3': 'Plan (rules + LoRA)',
+  'intro.step.3': 'Plan (rules + LoRA or API)',
   'intro.step.4': 'Real NASA data',
   'intro.step.5': 'Statistics',
   'intro.step.6': 'Cited explanation',
@@ -106,6 +106,13 @@ const EN = {
   'intro.res.title': 'Resources obtained',
   'intro.res.body': '{vars} real variables from NASA POWER (MERRA-2 and CERES), GISTEMP and the NSIDC Sea Ice Index, plus the platforms named in the challenge:',
   'intro.res.prov': 'Every result shows its exact request URL, date and SHA-256 fingerprint.',
+  'intro.api.title': 'Language-model API: optional',
+  'intro.api.body': 'Besides its own LoRA planner, Huiracocha AI can ask a hosted language model (any OpenAI-compatible API) to propose the plan and to word the explanation. The model never supplies numbers or sources: they come from the NASA data and the cited documents.',
+  'intro.api.guard': 'Verified rules check every plan it proposes and overrule it when they disagree; a guard rejects any figure or citation that is not in the data. Calls are limited (a daily cap, at most 8 at once, 20 s each) and the key stays on the server.',
+  'intro.api.here.off': 'In this server: not active. Verified rules + RAG answer and no external AI service is used.',
+  'intro.api.here.configured': 'In this server: configured; it is announced as active only after its first successful answer.',
+  'intro.api.here.ready': 'In this server: active ({host}). That provider receives the text of your question and, to word the explanation, the computed statistics and the cited passages.',
+  'intro.api.here.failing': 'In this server: configured but not answering right now; verified rules + RAG answer instead.',
   'scan.eyebrow': 'All variables · {place}',
   'scan.title': '{c} of {n} changes confirmed',
   'scan.lead': 'Every variable was tested at the same point and period. “Confirmed” means the engine’s verdict is significant and the change also survives the Benjamini–Hochberg correction for {n} simultaneous tests (q < 0.05).',
@@ -206,7 +213,7 @@ const ES = {
   'intro.pipeline': 'De la pregunta a la respuesta',
   'intro.step.1': 'Pregunta',
   'intro.step.2': 'Recupera fuentes (RAG)',
-  'intro.step.3': 'Plan (reglas + LoRA)',
+  'intro.step.3': 'Plan (reglas + LoRA o API)',
   'intro.step.4': 'Datos reales de la NASA',
   'intro.step.5': 'Estadística',
   'intro.step.6': 'Explicación con citas',
@@ -224,6 +231,13 @@ const ES = {
   'intro.res.title': 'Recursos obtenidos',
   'intro.res.body': '{vars} variables reales de NASA POWER (MERRA-2 y CERES), GISTEMP y el índice de hielo marino del NSIDC, más las plataformas que nombra el reto:',
   'intro.res.prov': 'Cada resultado muestra la URL exacta de la petición, la fecha y una huella SHA-256.',
+  'intro.api.title': 'API de modelo de lenguaje: opcional',
+  'intro.api.body': 'Además de su propio planificador LoRA, Huiracocha IA puede pedir a un modelo de lenguaje alojado (cualquier API compatible con OpenAI) que proponga el plan y redacte la explicación. El modelo nunca aporta cifras ni fuentes: salen de los datos de la NASA y de los documentos citados.',
+  'intro.api.guard': 'Las reglas verificadas comprueban cada plan que propone y lo anulan si no coinciden; un guardián rechaza cualquier cifra o cita que no esté en los datos. Las llamadas están limitadas (tope diario, 8 a la vez como máximo, 20 s cada una) y la clave se queda en el servidor.',
+  'intro.api.here.off': 'En este servidor: no está activa. Responden las reglas verificadas + RAG y no se usa ningún servicio externo de IA.',
+  'intro.api.here.configured': 'En este servidor: configurada; solo se anuncia como activa tras su primera respuesta correcta.',
+  'intro.api.here.ready': 'En este servidor: activa ({host}). Ese proveedor recibe el texto de tu pregunta y, para redactar la explicación, las estadísticas calculadas y los pasajes citados.',
+  'intro.api.here.failing': 'En este servidor: configurada pero sin responder ahora; responden las reglas verificadas + RAG.',
   'scan.eyebrow': 'Todas las variables · {place}',
   'scan.title': '{c} de {n} cambios confirmados',
   'scan.lead': 'Cada variable se probó en el mismo punto y periodo. «Confirmado» significa que el veredicto del motor es significativo y que el cambio además resiste la corrección de Benjamini–Hochberg por {n} pruebas simultáneas (q < 0,05).',
@@ -918,7 +932,16 @@ function renderIntro() {
   }
   rs.append(ul, el('p', 'help', t('intro.res.prov')));
 
-  els.grid.append(flow, rag, lo, rs);
+  // The optional hosted-model API. The sentence about THIS server follows what the server reports
+  // (off | configured | ready | failing), so the card never claims more than has actually answered.
+  const ap = card(t('intro.api.title'));
+  ap.classList.add('intro-card--wide');
+  ap.append(el('p', null, t('intro.api.body')), el('p', null, t('intro.api.guard')));
+  const llmInfo = about.deployment.llm || {};
+  const apiState = ['off', 'configured', 'ready', 'failing'].includes(llmInfo.state) ? llmInfo.state : 'off';
+  ap.append(el('p', 'help', t(`intro.api.here.${apiState}`, { host: llmInfo.host || '' })));
+
+  els.grid.append(flow, rag, lo, rs, ap);
 }
 
 async function loadAbout() {

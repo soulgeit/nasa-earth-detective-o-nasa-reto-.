@@ -1500,3 +1500,4 @@ html, body {
 .masthead-inner { align-items: center; gap: 0.75rem 1.5rem; }
 .res-list .res-host { color: var(--muted); font-size: 0.7rem; margin-left: 0.3rem; }
 .engine-badge[data-engine="llm"] { background: #e8eef9; color: #1d3a73; border-color: #b9c9ea; }
+.intro-card--wide { grid-column: 1 / -1; }
