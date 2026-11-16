@@ -52,9 +52,9 @@ and every result carries the exact query, retrieval date and citation that produ
 
 A student types "Is it raining less in Piura?" or clicks a point on the map. The app:
 
-1. **Plans** the question: which NASA variable, which place, which period. Planning
-   runs on deterministic rules in the deployed product, so it needs no GPU and gives
-   the same answer every time.
+1. **Plans** the question: which NASA variable, which place, which period. Deterministic
+   rules always decide, so no GPU is needed; in the live demo a hosted language model
+   proposes the plan first and the rules overrule it when they disagree (SI item 4).
 2. **Retrieves** the real series from NASA POWER (MERRA-2 reanalysis) through the
    live API — 45 years of monthly data, fetched in about 2 seconds.
 3. **Analyses** it: seasonal cycle removed, Theil–Sen slope with a 95 % confidence
@@ -72,7 +72,7 @@ Piura rainfall case reports "suggestive", not "significant".
 ### 2. How it works
 
 **Data.** NASA POWER Monthly API v2.10.0 (MERRA-2 meteorology; CERES/SRB radiation)
-for 15 variables, NASA GISTEMP v4 for global temperature anomaly, and NSIDC Sea Ice
+for 32 variables, NASA GISTEMP v4 for global temperature anomaly, and NSIDC Sea Ice
 Index v4 for Arctic and Antarctic ice. Two Giovanni CSV exports (MERRA-2 temperature
 and precipitation over the Amazon basin) are loaded through the upload path. Every
 series stores `provenance`: kind, source, model, request URL, retrieval timestamp and
@@ -85,7 +85,7 @@ t-test adjusted for effective sample size (Santer et al. 2000); detectability fr
 Weatherhead et al. (1998). The trend map applies Benjamini–Hochberg false-discovery
 control per cell (Wilks 2016).
 
-**The detective.** Retrieval is BM25 over a corpus of 168 verified documents (variable
+**The detective.** Retrieval is BM25 over a corpus of 999 documents (variable
 cards, biome profiles, NASA articles, method notes, glossary), plus optional
 embeddings with reciprocal rank fusion. The assistant names the sources it used and
 shows them once; the prose never contains a raw URL. A deterministic guard checks

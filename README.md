@@ -81,8 +81,9 @@ python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8791
 ```
 
 The app works with **no language model**: the planner uses rules and the
-explanation quotes the cited sources (`AI_MODE=extractive`, the default and the mode the
-public server runs; the "how it works" panel of the app reports the mode it is in).
+explanation quotes the cited sources (`AI_MODE=extractive`, the default). The public demo
+additionally switches on an optional hosted language model (see "Optional hosted language
+model" below); the "how it works" panel of the app reports the mode the server you are using is in.
 
 ### How to check it
 

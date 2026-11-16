@@ -163,12 +163,15 @@ run gets right; the fuller list is reproducible with the command above.
 
 ### Who plans by default
 
-**The product plans with rules.** The public server runs `AI_MODE=extractive`:
-the rules answer, no model is loaded, no GPU is needed. The LoRA is the optional
-local mode (`PLANNER_MODEL=local-lora`); it needs ~7 GB of RAM in float32 or a CUDA
-GPU in 4-bit, so it is not deployed to the public server. Every plan the model
-produces is re-verified by the rules (variable available, place resolvable), so a
-model mistake in the place or the variable id cannot reach the user.
+**The rules decide who plans.** By default (`AI_MODE=extractive`) the rules answer, no
+model is loaded and no GPU is needed. Since 2026-11-15 the public demo also runs an optional
+hosted language model (OpenAI `gpt-4.1-mini`, `AI_MODE=full`) that proposes the plan; the rules
+re-verify it and overrule it when they disagree. The LoRA is the optional local mode
+(`PLANNER_MODEL=local-lora`); it needs ~7 GB of RAM in float32 or a CUDA GPU in 4-bit, so it is
+not deployed to the public server. Every plan any model produces is re-verified by the rules
+(variable available, place resolvable), so a model mistake in the place or the variable id
+cannot reach the user. The numbers in this file measure the rules and the LoRA; the hosted model
+was only checked end to end (`docs/RONDA_7.md` section 12), not scored on the 50 questions.
 
 The numbers above are the reason: 50/50 rules vs 40/50 LoRA on the hand-written
 questions. The LoRA is shown as what it is — a working fine-tune with published

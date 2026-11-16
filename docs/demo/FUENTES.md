@@ -13,7 +13,7 @@ Cumple con `docs/RONDA_5.md` §4 (claude-omni-1, tarea 4): *«Cada cifra de una 
 
 ### Lámina 2 — El Problema y las 4 Preguntas
 - **Preguntas del desafío**: «What is changing? Where? How much? Is it statistically significant?». Fuente: `docs/KIT_ENTREGA.md` §4, NASA Space Apps Challenge 2026.
-- **Variables científicas en catálogo**: 15 variables reales de la NASA implementadas + 10 variables planificadas de Giovanni GES DISC. Fuente: `data/catalog/variables.json`.
+- **Variables científicas en catálogo**: 35 variables reales de la NASA implementadas + 10 variables planificadas de Giovanni GES DISC. Fuente: `data/catalog/variables.json`.
 
 ---
 
