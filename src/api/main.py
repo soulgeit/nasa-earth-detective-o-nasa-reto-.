@@ -20,6 +20,7 @@ from fastapi import FastAPI, File, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import catalog, modules, service, validation
@@ -146,7 +147,9 @@ def health() -> dict[str, Any]:
 
 
 @app.get("/api/health/live", tags=["meta"])
-def health_live() -> dict[str, str]:
+async def health_live() -> dict[str, str]:
+    # `async` on purpose: the liveness probe does no I/O, and answering it on the event loop keeps it
+    # independent of the worker-thread pool that model calls (and the scan) can saturate.
     return {"status": "ok"}
 
 
@@ -518,7 +521,9 @@ async def ai_chat(request: Request) -> JSONResponse:
         )
     lang = body.get("lang") if body.get("lang") in ("es", "en") else None
     context = body.get("context") if isinstance(body.get("context"), dict) else None
-    result = _detective_call("chat", lambda fn: fn(message[:500], lang=lang, context=context))
+    # A worker thread, never the event loop: with a hosted model the call waits on the network (up to
+    # seconds) and must not freeze health checks or the other visitors (the hang of 2026-11-15).
+    result = await run_in_threadpool(_detective_call, "chat", lambda fn: fn(message[:500], lang=lang, context=context))
     return JSONResponse(result, headers=_data_headers())
 
 
@@ -563,7 +568,7 @@ async def ai_explain(request: Request) -> JSONResponse:
             "INVALID_REQUEST",
             message={"es": "Falta un 'analysis' con esquema analysis/2.", "en": "Missing an 'analysis' with schema analysis/2."},
         )
-    result = _detective_call("explain", lambda fn: fn(analysis, level=level, lang=lang))
+    result = await run_in_threadpool(_detective_call, "explain", lambda fn: fn(analysis, level=level, lang=lang))
     return JSONResponse(result, headers=_data_headers())
 
 

@@ -629,6 +629,9 @@ def _plan_reply(plan: dict[str, Any], lang: str, *, inherited: list[str]) -> dic
     if plan.get("mode") == "lora":
         text += " " + _t(lang, "(Plan propuesto por el planificador LoRA y verificado por reglas.)",
                          "(Plan proposed by the LoRA planner and checked by rules.)")
+    if plan.get("mode") == "llm":
+        text += " " + _t(lang, "(Plan propuesto por el modelo de lenguaje y verificado por reglas.)",
+                         "(Plan proposed by the language model and checked by rules.)")
     definition = _pick((_card(variable_id) or {}).get("simple_definition"), lang)
     if definition:
         text += "\n" + _t(lang, f"Qué mide: {definition}", f"What it measures: {definition}")
@@ -706,7 +709,7 @@ def _verify_lora_plan(plan: dict[str, Any], text: str, language: str, named: lis
     LoRA plan is kept only when its variable is one the student's own words point at and it
     agrees with the comparison cue; otherwise the rules plan the question, and the note says so.
     """
-    if plan.get("mode") != "lora" or plan.get("intent") not in ("investigate", "compare"):
+    if plan.get("mode") not in ("lora", "llm") or plan.get("intent") not in ("investigate", "compare"):
         return plan
     padded = " ".join(fold(text).replace("?", " ").replace("!", " ").replace(",", " ").replace(".", " ").split())
     verified = [v for v in (plan.get("variable_ids") or []) if _card(v) and _names_variable(padded, v, named)]
@@ -714,7 +717,7 @@ def _verify_lora_plan(plan: dict[str, Any], text: str, language: str, named: lis
     if verified and (plan.get("intent") == "compare" or not wants_compare):
         return plan
     rules = dict(make_plan(text, lang=language, use_lora=False))
-    rules["note"] = (f"lora_overruled: it proposed {plan.get('variable_ids') or []} ({plan.get('intent')}); "
+    rules["note"] = (f"{plan['mode']}_overruled: it proposed {plan.get('variable_ids') or []} ({plan.get('intent')}); "
                      "the verified rules planned instead")[:160]
     return rules
 

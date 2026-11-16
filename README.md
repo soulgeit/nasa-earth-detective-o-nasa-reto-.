@@ -239,3 +239,12 @@ factual citation of its data.
 
 *Data: NASA POWER, NASA GISTEMP, NSIDC, NASA Earth Observatory, Giovanni (GES DISC).
 NASA does not endorse this project; the name does not use NASA branding.*
+
+## Optional hosted language model
+
+By default the public server answers with verified rules + RAG and calls no external AI service. Setting
+`AI_MODE=full`, `LLM_BASE_URL`, `LLM_API_KEY`, `PLANNER_MODEL` and `EXPLAIN_MODEL` makes any OpenAI-compatible API
+propose the plan and word the explanation; the verified rules still decide and the guard still rejects any number or
+source that is not in the data. Calls are capped (daily cap, 8 at once, 20 s each) and the key is never logged or
+returned. Details and the declaration text: `docs/RONDA_7.md` §12. Check it end to end with no key and no cost:
+`python scripts/check_hosted_mode.py`.

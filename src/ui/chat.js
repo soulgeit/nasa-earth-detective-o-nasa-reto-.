@@ -70,6 +70,10 @@ const EN = {
   'engine.title.rules': 'This server answers with verified rules over a retrieval index (RAG). The LoRA planner is used when its model is loaded.',
   'engine.title.lora': 'This server uses the LoRA planner (SmolLM2-1.7B adapter); every plan is verified by rules.',
   'engine.unknown': 'Connecting…',
+  'engine.llm': 'Language model + rules + RAG',
+  'engine.title.llm': 'This server asks a hosted language model to propose the plan and to word the explanation. Verified rules check every plan and a guard rejects any number or source that is not in the data.',
+  'intro.note.llm': 'Huiracocha AI is made in Peru and named after Wiracocha, the Andean creator deity. It combines a retrieval index (RAG) over {docs} cited documents, a statistics engine that downloads the real NASA series and a hosted language model ({host}) that only proposes the plan and words the explanation: verified rules check every plan and a guard rejects any number or source that is not in the data. Its own LoRA planner (SmolLM2-1.7B, trained on a single NVIDIA RTX 4070 SUPER GPU) is the open-weight alternative. It is built to be precise and traceable, not fast.',
+  'intro.mode.llm': 'hosted language model ({host}) + verified rules + RAG; the LoRA planner is not loaded here',
   'engine.offline': 'Static copy · no live server',
   'about.open': 'How it works',
   'footer.ai': 'Built with AI assistance; the AI-use log is in the repository (docs/AI_USE_LOG.md).',
@@ -184,6 +188,10 @@ const ES = {
   'engine.title.rules': 'Este servidor responde con reglas verificadas sobre un índice de recuperación (RAG). El planificador LoRA se usa cuando su modelo está cargado.',
   'engine.title.lora': 'Este servidor usa el planificador LoRA (adaptador de SmolLM2-1.7B); cada plan lo verifican las reglas.',
   'engine.unknown': 'Conectando…',
+  'engine.llm': 'Modelo de lenguaje + reglas + RAG',
+  'engine.title.llm': 'Este servidor pide a un modelo de lenguaje alojado que proponga el plan y redacte la explicación. Las reglas verificadas comprueban cada plan y un guardián rechaza cualquier cifra o fuente que no esté en los datos.',
+  'intro.note.llm': 'Huiracocha IA nace en el Perú y lleva el nombre de Wiracocha, la deidad creadora andina. Combina un índice de recuperación (RAG) sobre {docs} documentos citados, un motor estadístico que descarga las series reales de la NASA y un modelo de lenguaje alojado ({host}) que solo propone el plan y redacta la explicación: las reglas verificadas comprueban cada plan y un guardián rechaza cualquier cifra o fuente que no esté en los datos. Su propio planificador LoRA (SmolLM2-1.7B, entrenado en una sola GPU NVIDIA RTX 4070 SUPER) es la alternativa de pesos abiertos. Está hecha para ser precisa y trazable, no rápida.',
+  'intro.mode.llm': 'modelo de lenguaje alojado ({host}) + reglas verificadas + RAG; aquí no está cargado el planificador LoRA',
   'engine.offline': 'Copia estática · sin servidor',
   'about.open': 'Cómo funciona',
   'footer.ai': 'Construida con asistencia de IA; el registro de uso de IA está en el repositorio (docs/AI_USE_LOG.md).',
@@ -785,7 +793,7 @@ function welcome() {
 /* ------------------------------------------------------------------ how it works */
 
 function engineLabel(engine) {
-  return t(engine === 'lora+rag' ? 'engine.lora' : 'engine.rules');
+  return t(engine === 'lora+rag' ? 'engine.lora' : (engine === 'llm+rag' ? 'engine.llm' : 'engine.rules'));
 }
 
 function renderBadge() {
@@ -798,8 +806,8 @@ function renderBadge() {
   }
   const engine = about.deployment.engine;
   els.badge.textContent = engineLabel(engine);
-  els.badge.dataset.engine = engine === 'lora+rag' ? 'lora' : 'rules';
-  els.badge.title = t(engine === 'lora+rag' ? 'engine.title.lora' : 'engine.title.rules');
+  els.badge.dataset.engine = engine === 'lora+rag' ? 'lora' : (engine === 'llm+rag' ? 'llm' : 'rules');
+  els.badge.title = t(engine === 'lora+rag' ? 'engine.title.lora' : (engine === 'llm+rag' ? 'engine.title.llm' : 'engine.title.rules'));
 }
 
 function renderNote() {
@@ -809,11 +817,14 @@ function renderNote() {
     els.note.append(document.createTextNode(t('intro.note.static')));
     return;
   }
-  els.note.append(document.createTextNode(`${t('intro.note', { docs: num(about.corpus.documents) })} `));
+  const hosted = about.deployment.engine === 'llm+rag';
+  const host = (about.deployment.llm && about.deployment.llm.host) || '';
+  els.note.append(document.createTextNode(`${t(hosted ? 'intro.note.llm' : 'intro.note', { docs: num(about.corpus.documents), host })} `));
   const mode = el('span', 'mode-line');
   const loading = about.deployment.lora && about.deployment.lora.state === 'loading';
-  const modeKey = about.deployment.engine === 'lora+rag' ? 'intro.mode.lora' : (loading ? 'intro.mode.loading' : 'intro.mode.rules');
-  mode.append(el('strong', null, `${t('intro.mode')}: `), document.createTextNode(t(modeKey)));
+  const modeKey = about.deployment.engine === 'lora+rag' ? 'intro.mode.lora'
+    : (hosted ? 'intro.mode.llm' : (loading ? 'intro.mode.loading' : 'intro.mode.rules'));
+  mode.append(el('strong', null, `${t('intro.mode')}: `), document.createTextNode(t(modeKey, { host })));
   els.note.append(mode);
 }
 

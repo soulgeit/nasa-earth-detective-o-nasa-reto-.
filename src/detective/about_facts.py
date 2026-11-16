@@ -138,19 +138,52 @@ def _static_block(lang: str) -> dict[str, Any]:
     }
 
 
+def _llm_block() -> dict[str, Any]:
+    """The hosted model, if any: configured, and only "ready" after a call really succeeded."""
+    from . import llm as llm_client
+
+    local_lora = (SETTINGS.planner_model or "").strip().lower() in ("local-lora", "local_lora", "lora")
+    plans = bool(SETTINGS.planner_model) and not local_lora
+    explains = bool(SETTINGS.explain_model)
+    configured = bool(SETTINGS.ai_mode == "full" and SETTINGS.llm_hosted and (plans or explains))
+    last_ok = llm_client.status()["last_ok"]
+    if not configured:
+        state = "off"
+    elif last_ok is True:
+        state = "ready"
+    elif last_ok is False:
+        state = "failing"
+    else:
+        state = "configured"
+    return {
+        "configured": configured,
+        "state": state,  # off | configured | ready | failing
+        "host": llm_client.host() if configured else None,
+        "plans": configured and plans,
+        "explains": configured and explains,
+    }
+
+
 def about(*, lang: str = "es") -> dict[str, Any]:
     static = _static_block(lang)
     lora = _lora_runtime()
-    engine = "lora+rag" if lora["active"] else "rules+rag"
+    llm = _llm_block()
+    if lora["active"]:
+        engine = "lora+rag"
+    elif llm["state"] == "ready":
+        engine = "llm+rag"
+    else:
+        engine = "rules+rag"
     return {
         "schema": "about/1",
         "assistant": {"name": "Huiracocha IA", "named_after": "Wiracocha"},
         "deployment": {
             "ai_mode": SETTINGS.ai_mode,
             "engine": engine,
-            "planner": "lora" if lora["active"] else "rules",
+            "planner": "lora" if lora["active"] else ("llm" if engine == "llm+rag" and llm["plans"] else "rules"),
             "lora": lora,
-            "generative_text": False,
+            "llm": llm,
+            "generative_text": bool(engine == "llm+rag" and llm["explains"]),
             "embeddings": bool(SETTINGS.embeddings_enabled),
         },
         "pipeline": ["question", "retrieval", "plan", "nasa_data", "statistics", "explanation"],

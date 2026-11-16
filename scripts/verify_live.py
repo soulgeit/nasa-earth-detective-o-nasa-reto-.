@@ -41,7 +41,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("url")
     parser.add_argument("--wait", type=int, default=480, help="seconds to wait for the new version")
+    parser.add_argument("--hosted", action="store_true",
+                        help="the server runs with a hosted model (AI_MODE=full + LLM_API_KEY): different expectations")
     args = parser.parse_args()
+    # A hosted plan answers in seconds, not milliseconds; everything else about the burst stays the same.
+    slow = 8.0 if args.hosted else 3.0
+    engines = ("rules+rag", "llm+rag") if args.hosted else ("rules+rag",)
     base = args.url.rstrip("/")
     failures: list[str] = []
 
@@ -62,12 +67,14 @@ def main() -> int:
         return 2
 
     status, health, took = call(f"{base}/api/health")
-    check(status == 200 and health and health.get("ai_mode") == "extractive", "public image runs verified rules + RAG",
+    expected_mode = "full" if args.hosted else "extractive"
+    check(status == 200 and health and health.get("ai_mode") == expected_mode,
+          "hosted model configured" if args.hosted else "public image runs verified rules + RAG",
           f"ai_mode={health and health.get('ai_mode')} in {took:.2f}s")
 
     for n in (1, 2, 3):
         status, about, took = call(f"{base}/api/ai/about?lang=es")
-        check(status == 200 and about and about["deployment"]["engine"] == "rules+rag", f"about call {n}", f"{took:.2f}s")
+        check(status == 200 and about and about["deployment"]["engine"] in engines, f"about call {n}", f"{took:.2f}s")
     if about:
         corpus = about["corpus"]
         check(corpus["documents"] >= 990 and corpus["skipped_rows"] == 0, "corpus loaded without skipped rows",
@@ -77,8 +84,17 @@ def main() -> int:
                                 ("¿Llueve menos en Ica?", "es", "plan"), ("¿y en Huancayo?", "es", "plan")):
         ctx = {"place": "Ica", "variable_id": "PRECTOTCORR"} if message.startswith("¿y") else {}
         status, reply, took = call(f"{base}/api/ai/chat", data={"message": message, "lang": lang, "context": ctx})
-        check(status == 200 and reply and reply["kind"] == kind and took < 3.0, f"chat {message!r}",
+        check(status == 200 and reply and reply["kind"] == kind and took < slow, f"chat {message!r}",
               f"{reply and reply['kind']} in {took:.2f}s")
+
+    if args.hosted:
+        # After real plan questions the panel must name the provider, and nothing may carry a key.
+        status, about, _ = call(f"{base}/api/ai/about?lang=en")
+        llm = (about or {}).get("deployment", {}).get("llm", {})
+        check(status == 200 and llm.get("state") == "ready" and (about["deployment"]["engine"] == "llm+rag"),
+              "the provider answered for real (panel says llm+rag)", f"state={llm.get('state')} host={llm.get('host')}")
+        _, health_again, _ = call(f"{base}/api/health")
+        check("sk-" not in json.dumps([about, health_again]), "no API key appears in the public responses")
 
     # --- the incident of 2026-11-15: a burst of chats must never block everybody else
     questions = ["hola", "¿Hace más calor en Lima?", "heladas en Huancayo", "Compara la lluvia de Andahuaylas y Lima",

@@ -42,6 +42,13 @@ class Settings:
     knowledge_dir: Path
     index_dir: Path
     request_timeout: float
+    # Hosted OpenAI-compatible API (RONDA_7). An empty key means a local server such as Ollama.
+    llm_api_key: str = ""
+    llm_daily_cap: int = 0  # hosted calls per day; 0 = no cap
+
+    @property
+    def llm_hosted(self) -> bool:
+        return bool(self.llm_api_key)
 
     @property
     def llm_enabled(self) -> bool:
@@ -51,6 +58,17 @@ class Settings:
     def embeddings_enabled(self) -> bool:
         # Embeddings are allowed in `full`; in `extractive`/`off` we never call out.
         return self.ai_mode == "full" and bool(self.embed_model)
+
+
+def _daily_cap() -> int:
+    """Calls per day a hosted key may spend; with a key the default is 2000, never unlimited by accident."""
+    raw = _env("LLM_DAILY_CALL_CAP")
+    if raw:
+        try:
+            return max(0, int(raw))
+        except ValueError:
+            return 0
+    return 2000 if _env("LLM_API_KEY") else 0
 
 
 def load_settings() -> Settings:
@@ -67,6 +85,8 @@ def load_settings() -> Settings:
         knowledge_dir=data_dir / "knowledge",
         index_dir=data_dir / "cache" / "rag",
         request_timeout=float(_env("AI_HTTP_TIMEOUT", "60") or 60),
+        llm_api_key=_env("LLM_API_KEY"),
+        llm_daily_cap=_daily_cap(),
     )
 
 

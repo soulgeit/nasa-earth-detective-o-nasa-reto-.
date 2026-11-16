@@ -300,3 +300,42 @@ vale si una cifra no se puede seguir hasta su origen.
 - **Verificado en vivo:** `python scripts/verify_live.py https://huiracochaia.soulgeit.com` (96 chats en paralelo, todos
   respondidos; el servidor vuelve a la normalidad al terminar la ráfaga).
 - **Entrega:** vídeo `docs/demo/Huiracocha_AI_pitch_30s.mp4` (29,97 s, voz de IA declarada y etiquetada) y láminas de 7 páginas.
+
+## 12. Modelo de lenguaje alojado (opcional, apagado por defecto)
+
+Hecho el 2026-11-15 por orden del humano («implementar la IA por API»). **No cambia el servidor desplegado:** sin
+`LLM_API_KEY` todo se comporta exactamente como antes (reglas verificadas + RAG).
+
+- **Qué hace:** con `AI_MODE=full` y una clave, cualquier API compatible con OpenAI (`/chat/completions`) planifica
+  la pregunta (con el mismo prompt con el que se entrenó el LoRA, `data/lora/system_prompt.txt`) y redacta la
+  explicación. «El modelo propone, las reglas deciden»: un plan que las reglas no respaldan se descarta
+  (`llm_overruled`) y el guardián rechaza cualquier cifra o fuente que no esté en los datos (2 intentos y después texto
+  extractivo).
+- **Qué NO hace:** no ejecuta el LoRA (sigue siendo `PLANNER_MODEL=local-lora`, en la GPU del equipo).
+- **Contra cuelgues y gasto:** 20 s por llamada; como mucho 8 llamadas simultáneas al proveedor (las demás se
+  responden al instante con las reglas); tope diario `LLM_DAILY_CALL_CAP` (2000 por defecto cuando hay clave); las
+  rutas `async` del chat y de la explicación llaman al modelo en un hilo de trabajo (`run_in_threadpool`) y la sonda
+  `/api/health/live` vive en el bucle de eventos: un proveedor lento ya no puede congelar el servidor (el incidente de
+  las 17:50).
+- **Privacidad:** la clave solo vive en las variables de Railway. No aparece en logs ni en respuestas, y los errores
+  muestran solo `host: HTTP código` (nada del texto del proveedor sobre cuota o facturación). La pregunta del visitante
+  sí viaja al proveedor: hay que decirlo.
+- **La nota de la app dice la verdad sola:** solo pasa a «modelo de lenguaje alojado (host)» tras una llamada real
+  exitosa; si el proveedor cae vuelve a «reglas + RAG».
+- **Activarlo (Railway → Variables):** `AI_MODE=full`, `LLM_BASE_URL=https://api.openai.com/v1` (o el del proveedor),
+  `LLM_API_KEY=<la clave>`, `PLANNER_MODEL=<modelo pequeño del proveedor>`, `EXPLAIN_MODEL=<el mismo>`,
+  opcional `LLM_DAILY_CALL_CAP=1500`. Después redesplegar y correr
+  `python scripts/verify_live.py https://huiracochaia.soulgeit.com --hosted`.
+  **Apagarlo:** borrar `LLM_API_KEY` (o poner `AI_MODE=extractive`) y redesplegar.
+- **Verificado:** `python scripts/check_hosted_mode.py` (proveedor falso + app real, 11 comprobaciones: clave enviada,
+  plan etiquetado `llm`, clave ausente de respuestas y logs, ráfaga de 40 chats contra un proveedor lento sin frenar
+  la sonda, caída del proveedor → reglas) y `tests/detective/test_hosted_llm.py` (17 pruebas). **No probado:** una
+  llamada contra el proveedor real (nombre exacto del modelo; si rechaza `temperature` el cliente reintenta sin ella).
+- **Antes de encenderlo para los jueces, declarar** (`docs/SUBMISSION.md`, sección de uso de IA, y
+  `docs/AI_USE_LOG.md`). Texto listo:
+  > The live demo can optionally use a hosted third-party language model (PROVIDER) to propose the investigation plan
+  > and to word the explanation. It never produces numbers or sources: every plan is checked by deterministic rules and
+  > a guard rejects any figure or citation that is not in the NASA data. The model receives only the user's question
+  > and the public variable catalogue.
+
+  Revisar además que ninguna lámina, el vídeo ni la página digan que el servidor público «no usa IA de terceros».

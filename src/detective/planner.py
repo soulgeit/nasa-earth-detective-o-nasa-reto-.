@@ -33,6 +33,17 @@ from .text_norm import detect_language, fold
 VALID_INTENTS = ("investigate", "compare", "define", "out_of_scope", "no_match")
 VALID_HYPOTHESES = ("up", "down", "unknown")
 
+# The planner prompt a hosted model gets when the training prompt file is not packaged: the same
+# text as data/lora/system_prompt.txt (a test keeps them equal).
+HOSTED_PLANNER_PROMPT = (
+    "You are the planning module of EarthTrend Detective, a tool that helps students investigate trends "
+    "in Earth science data.\n"
+    "Read the QUESTION and the CANDIDATES. Reply with ONLY one JSON object with these keys, in this order: "
+    "intent, variable_ids, place, place_b, start_year, end_year, last_n_years, hypothesis, lang.\n"
+    "Use only ids listed in CANDIDATES. Copy place names exactly as written in the question. "
+    "Never invent numbers or places."
+)
+
 PLAN_SCHEMA_HINT = (
     '{"intent":"investigate|compare|define|out_of_scope|no_match",'
     '"variable_ids":["<id from CANDIDATES>"],'
@@ -718,13 +729,7 @@ def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: st
     """Ask PLANNER_MODEL, validate, retry once, then fall back to rules."""
     candidates = {(c.get("variables") or [None])[0] for c in cards}
     candidates = {c for c in candidates if c}
-    system = _system_prompt()
-    if system is None:
-        # Without Hermes 2's system prompt the training/use contract can't be met,
-        # so we do not pretend: rules answer, and the plan says why.
-        plan = _rules_plan(question, lang, cards, mode="rules")
-        plan["note"] = "lora_system_prompt_missing"
-        return plan
+    system = _system_prompt() or HOSTED_PLANNER_PROMPT
 
     messages = [
         {"role": "system", "content": system},
@@ -741,7 +746,7 @@ def _llm_plan(question: str, lang: str, cards: list[dict[str, Any]], *, mode: st
         plan, reason = validate_plan(raw, question=question, candidates=candidates, lang=lang)
         if plan is not None:
             plan["mode"] = mode
-            plan["planner"] = "rules" if mode == "rules" else "lora"
+            plan["planner"] = {"rules": "rules", "llm": "llm"}.get(mode, "lora")
             return plan
         last_reason = reason
         messages = messages[:2] + [

@@ -111,7 +111,7 @@ as the default. Both numbers are always published together
 
 **Huiracocha AI, the conversational layer (round 7).** The assistant that talks in the
 app is named after Wiracocha, the Andean creator deity. It is a retrieval-and-rules
-system, not a free-text generator: it recognises the intent of the message, retrieves
+system by default, not a free-text generator: it recognises the intent of the message, retrieves
 from the cited corpus (BM25 plus a lexicon of everyday words), plans with verified rules
 (the LoRA planner is used only on a machine where its model is loaded) and then calls the
 same statistics engine that serves the rest of the app. Everything it says is a fixed
@@ -121,7 +121,10 @@ engine, and every reply names the engine that produced it. The catalogue grew fr
 tests every point variable for one place and applies the Benjamini–Hochberg correction
 across all of them, so a "confirmed" change has survived the multiple-testing problem.
 The "how it works" panel at the top of the app reads its numbers from the running
-server (`GET /api/ai/about`) and says which mode that server is in.
+server (`GET /api/ai/about`) and says which mode that server is in. If the optional
+hosted language model is switched on (SI item 4 below), the plan may be proposed by it and
+the explanation worded by it, always under the same rules and guard, and the badge and
+the panel then say so.
 
 ### 3. Why you can trust it
 
@@ -278,6 +281,20 @@ If a GPM product is used, note that **GPM is a joint NASA–JAXA mission**.
    documents each, 340 of them trends computed by our own statistics engine (never
    presented as quotations). Each lane wrote only its own files and every file passes
    `scripts/validate_fragments.py` before it can be pushed.
+
+4. **An optional hosted language model (any OpenAI-compatible API) can propose the plan
+   and word the explanation.** It is off unless the operator sets an API key on the
+   server; the "how it works" card and the engine badge of the app report live whether it
+   is active on the server you are using, and name its host. The model never supplies
+   numbers or sources: verified rules check every plan it proposes and overrule it when
+   they disagree, and a guard rejects any figure or citation that is not in the NASA
+   data (after two rejected attempts the app falls back to the extractive text). The
+   provider receives the text of the user's question and, to word an explanation, the
+   computed statistics and the cited public passages. Calls are limited (a daily cap, at
+   most 8 at once, 20 s each) and the key lives only in the server's environment.
+   Code: `src/detective/llm.py`; its failure paths are tested in
+   `tests/detective/test_hosted_llm.py` and `scripts/check_hosted_mode.py` (against a fake
+   provider: they prove the safeguards, not the accuracy of any model).
 
 **No images or video were generated with SI; one audio track was.** All screenshots are
 captures of the running application with real data. The narration of the pitch video is an
