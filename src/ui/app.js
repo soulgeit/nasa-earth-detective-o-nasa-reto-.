@@ -261,6 +261,8 @@ function initMap() {
 
   trendmapLayer = L.layerGroup().addTo(map);
   mapReady = true;
+  setTimeout(() => { map.invalidateSize(); }, 150);
+  setTimeout(() => { map.invalidateSize(); }, 600);
 
   map.on('click', (ev) => {
     if (state.mode === 'compare') {
@@ -1716,3 +1718,15 @@ document.addEventListener('DOMContentLoaded', boot);
 window.__etd = { state, investigate, renderAnalysis, renderTrendMap, renderCompare, setLang, setMode, setPoint, setPointA, setPointB, setBBox, onVariableChange, fmt, fmtP, signed, t, openCase };
 
 })();
+
+// Auto-recover Leaflet map layout when container or layout resizes
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (window.__etd && window.__etd.map) { window.__etd.map.invalidateSize(); }
+    else if (typeof map !== 'undefined' && map) { map.invalidateSize(); }
+  }, 100);
+});
+window.addEventListener('resize', () => {
+  if (typeof map !== 'undefined' && map) { map.invalidateSize(); }
+});
+
