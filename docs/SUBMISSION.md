@@ -29,12 +29,13 @@ science data for that place, shows how it has changed over 45 years, and answers
 four questions of the challenge: **what** is changing, **where**, **how much**, and
 **whether the change is statistically significant**.
 
-It gives honest verdicts. A trend is called significant only when three independent
-tests agree after correcting for autocorrelation (Mann–Kendall with the Hamed–Rao
-correction, an autocorrelation-adjusted t-test on the least-squares slope, and the
-Theil–Sen confidence interval). When they disagree, the tool says so instead of
-picking the loudest one. When the record is too short, it estimates how many more
-years of data would be needed, using Weatherhead et al. (1998).
+It gives honest verdicts. A trend is rated "strong" only when all the independent tests
+agree after correcting for autocorrelation (Mann–Kendall with the Hamed–Rao correction,
+an autocorrelation-adjusted t-test on the least-squares slope, and the Theil–Sen
+confidence interval) and the record is long enough; "significant" needs the corrected
+Mann–Kendall test and the Theil–Sen interval plus one more test. When the tests disagree,
+the tool says so instead of picking the loudest one. When the record is too short, it
+estimates how many more years of data would be needed, using Weatherhead et al. (1998).
 
 A trend map shows where the same variable rises in one region and falls in another.
 An assistant grounded in cited NASA sources suggests what to investigate; it never
