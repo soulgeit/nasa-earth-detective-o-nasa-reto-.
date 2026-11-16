@@ -1550,8 +1550,10 @@ const DEMO_DURATION = 12000;
 function startDemo() {
   demoIndex = 0;
   demoPaused = false;
-  $('#demo-banner').hidden = false;
+  const banner = $('#demo-banner');
+  banner.hidden = false;
   $('#btn-demo-pause').textContent = t('demo.btn.pause');
+  banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
   loadDemoCase(demoIndex);
 }
 
