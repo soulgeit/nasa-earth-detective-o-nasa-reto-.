@@ -292,3 +292,11 @@ vale si una cifra no se puede seguir hasta su origen.
   en segundo plano, reglas mientras tanto) y la nota de la app muestra su estado real.
 - **Congelación:** desde este punto no se tocan `src/`, `data/catalog/` ni `docs.jsonl`. Los
   carriles de datos solo corrigen sus archivos y pasan siempre `validate_fragments.py`.
+
+## 11. Cierre (domingo 15, 19:10)
+
+- **Integrado y desplegado por orden del humano (18:50):** `main@4c975ef`; Railway `3cd25750` (imagen ligera);
+  GitHub Pages `gh-pages@600f910`.
+- **Verificado en vivo:** `python scripts/verify_live.py https://huiracochaia.soulgeit.com` (96 chats en paralelo, todos
+  respondidos; el servidor vuelve a la normalidad al terminar la ráfaga).
+- **Entrega:** vídeo `docs/demo/Huiracocha_AI_pitch_30s.mp4` (29,97 s, voz de IA declarada y etiquetada) y láminas de 7 páginas.

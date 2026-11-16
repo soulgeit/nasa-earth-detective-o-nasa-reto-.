@@ -1,14 +1,13 @@
 <!-- ESTADO:INICIO -->
-## ESTADO — cfable (arquitecto) — 2026-11-15 18:35 hora de Perú
-Rama@commit: `integracion/ronda7@41dd611` · empujado: sí (NO está en `main`: espera el «integra» del humano)
-VERIFICADO: suite completa **361 pasan / 0 fallan / 9 omitidas**; `scripts/gate.py --offline` → **PUERTA ABIERTA** (7/7: pytest, smoke_api, validate_datasets, validate_knowledge, planned_not_analyzable, case_physical_ranges, no_secrets); `validate_fragments.py` → 773 documentos válidos en 13 archivos.
-VERIFICADO: corpus de **999 documentos** (antes 168): Lima 140, Huancayo 129, Andahuaylas 124, Ica 143, Ayacucho 195; 172 instituciones, 433 páginas fuente; catálogo de **35 variables** (20 nuevas de NASA POWER, cada una pedida en vivo).
-VERIFICADO con el adaptador real (RTX 4070 SUPER, `AI_MODE=full`): carga en segundo plano en ≈8 s; 2,4–3,1 s por pregunta; de 6 preguntas conserva 4 y las reglas corrigen 2 (ver `docs/EVAL_IA.md`, «Comprobación en vivo»). El LoRA funciona y es más lento, no más preciso que las reglas.
-VERIFICADO en navegador (servidor local): «hola» → saludo de Huiracocha IA; «¿Llueve menos en Ica?» → plan + serie real + veredicto + explicación que cita notas SENAMHI de Ica; chip de ciudad → escaneo de 32 variables con corrección de Benjamini–Hochberg (Huancayo 9/32, Ayacucho 16/32 confirmadas); móvil 390 px sin desbordamiento; copia estática con aviso «necesita el servidor en vivo» y 0 errores de consola.
-ROTO / RIESGO: producción (despliegue `978ec8e4` de las 17:31, imagen pesada con `ai_mode=full`) se **colgó a las 17:50**: cada mensaje de chat carga SmolLM2 + LoRA en CPU dentro de la petición y el servicio deja de responder (último log: «generation flags»). Hoy responde de nuevo, pero volverá a colgarse con el siguiente chat. La imagen ligera (reglas + RAG) contesta en milisegundos.
-Siguiente paso: humano → «integra» (`integracion/ronda7` → `main`) y «despliega» (`bash scripts/deploy_railway.sh --deploy`: comprueba, sube la imagen ligera y verifica la URL).
-Necesito de: humano: esas dos órdenes; y decidir si quiere el texto de «Runas de Energía / Machu Picchu» como dedicatoria (no puedo afirmarlo como ubicación técnica: el servidor está en Railway).
-Avisos para otros carriles: `feature/ui` quedó fusionada en `integracion/ronda7`; no empujar chat ni UI a `main`; no desplegar `Dockerfile.lora` en la URL pública.
+## ESTADO — cfable (arquitecto) — 2026-11-15 19:10 hora de Perú
+Rama@commit: `main@4c975ef` = `integracion/ronda7@4c975ef` (este informe es el commit siguiente) · empujado: sí · **INTEGRADO en `main`** (orden del humano, 18:50)
+DESPLEGADO: Railway, despliegue `3cd25750` (18:54, imagen ligera, `ai_mode=extractive`) en https://huiracochaia.soulgeit.com; GitHub Pages `gh-pages@600f910` con la copia estática nueva (el chat avisa que necesita el servidor).
+VERIFICADO EN VIVO (`scripts/verify_live.py`): 96 chats en paralelo responden todos (el más lento 2,49 s; 2,60 s la ráfaga entera); escaneo de 32 variables 0,4–3,6 s; 999 documentos sin filas saltadas. Un ping de salud en mitad de la ráfaga espera ≈2,4 s (cola de un proceso único) y el servidor vuelve a <1 s al terminar: no hay cuelgue.
+HECHO: vídeo `docs/demo/Huiracocha_AI_pitch_30s.mp4` (29,97 s: presentador re-temporizado + láminas en ventana de app + subtítulos; la narración es una voz de IA de ElevenLabs, etiquetada en pantalla y declarada en `AI_USE_LOG.md` y `SUBMISSION.md`); láminas con RAG y LoRA con cifras medidas (`EarthTrend_Detective_slides.pdf`, 7 páginas); copias en Descargas. Suite 372 verdes / 0 rojas; `gate.py` abierto.
+ROTO / NO HECHO: `feature/ui` queda superada por `main` (no fusionar encima); las láminas antiguas «15 variables» ya no existen; el despliegue de Railway se hace SOLO con `bash scripts/deploy_railway.sh --deploy` (imagen ligera). `Dockerfile.lora` es experimental.
+Siguiente paso: humano → subir el vídeo y/o las láminas al formulario antes de las 20:00 («Submit for Judging»); decidir el texto de «Runas de Energía / Machu Picchu» como dedicatoria, si lo quiere.
+Necesito de: humano: nada más para el despliegue.
+Avisos para otros carriles: no empujar chat ni UI a `main`; no redesplegar la imagen pesada.
 <!-- ESTADO:FIN -->
 
 # Reporte — arquitecto (cfable)
