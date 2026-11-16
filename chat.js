@@ -70,9 +70,13 @@ const EN = {
   'engine.title.rules': 'This server answers with verified rules over a retrieval index (RAG). The LoRA planner is used when its model is loaded.',
   'engine.title.lora': 'This server uses the LoRA planner (SmolLM2-1.7B adapter); every plan is verified by rules.',
   'engine.unknown': 'Connecting…',
+  'engine.llm': 'Language model + rules + RAG',
+  'engine.title.llm': 'This server asks a hosted language model to propose the plan and to word the explanation. Verified rules check every plan and a guard rejects any number or source that is not in the data.',
+  'intro.note.llm': 'Huiracocha AI is made in Peru and named after Wiracocha, the Andean creator deity. It combines a retrieval index (RAG) over {docs} cited documents, a statistics engine that downloads the real NASA series and a hosted language model ({host}) that only proposes the plan and words the explanation: verified rules check every plan and a guard rejects any number or source that is not in the data. Its own LoRA planner (SmolLM2-1.7B, trained on a single NVIDIA RTX 4070 SUPER GPU) is the open-weight alternative. It is built to be precise and traceable, not fast.',
+  'intro.mode.llm': 'hosted language model ({host}) + verified rules + RAG; the LoRA planner is not loaded here',
   'engine.offline': 'Static copy · no live server',
   'about.open': 'How it works',
-  'footer.ai': 'Built with AI assistance; the AI-use log is in the repository (docs/AI_USE_LOG.md).',
+  'footer.ai': 'Built with AI assistance; the logo was generated with AI (Antigravity). The AI-use log is in the repository (docs/AI_USE_LOG.md).',
   'intro.note.static': 'Huiracocha AI is made in Peru and named after Wiracocha, the Andean creator deity. It works from the memory of its own server, with no third-party AI service: a retrieval index (RAG) over cited sources and a statistics engine that downloads the real NASA series. Its planner is a LoRA adapter on SmolLM2-1.7B trained on a single NVIDIA RTX 4070 SUPER GPU. It is built to be precise and traceable, not fast.',
   'intro.note': 'Huiracocha AI is made in Peru and named after Wiracocha, the Andean creator deity. It works from the memory of its own server, with no third-party AI service: a retrieval index (RAG) over {docs} cited documents and a statistics engine that downloads the real NASA series. Its planner is a LoRA adapter on SmolLM2-1.7B trained on a single NVIDIA RTX 4070 SUPER GPU. It is built to be precise and traceable, not fast.',
   'intro.mode': 'Mode of this server',
@@ -84,7 +88,7 @@ const EN = {
   'intro.pipeline': 'From question to answer',
   'intro.step.1': 'Question',
   'intro.step.2': 'Retrieve sources (RAG)',
-  'intro.step.3': 'Plan (rules + LoRA)',
+  'intro.step.3': 'Plan (rules + LoRA or API)',
   'intro.step.4': 'Real NASA data',
   'intro.step.5': 'Statistics',
   'intro.step.6': 'Cited explanation',
@@ -102,6 +106,13 @@ const EN = {
   'intro.res.title': 'Resources obtained',
   'intro.res.body': '{vars} real variables from NASA POWER (MERRA-2 and CERES), GISTEMP and the NSIDC Sea Ice Index, plus the platforms named in the challenge:',
   'intro.res.prov': 'Every result shows its exact request URL, date and SHA-256 fingerprint.',
+  'intro.api.title': 'Language-model API: optional',
+  'intro.api.body': 'Besides its own LoRA planner, Huiracocha AI can ask a hosted language model (any OpenAI-compatible API) to propose the plan and to word the explanation. The model never supplies numbers or sources: they come from the NASA data and the cited documents.',
+  'intro.api.guard': 'Verified rules check every plan it proposes and overrule it when they disagree; a guard rejects any figure or citation that is not in the data. Calls are limited (a daily cap, at most 8 at once, 20 s each) and the key stays on the server.',
+  'intro.api.here.off': 'In this server: not active. Verified rules + RAG answer and no external AI service is used.',
+  'intro.api.here.configured': 'In this server: configured; it is announced as active only after its first successful answer.',
+  'intro.api.here.ready': 'In this server: active ({host}). That provider receives the text of your question and, to word the explanation, the computed statistics and the cited passages.',
+  'intro.api.here.failing': 'In this server: configured but not answering right now; verified rules + RAG answer instead.',
   'scan.eyebrow': 'All variables · {place}',
   'scan.title': '{c} of {n} changes confirmed',
   'scan.lead': 'Every variable was tested at the same point and period. “Confirmed” means the engine’s verdict is significant and the change also survives the Benjamini–Hochberg correction for {n} simultaneous tests (q < 0.05).',
@@ -184,9 +195,13 @@ const ES = {
   'engine.title.rules': 'Este servidor responde con reglas verificadas sobre un índice de recuperación (RAG). El planificador LoRA se usa cuando su modelo está cargado.',
   'engine.title.lora': 'Este servidor usa el planificador LoRA (adaptador de SmolLM2-1.7B); cada plan lo verifican las reglas.',
   'engine.unknown': 'Conectando…',
+  'engine.llm': 'Modelo de lenguaje + reglas + RAG',
+  'engine.title.llm': 'Este servidor pide a un modelo de lenguaje alojado que proponga el plan y redacte la explicación. Las reglas verificadas comprueban cada plan y un guardián rechaza cualquier cifra o fuente que no esté en los datos.',
+  'intro.note.llm': 'Huiracocha IA nace en el Perú y lleva el nombre de Wiracocha, la deidad creadora andina. Combina un índice de recuperación (RAG) sobre {docs} documentos citados, un motor estadístico que descarga las series reales de la NASA y un modelo de lenguaje alojado ({host}) que solo propone el plan y redacta la explicación: las reglas verificadas comprueban cada plan y un guardián rechaza cualquier cifra o fuente que no esté en los datos. Su propio planificador LoRA (SmolLM2-1.7B, entrenado en una sola GPU NVIDIA RTX 4070 SUPER) es la alternativa de pesos abiertos. Está hecha para ser precisa y trazable, no rápida.',
+  'intro.mode.llm': 'modelo de lenguaje alojado ({host}) + reglas verificadas + RAG; aquí no está cargado el planificador LoRA',
   'engine.offline': 'Copia estática · sin servidor',
   'about.open': 'Cómo funciona',
-  'footer.ai': 'Construida con asistencia de IA; el registro de uso de IA está en el repositorio (docs/AI_USE_LOG.md).',
+  'footer.ai': 'Construida con asistencia de IA; el logo fue generado con IA (Antigravity). El registro de uso de IA está en el repositorio (docs/AI_USE_LOG.md).',
   'intro.note.static': 'Huiracocha IA nace en el Perú y lleva el nombre de Wiracocha, la deidad creadora andina. Trabaja desde la memoria de su propio servidor, sin servicios de IA de terceros: un índice de recuperación (RAG) sobre fuentes citadas y un motor estadístico que descarga las series reales de la NASA. Su planificador es un adaptador LoRA sobre SmolLM2-1.7B entrenado en una sola GPU NVIDIA RTX 4070 SUPER. Está hecha para ser precisa y trazable, no rápida.',
   'intro.note': 'Huiracocha IA nace en el Perú y lleva el nombre de Wiracocha, la deidad creadora andina. Trabaja desde la memoria de su propio servidor, sin servicios de IA de terceros: un índice de recuperación (RAG) sobre {docs} documentos citados y un motor estadístico que descarga las series reales de la NASA. Su planificador es un adaptador LoRA sobre SmolLM2-1.7B entrenado en una sola GPU NVIDIA RTX 4070 SUPER. Está hecha para ser precisa y trazable, no rápida.',
   'intro.mode': 'Modo de este servidor',
@@ -198,7 +213,7 @@ const ES = {
   'intro.pipeline': 'De la pregunta a la respuesta',
   'intro.step.1': 'Pregunta',
   'intro.step.2': 'Recupera fuentes (RAG)',
-  'intro.step.3': 'Plan (reglas + LoRA)',
+  'intro.step.3': 'Plan (reglas + LoRA o API)',
   'intro.step.4': 'Datos reales de la NASA',
   'intro.step.5': 'Estadística',
   'intro.step.6': 'Explicación con citas',
@@ -216,6 +231,13 @@ const ES = {
   'intro.res.title': 'Recursos obtenidos',
   'intro.res.body': '{vars} variables reales de NASA POWER (MERRA-2 y CERES), GISTEMP y el índice de hielo marino del NSIDC, más las plataformas que nombra el reto:',
   'intro.res.prov': 'Cada resultado muestra la URL exacta de la petición, la fecha y una huella SHA-256.',
+  'intro.api.title': 'API de modelo de lenguaje: opcional',
+  'intro.api.body': 'Además de su propio planificador LoRA, Huiracocha IA puede pedir a un modelo de lenguaje alojado (cualquier API compatible con OpenAI) que proponga el plan y redacte la explicación. El modelo nunca aporta cifras ni fuentes: salen de los datos de la NASA y de los documentos citados.',
+  'intro.api.guard': 'Las reglas verificadas comprueban cada plan que propone y lo anulan si no coinciden; un guardián rechaza cualquier cifra o cita que no esté en los datos. Las llamadas están limitadas (tope diario, 8 a la vez como máximo, 20 s cada una) y la clave se queda en el servidor.',
+  'intro.api.here.off': 'En este servidor: no está activa. Responden las reglas verificadas + RAG y no se usa ningún servicio externo de IA.',
+  'intro.api.here.configured': 'En este servidor: configurada; solo se anuncia como activa tras su primera respuesta correcta.',
+  'intro.api.here.ready': 'En este servidor: activa ({host}). Ese proveedor recibe el texto de tu pregunta y, para redactar la explicación, las estadísticas calculadas y los pasajes citados.',
+  'intro.api.here.failing': 'En este servidor: configurada pero sin responder ahora; responden las reglas verificadas + RAG.',
   'scan.eyebrow': 'Todas las variables · {place}',
   'scan.title': '{c} de {n} cambios confirmados',
   'scan.lead': 'Cada variable se probó en el mismo punto y periodo. «Confirmado» significa que el veredicto del motor es significativo y que el cambio además resiste la corrección de Benjamini–Hochberg por {n} pruebas simultáneas (q < 0,05).',
@@ -785,7 +807,7 @@ function welcome() {
 /* ------------------------------------------------------------------ how it works */
 
 function engineLabel(engine) {
-  return t(engine === 'lora+rag' ? 'engine.lora' : 'engine.rules');
+  return t(engine === 'lora+rag' ? 'engine.lora' : (engine === 'llm+rag' ? 'engine.llm' : 'engine.rules'));
 }
 
 function renderBadge() {
@@ -798,8 +820,8 @@ function renderBadge() {
   }
   const engine = about.deployment.engine;
   els.badge.textContent = engineLabel(engine);
-  els.badge.dataset.engine = engine === 'lora+rag' ? 'lora' : 'rules';
-  els.badge.title = t(engine === 'lora+rag' ? 'engine.title.lora' : 'engine.title.rules');
+  els.badge.dataset.engine = engine === 'lora+rag' ? 'lora' : (engine === 'llm+rag' ? 'llm' : 'rules');
+  els.badge.title = t(engine === 'lora+rag' ? 'engine.title.lora' : (engine === 'llm+rag' ? 'engine.title.llm' : 'engine.title.rules'));
 }
 
 function renderNote() {
@@ -809,11 +831,14 @@ function renderNote() {
     els.note.append(document.createTextNode(t('intro.note.static')));
     return;
   }
-  els.note.append(document.createTextNode(`${t('intro.note', { docs: num(about.corpus.documents) })} `));
+  const hosted = about.deployment.engine === 'llm+rag';
+  const host = (about.deployment.llm && about.deployment.llm.host) || '';
+  els.note.append(document.createTextNode(`${t(hosted ? 'intro.note.llm' : 'intro.note', { docs: num(about.corpus.documents), host })} `));
   const mode = el('span', 'mode-line');
   const loading = about.deployment.lora && about.deployment.lora.state === 'loading';
-  const modeKey = about.deployment.engine === 'lora+rag' ? 'intro.mode.lora' : (loading ? 'intro.mode.loading' : 'intro.mode.rules');
-  mode.append(el('strong', null, `${t('intro.mode')}: `), document.createTextNode(t(modeKey)));
+  const modeKey = about.deployment.engine === 'lora+rag' ? 'intro.mode.lora'
+    : (hosted ? 'intro.mode.llm' : (loading ? 'intro.mode.loading' : 'intro.mode.rules'));
+  mode.append(el('strong', null, `${t('intro.mode')}: `), document.createTextNode(t(modeKey, { host })));
   els.note.append(mode);
 }
 
@@ -907,7 +932,16 @@ function renderIntro() {
   }
   rs.append(ul, el('p', 'help', t('intro.res.prov')));
 
-  els.grid.append(flow, rag, lo, rs);
+  // The optional hosted-model API. The sentence about THIS server follows what the server reports
+  // (off | configured | ready | failing), so the card never claims more than has actually answered.
+  const ap = card(t('intro.api.title'));
+  ap.classList.add('intro-card--wide');
+  ap.append(el('p', null, t('intro.api.body')), el('p', null, t('intro.api.guard')));
+  const llmInfo = about.deployment.llm || {};
+  const apiState = ['off', 'configured', 'ready', 'failing'].includes(llmInfo.state) ? llmInfo.state : 'off';
+  ap.append(el('p', 'help', t(`intro.api.here.${apiState}`, { host: llmInfo.host || '' })));
+
+  els.grid.append(flow, rag, lo, rs, ap);
 }
 
 async function loadAbout() {
